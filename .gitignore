@@ -26,3 +26,6 @@ data/processed/
 .DS_Store
 .idea/
 .vscode/
+
+# HWP->HWPX converter build output (data/scripts/hwp2hwpx/build.sh)
+data/scripts/hwp2hwpx/build/

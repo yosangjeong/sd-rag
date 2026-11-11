@@ -71,9 +71,14 @@ def fetch(record: bool) -> int:
         digest = sha256(dest)
         if not row["sha256"]:
             row["sha256"] = digest if record else ""
-            print(f"new      {row['id']} {digest[:12]}" + (" (recorded)" if record else ""))
+            print(
+                f"new      {row['id']} {digest[:12]}"
+                + (" (recorded)" if record else "")
+            )
         elif row["sha256"] != digest:
-            print(f"CHANGED  {row['id']}: expected {row['sha256'][:12]}, got {digest[:12]}")
+            print(
+                f"CHANGED  {row['id']}: expected {row['sha256'][:12]}, got {digest[:12]}"
+            )
             problems += 1
         else:
             print(f"ok       {row['id']}")
@@ -96,8 +101,13 @@ def write_sources() -> None:
         "",
     ]
     lines += [f"- **{k}**: {v}" for k, v in LICENSES.items()]
-    lines += ["", "## Documents", "", "| ID | Lang | Title | Source | Format | Tags | License |",
-              "|---|---|---|---|---|---|---|"]
+    lines += [
+        "",
+        "## Documents",
+        "",
+        "| ID | Lang | Title | Source | Format | Tags | License |",
+        "|---|---|---|---|---|---|---|",
+    ]
     for r in rows:
         lines.append(
             f"| {r['id']} | {r['lang']} | [{r['title']}]({r['url']}) | {r['source']} "
@@ -108,9 +118,17 @@ def write_sources() -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--record", action="store_true", help="write missing sha256 values to the manifest")
-    p.add_argument("--sources", action="store_true", help="regenerate SOURCES.md and exit")
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    p.add_argument(
+        "--record",
+        action="store_true",
+        help="write missing sha256 values to the manifest",
+    )
+    p.add_argument(
+        "--sources", action="store_true", help="regenerate SOURCES.md and exit"
+    )
     args = p.parse_args()
     if args.sources:
         write_sources()
