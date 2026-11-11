@@ -20,7 +20,6 @@ chunk.est_tokens. Embeddings and translations are cached under data/raw/embed-be
     cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/embed_bench.py
 """
 
-import csv
 import hashlib
 import json
 import random
@@ -38,6 +37,7 @@ sys.path.insert(0, str(ROOT / "data" / "scripts"))
 import fetch
 
 from sdrag.ingest.chunk import chunk_structure, est_tokens
+from sdrag.ingest.corpus import load_corpus
 from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
 from sdrag.ingest.parse import parse
 
@@ -63,30 +63,18 @@ RE_EN_HEAD = re.compile(r"^\s*§\s?[\d.]+[a-z]?\.?[^\n]*\n")
 # ---------- corpus ----------
 
 
-def corpus_file(row: dict) -> Path:
-    if row["format"] == "scan":
-        return fetch.RAW / "scans" / f"{row['id']}.pdf"
-    if row["id"].startswith("kr-"):
-        family, _, kind = row["id"].rpartition("-")
-        return next((fetch.KR_INBOX / family / kind).glob(f"*.{row['format']}"))
-    return fetch.RAW / f"{row['id']}.{row['format']}"
-
-
 def load_chunks() -> list[dict]:
     ocr = CachedOcr(BedrockVisionOcr("qwen.qwen3-vl-235b-a22b", REGION), fetch.RAW / "ocr-cache")
     chunks = []
-    with fetch.MANIFEST.open(encoding="utf-8") as f:
-        rows = [r for r in csv.DictReader(f) if "eval-truth" not in r["tags"]]
-    for row in rows:
-        doc = parse(corpus_file(row), ocr=ocr)
-        for c in chunk_structure(doc, row["id"], max_tokens=CHUNK_TOKENS):
-            body = RE_KO_HEAD.sub("", c.text) if row["lang"] == "ko" else RE_EN_HEAD.sub("", c.text)
+    for d in load_corpus(fetch.DATA):
+        for c in chunk_structure(parse(d.path, ocr=ocr), d.id, max_tokens=CHUNK_TOKENS):
+            body = RE_KO_HEAD.sub("", c.text) if d.lang == "ko" else RE_EN_HEAD.sub("", c.text)
             if body.strip():
                 chunks.append(
                     {
                         "id": c.id,
-                        "doc": row["id"],
-                        "lang": row["lang"],
+                        "doc": d.id,
+                        "lang": d.lang,
                         "heading": c.heading,
                         "text": body,
                     }

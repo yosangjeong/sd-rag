@@ -112,6 +112,32 @@ English chunks. Restricting the search to the answer's language lifts ko->en fro
 38.8% to 62.5%. Retrieval will therefore search per language and merge the results
 (to be compared in the ablation).
 
+## Index and retrieval (`backend/src/sdrag/retrieval/`)
+
+**OpenSearch, one document per chunk**, developed against a local OpenSearch 3.7
+(the newest version AWS OpenSearch Service offers; `infra/local/opensearch/up.sh`).
+BM25 runs on the embedding input (statute title > heading + text) through two
+analyzers: Korean nori (morphemes, hanja read as hangul, particles dropped) and
+English (stemmed); middle dots ㆍ · • become spaces, which also absorbs the OCR's
+· for ㆍ. nori splits words our PDF clean-up wrongly joined
+("동거하는친족만을" -> 동거/하/는/친족/만/을), which is why the spacing heuristic leans
+to joining. Vectors: Lucene HNSW, cosine.
+
+**Fusion by Reciprocal Rank Fusion, in application code**: ranks, not scores, so BM25
+and cosine need no normalization, and the same code can merge per-language lists.
+
+**Ingestion throughput (local, 2026-11-12)**: 53 documents, 6,499 chunks in 242 s
+(13 documents per minute), 2.2M embedding tokens (about $0.06). Embedding calls take
+most of the time; HWPX/DOCX parse in under 0.1 s, the 210-page PDF in 8 s.
+
+**Open: how to search across languages.** In a smoke test (`eval/search_smoke.py`)
+BM25 and hybrid answered an English question about Korean law with US FMLA sections,
+while dense search found 근로기준법 제26조. Fusing one hybrid list per language fixes
+that but forces the other language into the top results even when it holds no
+answer (a Korean 포상금 article ranked first for "minimum wage for federal contracts
+in 2027"). Translating the query and searching with both versions is the candidate
+fix; to be decided on the evaluation set.
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region
