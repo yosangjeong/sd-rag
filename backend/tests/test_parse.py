@@ -3,7 +3,14 @@ import zipfile
 import pytest
 from docx import Document
 
-from sdrag.ingest.parse import HeadingTracker, parse, split_statute_text
+from sdrag.ingest.parse import (
+    HeadingTracker,
+    _pdf_cell,
+    dehyphenate,
+    parse,
+    split_statute_text,
+    strip_running_lines,
+)
 
 # ---------- headings ----------
 
@@ -45,6 +52,119 @@ def test_split_statute_text_on_article_starts():
         "제1조(목적) 이 법은\n목적으로 한다.",
         "제2조(정의) 이 법에서\n제26조에 따른",
     ]
+
+
+def test_us_section_headings_need_a_capitalised_title():
+    assert headings(
+        [
+            "§ 203. Definitions\nAs used in this chapter",
+            "§ 825.102 of this part. For purposes of",  # wrapped cross-reference
+            "§ 215(a), Sept. 23, 1966, 80 Stat. 830",  # amendment note
+            "§ 541.4 Other laws and collective bar-",
+            "§ 825.103 [Reserved]",
+        ]
+    ) == [
+        "§ 203 Definitions",
+        "§ 203 Definitions",
+        "§ 203 Definitions",
+        "§ 541.4 Other laws and collective bar",
+        "§ 825.103 [Reserved]",
+    ]
+
+
+def test_wrapped_section_titles_are_rejoined():
+    assert headings(
+        [
+            "§ 825.401 Filing a complaint with the\nFederal Government.\n(a) A complaint",
+            "§ 651 Congressional statement of findings and\ndeclaration of purpose and policy\n(a)",
+            "§ 652 Definitions\nFor the purposes of this chapter",  # complete: next line is body
+        ]
+    ) == [
+        "§ 825.401 Filing a complaint with the Federal Government.",
+        "§ 651 Congressional statement of findings and declaration of purpose and policy",
+        "§ 652 Definitions",
+    ]
+
+
+def test_federal_register_headings():
+    assert headings(
+        [
+            "AGENCY: Employment and Training Administration, Labor.",
+            "ACTION: Final rule.",
+            "SUMMARY: The Department rescinds ...",
+            "I. Background and History",
+            "IV. Procedural and Other Matters",
+            "A. Review Under Executive Order 12866",
+            "V. P. Loftis Co., 167 F. (2d) 286.",  # a case citation, not a heading
+            "AGENCY: Institute of Museum and Library Services.",  # next notice on the page
+            "A. Background",
+        ]
+    ) == [
+        "AGENCY",
+        "AGENCY",
+        "SUMMARY",
+        "I. Background and History",
+        "IV. Procedural and Other Matters",
+        "IV. Procedural and Other Matters / A. Review Under Executive Order 12866",
+        "IV. Procedural and Other Matters / A. Review Under Executive Order 12866",
+        "AGENCY",
+        "A. Background",
+    ]
+
+
+def test_split_statute_text_on_us_sections():
+    page = "end of the last one.\n§ 541.100 General rule for executive\nemployees."
+    assert split_statute_text(page) == [
+        "end of the last one.",
+        "§ 541.100 General rule for executive\nemployees.",
+    ]
+
+
+# ---------- PDF cleanup ----------
+
+
+def test_running_headers_and_footers_are_dropped_by_position():
+    words = "가나다라마"
+    pages = [
+        "\n".join(
+            [
+                f"법제처 {i} 국가법령정보센터",
+                "근로기준법",
+                f"사용자는 {w}에 관하여",
+                f"<개정 20{i}0. 5. 26.>",  # recurs on every page (digits aside), mid-page
+                f"② 다만, {w}의 경우",
+                f"{w}한다.",
+                f"VerDate Sep<11>2014 Frm 0{i}",
+            ]
+        )
+        for i, w in enumerate(words, start=1)
+    ]
+    out = strip_running_lines(pages)
+    assert out[0].split("\n") == [
+        "사용자는 가에 관하여",
+        "<개정 2010. 5. 26.>",
+        "② 다만, 가의 경우",
+        "가한다.",
+    ]
+    assert strip_running_lines(pages[:2]) == pages[:2]  # too few pages to tell
+
+
+def test_body_lines_repeating_at_page_ends_are_kept():
+    # a fine table running over pages 4-7 of 10 ends every page with an amount
+    pages = [f"법제처 {i} 국가법령정보센터\n본문 {i}쪽\n가나다\n라마바" for i in range(1, 11)]
+    for i, amount in zip(range(3, 7), ("500만원", "300만원", "500만원", "200만원")):
+        pages[i] += f"\n{amount}"
+    out = strip_running_lines(pages)
+    assert [p.split("\n")[-1] for p in out[3:7]] == ["500만원", "300만원", "500만원", "200만원"]
+    assert all(not p.startswith("법제처") for p in out)
+
+
+def test_dehyphenate_rejoins_soft_hyphens_only():
+    assert dehyphenate("knowl-\nedge") == "knowledge"
+    assert dehyphenate("commod -\nities") == "commodities"  # US Code typesetting
+    assert dehyphenate("non- \nmanagement") == "non-management"
+    assert dehyphenate("Subpart H-\nDefinitions") == "Subpart H-\nDefinitions"
+    assert dehyphenate("근로-\n계약") == "근로-\n계약"
 
 
 # ---------- DOCX ----------
@@ -136,3 +256,12 @@ def test_format_is_sniffed_not_taken_from_extension(tmp_path):
     hwp.write_bytes(b"\xd0\xcf\x11\xe0" + b"\0" * 100)  # HWP 5.x (OLE) named .hwpx
     with pytest.raises(ValueError, match="unsupported"):
         parse(hwp)
+
+
+def test_pdf_cell_lines_rejoin_korean_words_but_keep_items_apart():
+    assert (
+        _pdf_cell("작업발판 일체형 거푸집 조\n립 및 해체") == "작업발판 일체형 거푸집 조립 및 해체"
+    )
+    assert _pdf_cell("1. 가설공사\n2. 굴착 및 발\n파 공사") == "1. 가설공사 2. 굴착 및 발파 공사"
+    assert _pdf_cell("Nitro\nmethane") == "Nitro methane"
+    assert _pdf_cell(None) == ""  # covered by a merged cell
