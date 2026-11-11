@@ -7,6 +7,14 @@
 Files land in data/raw/<id>.<format> (gitignored). 'manual' documents (e.g. from
 law.go.kr, whose download flow needs a browser) must be saved there by hand;
 this script then verifies them by SHA-256 so everyone gets the same bytes.
+
+Korean statutes are the exception: they live in data/raw/kr-inbox/<family>/<kind>/
+(see build_kr.py), and the recorded SHA-256 is that of the file as downloaded
+(the zip, or the single PDF/HWPX), not of the merged HWPX or generated DOCX.
+Those derived files are rebuilt by build_kr.py, which checks their text and
+table count against the source instead; their bytes vary between builds
+(zip timestamps), so hashing them would not be reproducible.
+
 Uses only the standard library.
 """
 
@@ -21,6 +29,7 @@ from pathlib import Path
 DATA = Path(__file__).resolve().parent.parent
 MANIFEST = DATA / "manifest.csv"
 RAW = DATA / "raw"
+KR_INBOX = RAW / "kr-inbox"
 USER_AGENT = "sd-rag-dataset-fetch/0.1"
 
 LICENSES = {
@@ -47,6 +56,19 @@ def download(url: str, dest: Path) -> None:
     tmp.rename(dest)
 
 
+def local_path(row: dict) -> Path:
+    """Where a document's hashed file lives (see the module docstring)."""
+    family, _, kind = row["id"].rpartition("-")
+    folder = KR_INBOX / family / kind
+    if folder.is_dir():
+        files = {f.suffix.lower(): f for f in folder.iterdir() if f.is_file()}
+        # the download is the zip if there is one, else the single PDF/HWPX
+        for ext in (".zip", ".pdf", ".hwpx"):
+            if ext in files:
+                return files[ext]
+    return RAW / f"{row['id']}.{row['format']}"
+
+
 def load() -> tuple[list[str], list[dict]]:
     with MANIFEST.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -58,7 +80,7 @@ def fetch(record: bool) -> int:
     RAW.mkdir(exist_ok=True)
     problems = 0
     for row in rows:
-        dest = RAW / f"{row['id']}.{row['format']}"
+        dest = local_path(row)
         if not dest.exists():
             if row["acquisition"] == "auto":
                 print(f"download {row['id']}")
