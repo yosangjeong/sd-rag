@@ -3,7 +3,8 @@
 Input (downloaded from law.go.kr by hand, file names untouched):
 
     data/raw/kr-inbox/<family>/{law,dec,rul}/
-        *.pdf   statutes assigned PDF (body + annexes already in one file)
+        *.pdf   statutes assigned PDF (body + annexes already in one file), or scan
+                (a PDF that data/scripts/make_scans.py turns into a synthetic scan)
         *.zip   statutes assigned HWPX or DOCX: law.go.kr's HWPX download is a
                 zip of the body .hwpx plus one file per annex (별표), and the
                 annexes are usually HWP 5.x, not HWPX
@@ -266,7 +267,7 @@ def build_kind(folder: Path, fmt: str, force: bool, title: str, kind: str) -> st
     ):
         return "not downloaded"
     check_title(folder, title, kind)
-    if fmt == "pdf":
+    if fmt in ("pdf", "scan"):  # scan: the PDF is scanned by make_scans.py
         files = [
             f for f in folder.iterdir() if f.is_file() and not f.name.startswith(".")
         ]
@@ -277,7 +278,7 @@ def build_kind(folder: Path, fmt: str, force: bool, title: str, kind: str) -> st
             )
         if magic(pdfs[0]) != "pdf":
             raise BuildError(f"{pdfs[0].name} is not a PDF")
-        return "pdf ok"
+        return "pdf ok" if fmt == "pdf" else "pdf ok (scanned by make_scans.py)"
     return build_hwpx_kind(folder, fmt, force)
 
 

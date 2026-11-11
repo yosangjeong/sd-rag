@@ -15,6 +15,10 @@ Those derived files are rebuilt by build_kr.py, which checks their text and
 table count against the source instead; their bytes vary between builds
 (zip timestamps), so hashing them would not be reproducible.
 
+Rows with format "scan" are corpus documents served as a synthetic scan: the hashed
+file is the source PDF (downloaded or saved as above), and make_scans.py writes the
+image-only scan of it to data/raw/scans/<id>.pdf. Their text PDF is not indexed.
+
 Rows tagged eval-truth (ids ending in -truth) are not part of the corpus: they are
 the HWPX edition of a statute the corpus holds as PDF, kept in
 data/raw/kr-truth/<family>/<kind>/ as ground truth for eval/pdf_tables.py. Build
@@ -77,7 +81,8 @@ def local_path(row: dict) -> Path:
         for ext in (".zip", ".pdf", ".hwpx"):
             if ext in files:
                 return files[ext]
-    return RAW / f"{row['id']}.{row['format']}"
+    ext = "pdf" if row["format"] == "scan" else row["format"]  # scans: source is a PDF
+    return RAW / f"{row['id']}.{ext}"
 
 
 def load() -> tuple[list[str], list[dict]]:

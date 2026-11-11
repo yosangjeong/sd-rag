@@ -17,6 +17,7 @@ writes OUT.pdf and OUT.truth.json ({"<page>": "<source text>"}; 1-based pages of
 import argparse
 import io
 import json
+import logging
 import random
 import time
 from pathlib import Path
@@ -24,6 +25,8 @@ from pathlib import Path
 import pypdfium2 as pdfium
 from PIL import Image, ImageChops, ImageEnhance, ImageFilter
 from pypdf import PdfReader
+
+logging.getLogger("pypdf").setLevel(logging.ERROR)  # a fontTools warning per CFF font
 
 PROFILES = {
     # a decent office copier / scanner
