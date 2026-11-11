@@ -15,6 +15,12 @@ Those derived files are rebuilt by build_kr.py, which checks their text and
 table count against the source instead; their bytes vary between builds
 (zip timestamps), so hashing them would not be reproducible.
 
+Rows tagged eval-truth (ids ending in -truth) are not part of the corpus: they are
+the HWPX edition of a statute the corpus holds as PDF, kept in
+data/raw/kr-truth/<family>/<kind>/ as ground truth for eval/pdf_tables.py. Build
+their HWPX with build_kr.build_hwpx_kind; never index them (the statute would
+appear twice).
+
 Uses only the standard library.
 """
 
@@ -30,6 +36,8 @@ DATA = Path(__file__).resolve().parent.parent
 MANIFEST = DATA / "manifest.csv"
 RAW = DATA / "raw"
 KR_INBOX = RAW / "kr-inbox"
+KR_TRUTH = RAW / "kr-truth"
+TRUTH_SUFFIX = "-truth"
 USER_AGENT = "sd-rag-dataset-fetch/0.1"
 
 LICENSES = {
@@ -58,8 +66,11 @@ def download(url: str, dest: Path) -> None:
 
 def local_path(row: dict) -> Path:
     """Where a document's hashed file lives (see the module docstring)."""
-    family, _, kind = row["id"].rpartition("-")
-    folder = KR_INBOX / family / kind
+    doc_id, root = row["id"], KR_INBOX
+    if doc_id.endswith(TRUTH_SUFFIX):
+        doc_id, root = doc_id.removesuffix(TRUTH_SUFFIX), KR_TRUTH
+    family, _, kind = doc_id.rpartition("-")
+    folder = root / family / kind
     if folder.is_dir():
         files = {f.suffix.lower(): f for f in folder.iterdir() if f.is_file()}
         # the download is the zip if there is one, else the single PDF/HWPX
