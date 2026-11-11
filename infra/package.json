@@ -1,0 +1,8 @@
+{
+  "name": "sdrag-infra",
+  "private": true,
+  "description": "Pins the CDK CLI version. Run with: npx cdk <command>",
+  "devDependencies": {
+    "aws-cdk": "2.1148.0"
+  }
+}

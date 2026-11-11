@@ -1,0 +1,19 @@
+[project]
+name = "sdrag-infra"
+version = "0.1.0"
+description = "AWS CDK app for the SD RAG system"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "aws-cdk-lib>=2.200,<3",
+    "constructs>=10.4,<11",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.8"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
