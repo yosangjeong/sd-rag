@@ -12,6 +12,9 @@ class Settings(BaseSettings):
 
     env: str = "local"
     aws_region: str = "ap-southeast-2"
+    # OCR engine for scanned PDF pages: a Bedrock vision model (eval/ocr_bench.py)
+    ocr_model: str = "qwen.qwen3-vl-235b-a22b"
+    ocr_cache_dir: str = ""  # empty: no cache (set locally to avoid paying twice)
 
 
 settings = Settings()

@@ -15,30 +15,29 @@ loop on long dot runs otherwise).
 Raw outputs, token usage and latency are kept under data/raw/ocr-bench/out/ so
 re-scoring needs no new calls and every transcription can be inspected.
 
+Transcription goes through sdrag.ingest.ocr, so what is measured is what ingestion
+runs (prompt, 200 dpi rendering, repetition guard).
+
     cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/ocr_bench.py [--engines a,b]
 """
 
 import argparse
 import csv
-import io
 import json
 import re
 import sys
-import time
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
 from pathlib import Path
 
-import boto3
-import pypdfium2 as pdfium
-from botocore.config import Config
-from botocore.exceptions import BotoCoreError, ClientError
-from PIL import Image
 from rapidfuzz.distance import Levenshtein
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "data" / "scripts"))
 import scanify
+
+from sdrag.ingest.ocr import BedrockVisionOcr, OcrError, render_page
 
 DATA = ROOT / "data"
 BENCH = DATA / "raw" / "ocr-bench"
@@ -59,13 +58,6 @@ PAGES = [
     ("us-fr-2026-20646", 2, "en-3col"),
     ("us-usc29-ch8", 4, "en-2col"),
 ]
-
-PROMPT = (
-    "Transcribe all text on this scanned page exactly as printed, in reading order "
-    "(on multi-column pages, column by column). Do not translate, correct, summarize "
-    "or add anything. Keep line breaks. Write tables as rows like | cell | cell |. "
-    "Write a run of leader dots or dashes as '...'. Output only the transcription."
-)
 
 # Bedrock vision models callable from this account in ap-southeast-2 (checked 2026-11-11)
 BEDROCK = {
@@ -97,84 +89,14 @@ def build() -> None:
                 scanify.scan(source_pdf(doc_id), out, [page], profile, seed=0)
 
 
-def page_image(pdf: Path) -> Image.Image:
-    """The scan's page image (the scan holds one image per page)."""
-    p = scanify.PROFILES["office" if "/office/" in str(pdf) else "poor"]
-    return pdfium.PdfDocument(pdf)[0].render(scale=p["dpi"] / 72).to_pil().convert("L")
-
-
-def jpeg(img: Image.Image) -> bytes:
-    buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=90)
-    return buf.getvalue()
-
-
-def halves(img: Image.Image) -> list[Image.Image]:
-    """Cut a page in two at the blankest pixel row of its middle fifth, so no text line
-    is cut: its rows are averaged and the brightest (emptiest) one wins."""
-    w, h = img.size
-    band = img.crop((0, int(h * 0.4), w, int(h * 0.6))).resize((1, int(h * 0.2)))
-    rows = list(band.get_flattened_data())
-    cut = int(h * 0.4) + max(range(len(rows)), key=rows.__getitem__)
-    return [img.crop((0, 0, w, cut)), img.crop((0, cut, w, h))]
-
-
-def bedrock_ocr(model_id: str):
-    client = boto3.client(
-        "bedrock-runtime",
-        # a dense page takes a VLM 20-30 s; botocore's default 60 s read timeout cut some
-        config=Config(retries={"max_attempts": 6, "mode": "adaptive"}, read_timeout=300),
-    )
-
-    def call(image: bytes) -> dict:
-        r = client.converse(
-            modelId=model_id,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"image": {"format": "jpeg", "source": {"bytes": image}}},
-                        {"text": PROMPT},
-                    ],
-                }
-            ],
-            inferenceConfig={"maxTokens": 6000, "temperature": 0},
-        )
-        return {
-            "text": "".join(b.get("text", "") for b in r["output"]["message"]["content"]),
-            "usage": r["usage"],
-            "stop": r["stopReason"],
-        }
-
-    def run(img: Image.Image) -> dict:
-        """Transcribe a page. Output cut by the token limit means the model got stuck
-        repeating itself (leader dots, "1818..."): read the two halves separately."""
-        t = time.perf_counter()
-        res = call(jpeg(img))
-        res["split"] = False
-        if res["stop"] == "max_tokens":
-            parts = [call(jpeg(half)) for half in halves(img)]
-            res = {
-                "text": "\n".join(x["text"] for x in parts),
-                "usage": {
-                    k: res["usage"][k] + sum(x["usage"][k] for x in parts)
-                    for k in ("inputTokens", "outputTokens")
-                },
-                "stop": ",".join(x["stop"] for x in parts),
-                "split": True,
-            }
-        res["seconds"] = round(time.perf_counter() - t, 2)
-        return res
-
-    return run
-
-
 def out_path(engine: str, profile: str, doc_id: str, page: int) -> Path:
     return BENCH / "out" / engine / profile / f"{doc_id}-p{page}.json"
 
 
 def transcribe(engine: str) -> None:
-    run = bedrock_ocr(BEDROCK[engine])
+    """Through the production OCR code (sdrag.ingest.ocr): prompt, rendering and guards
+    are exactly what ingestion uses."""
+    ocr = BedrockVisionOcr(BEDROCK[engine], region="ap-southeast-2")
     jobs = [
         (profile, doc_id, page)
         for profile in PROFILES
@@ -185,13 +107,13 @@ def transcribe(engine: str) -> None:
     def one(job):
         profile, doc_id, page = job
         try:
-            res = run(page_image(scan_path(profile, doc_id, page)))
-        except (ClientError, BotoCoreError) as e:  # keep going; retried on the next run
+            res = ocr.transcribe(render_page(scan_path(profile, doc_id, page), 1))
+        except OcrError as e:  # keep going; the page is retried on the next run
             print(f"  {engine} {profile} {doc_id} p{page}: {e}")
             return
         out = out_path(engine, profile, doc_id, page)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+        out.write_text(json.dumps(asdict(res), ensure_ascii=False, indent=1), encoding="utf-8")
 
     with ThreadPoolExecutor(4) as pool:
         list(pool.map(one, jobs))
@@ -226,8 +148,8 @@ def score(engine: str) -> dict:
             m["recall"].append(common / len(t))
             m["extra"].append(1 - common / len(o) if o else 0.0)
             m["seconds"].append(res["seconds"])
-            m["in"].append(res["usage"]["inputTokens"])
-            m["out"].append(res["usage"]["outputTokens"])
+            m["in"].append(res["input_tokens"])
+            m["out"].append(res["output_tokens"])
     return by_type
 
 

@@ -41,6 +41,8 @@ from docx.text.paragraph import Paragraph
 from lxml import etree
 from pypdf import PdfReader
 
+from sdrag.ingest.ocr import OcrEngine, ocr_pages, split_markdown
+
 # pypdf logs a fontTools warning for every CFF font it meets (1,500 lines for our
 # US PDFs); text extraction is unaffected
 logging.getLogger("pypdf").setLevel(logging.ERROR)
@@ -112,7 +114,8 @@ class ParsedDocument:
     path: str
     format: Literal["pdf", "hwpx", "docx"]
     blocks: list[Block] = field(default_factory=list)
-    needs_ocr_pages: list[int] = field(default_factory=list)
+    needs_ocr_pages: list[int] = field(default_factory=list)  # no text, not (yet) OCR'd
+    ocr_pages: list[int] = field(default_factory=list)  # text came from OCR
 
 
 class HeadingTracker:
@@ -584,16 +587,29 @@ class KoreanSpacing:
         return "\n".join(out)
 
 
-def parse_pdf(path: Path) -> ParsedDocument:
+def parse_pdf(path: Path, ocr: OcrEngine | None = None) -> ParsedDocument:
+    """Pages without a text layer are read by `ocr` when given; their text then goes
+    through the same clean-up as extracted text (headers, line wraps, headings), and
+    their "| a | b |" tables become table blocks. Without `ocr` (or if it fails on a
+    page) such pages are only listed in needs_ocr_pages."""
     doc = ParsedDocument(str(path), "pdf")
     heads = HeadingTracker()
     raw = [page.extract_text() or "" for page in PdfReader(path).pages]
+    blank = [i for i, t in enumerate(raw, start=1) if not t.strip()]
+    if ocr is not None and blank:
+        for i, res in ocr_pages(path, blank, ocr).items():
+            raw[i - 1] = res.text
+            doc.ocr_pages.append(i)
+        doc.ocr_pages.sort()
     kept = strip_running_lines(raw)
     pages: list[tuple[int, list[tuple[str, object]]]] = []
     with pdfplumber.open(path) as plumber:
         for i, (orig, text, page) in enumerate(zip(raw, kept, plumber.pages), start=1):
             if not orig.strip():
                 doc.needs_ocr_pages.append(i)
+                continue
+            if i in doc.ocr_pages:
+                pages.append((i, split_markdown(text)))
                 continue
             tables = _pdf_tables(page)
             if not tables:
@@ -666,8 +682,11 @@ def sniff_format(path: Path) -> str:
     raise ValueError(f"{path.name}: unsupported format (PDF, DOCX, HWPX only)")
 
 
-def parse(path: str | Path) -> ParsedDocument:
-    """Parse by content, not extension (an uploaded .hwpx may really be an HWP file)."""
+def parse(path: str | Path, ocr: OcrEngine | None = None) -> ParsedDocument:
+    """Parse by content, not extension (an uploaded .hwpx may really be an HWP file).
+    `ocr` reads scanned PDF pages (see parse_pdf)."""
     path = Path(path)
     fmt = sniff_format(path)
-    return {"pdf": parse_pdf, "hwpx": parse_hwpx, "docx": parse_docx}[fmt](path)
+    if fmt == "pdf":
+        return parse_pdf(path, ocr)
+    return {"hwpx": parse_hwpx, "docx": parse_docx}[fmt](path)
