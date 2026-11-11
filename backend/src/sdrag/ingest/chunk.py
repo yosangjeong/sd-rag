@@ -16,9 +16,10 @@ span (document + character range) is written once and scored against either
 strategy by overlap, instead of being tied to one strategy's chunk ids.
 
 Sizes are in *estimated tokens* (``est_tokens``), not characters: a Hangul
-syllable is about one token while English averages about four characters per
-token, so a character budget would give Korean chunks ~3x the tokens of
-English ones.
+syllable is about 1.4 tokens while English averages about four characters per
+token, so a character budget would give Korean chunks ~5x the tokens of
+English ones. The coefficients are fitted to an embedding model's own counts
+(see HANGUL_COST).
 """
 
 import bisect
@@ -41,8 +42,16 @@ LEVELS = [
 ]
 
 
+# Least-squares fit of Titan Text Embeddings v2's token counts over the 5,624 corpus
+# chunks (eval/embed_bench.py): 1.41 per Hangul syllable, 0.25 per other character.
+# The first guess, 1.0 per syllable, undercounted Korean by a third (28% of Korean
+# chunks were over 512 real tokens). With the fit, actual / estimate is 0.98 median,
+# 1.16 at p90, 1.6 at p99.
+HANGUL_COST, OTHER_COST = 1.4, 0.25
+
+
 def _cost(c: str) -> float:
-    return 1.0 if "가" <= c <= "힣" else 0.25  # Hangul syllables U+AC00..U+D7A3
+    return HANGUL_COST if "가" <= c <= "힣" else OTHER_COST  # syllables U+AC00..U+D7A3
 
 
 MIN_TOKENS = 40  # pieces below this are joined to a neighbour when possible

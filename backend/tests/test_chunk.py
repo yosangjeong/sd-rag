@@ -29,10 +29,10 @@ def assert_invariants(doc: ParsedDocument, chunks, max_tokens: int) -> None:
     assert all(ch.isspace() or i in covered for i, ch in enumerate(text))
 
 
-def test_est_tokens_counts_hangul_as_one_and_other_chars_as_a_quarter():
-    assert est_tokens("근로자") == 3
+def test_est_tokens_counts_hangul_as_1_4_and_other_chars_as_a_quarter():
+    assert est_tokens("근로자") == 5  # ceil(3 * 1.4)
     assert est_tokens("abcd") == 1
-    assert est_tokens("근로 abc") == 3  # 2 + 4/4
+    assert est_tokens("근로 abc") == 4  # ceil(2 * 1.4 + 4 * 0.25)
 
 
 def test_short_articles_become_one_chunk_each():
@@ -50,13 +50,13 @@ def test_short_articles_become_one_chunk_each():
 
 
 def test_long_article_is_cut_at_paragraph_marks():
-    para = "사용자는 근로자에게 정당한 이유 없이 해고하지 못한다. " * 4  # ~100 tokens
+    para = "사용자는 근로자에게 정당한 이유 없이 해고하지 못한다. " * 4  # ~140 tokens
     text = f"제23조(해고 등의 제한) ① {para}\n② {para}\n③ {para}"
     doc = make_doc(("text", text, "제23조(해고 등의 제한)"))
-    chunks = chunk_structure(doc, "d", max_tokens=230)
+    chunks = chunk_structure(doc, "d", max_tokens=320)  # ①+② = 288, +③ = 426
     assert [c.text[:1] for c in chunks] == ["제", "③"]  # ①+② fit together, ③ does not
     assert all(c.heading == "제23조(해고 등의 제한)" for c in chunks)
-    assert_invariants(doc, chunks, 230)
+    assert_invariants(doc, chunks, 320)
 
 
 def test_split_span_falls_back_to_finer_boundaries():
