@@ -29,3 +29,6 @@ data/processed/
 
 # HWP->HWPX converter build output (data/scripts/hwp2hwpx/build.sh)
 data/scripts/hwp2hwpx/build/
+
+# nori plugin for the local OpenSearch image (infra/local/opensearch/get-nori.sh)
+infra/local/opensearch/*.zip
