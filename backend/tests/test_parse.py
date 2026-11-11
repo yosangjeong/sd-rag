@@ -5,6 +5,7 @@ from docx import Document
 
 from sdrag.ingest.parse import (
     HeadingTracker,
+    KoreanSpacing,
     _pdf_cell,
     dehyphenate,
     parse,
@@ -265,3 +266,16 @@ def test_pdf_cell_lines_rejoin_korean_words_but_keep_items_apart():
     assert _pdf_cell("1. 가설공사\n2. 굴착 및 발\n파 공사") == "1. 가설공사 2. 굴착 및 발파 공사"
     assert _pdf_cell("Nitro\nmethane") == "Nitro methane"
     assert _pdf_cell(None) == ""  # covered by a merged cell
+
+
+def test_korean_line_wraps_are_rejoined_from_the_documents_own_words():
+    body = [
+        "이 규칙은 산업안전보건법 시행에 필요한 사항을 규정함을 목적으로 한다.",
+        "사업주는 근로자의 안전을 위하여 필요한 사항을 정한다.",
+        "고용노동부장관은 목적으로 정한 사항을 공표한다.",
+    ]
+    spacing = KoreanSpacing(["\n".join(body)])
+    wrapped = "필요한 사항을 규정함을 목\n적으로 한다. 그 밖에 필요한\n사항을 정한다.\n① 사업주는"
+    assert spacing.reflow(wrapped) == (
+        "필요한 사항을 규정함을 목적으로 한다. 그 밖에 필요한 사항을 정한다.\n① 사업주는"
+    )

@@ -14,7 +14,9 @@ flagged ``needs_ocr`` (scanned pages); OCR happens in a later stage.
 
 PDF text is cleaned before blocks are made: running headers/footers (page
 numbers, "법제처 3 국가법령정보센터", CFR "VerDate ..." lines) are dropped and
-words hyphenated at line ends are re-joined (``knowl-``/``edge``).
+words hyphenated at line ends are re-joined (``knowl-``/``edge``). Korean lines
+wrap mid-word ("목" / "적으로"), so each Hangul-Hangul line break is decided to be a
+space or nothing from the document's own words (``KoreanSpacing``).
 
 PDF text comes from pypdf, which keeps the column order of two-column pages (CFR).
 pypdf knows nothing of tables, so pages with ruled tables (law.go.kr annexes) are
@@ -503,12 +505,91 @@ def _pdf_page_parts(page, tables, running: set[str]) -> list[tuple[str, object]]
     return parts
 
 
+# a line that starts something (an item, an article, a note) is a real break, not a wrap
+RE_LINE_OPENER = re.compile(
+    r"^\s*([①-⑳]|\d+\.|[가-하]\.|\d+\)|[가-하]\)|\(\d+\)|제\s*\d+\s*조|부\s*칙|[<\[※■○ㆍ·-])"
+)
+WORD_EDGE_PUNCT = "「」『』“”‘’\"'(),.:;·ㆍ<>[]"
+
+
+class KoreanSpacing:
+    """Was a Korean PDF line break a space? Korean wraps lines anywhere, mid-word
+    included ("목" / "적으로"), and pypdf keeps no trace of a space at the break.
+    Measured against the same statutes' HWPX text: 36% of Hangul-Hangul wraps are
+    spaces, so neither "always space" nor "always join" is right.
+
+    The document teaches its own words: words in the middle of a line have real
+    spacing, so they make a vocabulary. For a break between fragments L and R:
+
+    1. L+R is a word at least as frequent as L or R alone -> join ("목적으로")
+    2. L and R are both words -> space ("사항을" "규정함을")
+    3. else boundary statistics: how often words start with R's first 3 syllables
+       and end with L's last 3, relative to how often those occur at all
+
+    88% / 85% correct on the two statutes with HWPX ground truth (36% before;
+    eval/pdf_spacing.py). A
+    corpus-wide vocabulary scored 2-4 points more but would tie every upload to the
+    labor-law corpus.
+    """
+
+    def __init__(self, texts: list[str]) -> None:
+        self.words: Counter = Counter()
+        for text in texts:
+            for line in text.split("\n"):
+                for w in line.split()[1:-1]:  # line-edge words may be fragments
+                    if w := w.strip(WORD_EDGE_PUNCT):
+                        self.words[w] += 1
+        self.starts: Counter = Counter()
+        self.ends: Counter = Counter()
+        self.within: Counter = Counter()
+        for w, n in self.words.items():
+            for k in range(1, min(3, len(w)) + 1):
+                self.starts[w[:k]] += n
+                self.ends[w[-k:]] += n
+            for sub in {w[a : a + k] for k in (1, 2, 3) for a in range(len(w) - k + 1)}:
+                self.within[sub] += n
+
+    def is_space(self, left: str, right: str) -> bool:
+        L, R = left.strip(WORD_EDGE_PUNCT), right.strip(WORD_EDGE_PUNCT)
+        if not L or not R:
+            return True
+        joined, l_n, r_n = self.words[L + R], self.words[L], self.words[R]
+        if joined and joined >= min(l_n, r_n):
+            return False
+        if l_n and r_n:
+            return True
+        l3, r3 = L[-3:], R[:3]
+        start = self.starts[r3] / (self.within[r3] or 1)
+        end = self.ends[l3] / (self.within[l3] or 1)
+        return start * end >= 0.2
+
+    def reflow(self, text: str) -> str:
+        """Join wrapped Hangul lines (with a space or not); keep every other break."""
+        lines = text.split("\n")
+        out = [lines[0]]
+        for line in lines[1:]:
+            prev = out[-1].rstrip()
+            nxt = line.lstrip()
+            if (
+                prev
+                and nxt
+                and "가" <= prev[-1] <= "힣"
+                and "가" <= nxt[0] <= "힣"
+                and not RE_LINE_OPENER.match(nxt)
+            ):
+                space = self.is_space(prev.split()[-1], nxt.split()[0])
+                out[-1] = prev + (" " if space else "") + nxt
+            else:
+                out.append(line)
+        return "\n".join(out)
+
+
 def parse_pdf(path: Path) -> ParsedDocument:
     doc = ParsedDocument(str(path), "pdf")
     heads = HeadingTracker()
     raw = [page.extract_text() or "" for page in PdfReader(path).pages]
     kept = strip_running_lines(raw)
-    table_end = 0  # page the last table block ends on (a block keeps its first page)
+    pages: list[tuple[int, list[tuple[str, object]]]] = []
     with pdfplumber.open(path) as plumber:
         for i, (orig, text, page) in enumerate(zip(raw, kept, plumber.pages), start=1):
             if not orig.strip():
@@ -516,53 +597,59 @@ def parse_pdf(path: Path) -> ParsedDocument:
                 continue
             tables = _pdf_tables(page)
             if not tables:
-                parts = [("text", text)]
-            else:
-                running = Counter(_edge_key(ln) for ln in orig.splitlines() if ln.strip())
-                running.subtract(_edge_key(ln) for ln in text.splitlines() if ln.strip())
-                parts = _pdf_page_parts(page, tables, {k for k, n in running.items() if n > 0})
-            for kind, content in parts:
-                if kind == "text":
-                    for piece in split_statute_text(dehyphenate(content)):
-                        heads.update(piece)
-                        doc.blocks.append(
-                            Block("text", piece, len(doc.blocks), page=i, heading=heads.current)
-                        )
-                    continue
-                rows = content
-                prev = doc.blocks[-1] if doc.blocks else None
-                if (
-                    prev is not None
-                    and prev.kind == "table"
-                    and table_end == i - 1
-                    and parts[0] == (kind, content)
-                    and len(prev.rows[0]) == len(rows[0])
-                ):
-                    # the page opens with the rest of the last page's table: one table.
-                    # A first row with an empty first cell is the second half of a row
-                    # cut by the page break ("번호" is printed on the first half only)
-                    if not rows[0][0] and prev.rows[-1][0]:
-                        last = prev.rows[-1]
-                        prev.rows[-1] = [
-                            (x + " " + y).strip() for x, y in zip(last, rows[0], strict=True)
-                        ]
-                        rows = rows[1:]
-                    prev.rows += rows
-                    prev.text = table_text(prev.rows)
-                    table_end = i
-                    continue
-                heads.update_annex(" ".join(rows[0]))
-                table_end = i
-                doc.blocks.append(
-                    Block(
-                        "table",
-                        table_text(rows),
-                        len(doc.blocks),
-                        page=i,
-                        heading=heads.current,
-                        rows=rows,
+                pages.append((i, [("text", text)]))
+                continue
+            running = Counter(_edge_key(ln) for ln in orig.splitlines() if ln.strip())
+            running.subtract(_edge_key(ln) for ln in text.splitlines() if ln.strip())
+            pages.append(
+                (i, _pdf_page_parts(page, tables, {k for k, n in running.items() if n > 0}))
+            )
+
+    spacing = KoreanSpacing([c for _, parts in pages for k, c in parts if k == "text"])
+    table_end = 0  # page the last table block ends on (a block keeps its first page)
+    for i, parts in pages:
+        for kind, content in parts:
+            if kind == "text":
+                for piece in split_statute_text(spacing.reflow(dehyphenate(content))):
+                    heads.update(piece)
+                    doc.blocks.append(
+                        Block("text", piece, len(doc.blocks), page=i, heading=heads.current)
                     )
+                continue
+            rows = content
+            prev = doc.blocks[-1] if doc.blocks else None
+            if (
+                prev is not None
+                and prev.kind == "table"
+                and table_end == i - 1
+                and parts[0] == (kind, content)
+                and len(prev.rows[0]) == len(rows[0])
+            ):
+                # the page opens with the rest of the last page's table: one table.
+                # A first row with an empty first cell is the second half of a row
+                # cut by the page break ("번호" is printed on the first half only)
+                if not rows[0][0] and prev.rows[-1][0]:
+                    last = prev.rows[-1]
+                    prev.rows[-1] = [
+                        (x + " " + y).strip() for x, y in zip(last, rows[0], strict=True)
+                    ]
+                    rows = rows[1:]
+                prev.rows += rows
+                prev.text = table_text(prev.rows)
+                table_end = i
+                continue
+            heads.update_annex(" ".join(rows[0]))
+            table_end = i
+            doc.blocks.append(
+                Block(
+                    "table",
+                    table_text(rows),
+                    len(doc.blocks),
+                    page=i,
+                    heading=heads.current,
+                    rows=rows,
                 )
+            )
     return doc
 
 
