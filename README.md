@@ -7,14 +7,15 @@ regulations (Korean labor acts with their decrees and rules; US Code, CFR, Feder
 Register), and each user's uploads are searched only for that user.
 
 The focus is retrieval accuracy, measured on a 338-question held-out set plus 137
-real user questions (`data/eval/`).
+real user questions (`data/eval/`): hit@10 0.94 and 0.95, MRR 0.88 on both, against
+0.78 / 0.53 and 0.88 / 0.59 for plain hybrid search (`docs/decisions.md`).
 
 ## How it works
 
 ```
 upload -> S3 -> SQS -> worker: parse (OCR for scans) -> chunk -> embed -> OpenSearch
-question -> translate to the other language -> BM25 + vector search for both
-         -> fuse (RRF) -> LLM rerank -> answer with [n] citations
+question -> BM25 + vector search (RRF), top 20; same for its translation, +10 more
+         -> LLM rerank -> answer with [n] citations
          (or: an agent chooses keyword / vector / filtered searches itself)
 ```
 
@@ -25,8 +26,8 @@ question -> translate to the other language -> BM25 + vector search for both
 | Chunks | one per article / section, split at paragraph > item > line | beats fixed windows on every slice |
 | Embeddings | Titan Text Embeddings v2 | far ahead across languages |
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |
-| Cross-lingual | query translation | ko->en hit@10 0.62 -> 0.85 (dev) |
-| Reranker | GLM-4.7 listwise | MRR 0.51 -> 0.81 (dev) |
+| Cross-lingual | query translation, candidates added | test ko->en hit@10 0.47 -> 0.90 |
+| Reranker | GLM-4.7 listwise | test MRR 0.53 -> 0.80 on hybrid |
 | Answers / agent | GLM-4.7 (in-Region, tool use) | fast; no cross-Region inference |
 
 ## Repository
@@ -59,7 +60,7 @@ The corpus files are downloaded by `data/scripts/fetch.py` (sources and licenses
 ```bash
 cd backend
 AWS_PROFILE=<profile> uv run python ../eval/run_retrieval.py --set ../data/eval/test.jsonl \
-  --systems hybrid@chunks-structure bilingual+rerank@chunks-structure agent+rerank@chunks-structure
+  --systems hybrid@chunks-structure bilingual_union+rerank@chunks-structure agent+rerank@chunks-structure
 ```
 
 Results per question and summaries by language and file type: `data/eval/results/`.

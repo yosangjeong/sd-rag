@@ -28,7 +28,9 @@ def main() -> None:
         for m in METRICS:
             ok = got[m] >= metrics[m] - TOLERANCE
             failed |= not ok
-            print(f"{'ok  ' if ok else 'FAIL'} {system} {m}: {got[m]:.3f} (baseline {metrics[m]:.3f})")
+            print(
+                f"{'ok  ' if ok else 'FAIL'} {system} {m}: {got[m]:.3f} (baseline {metrics[m]:.3f})"
+            )
     sys.exit(1 if failed else 0)
 
 

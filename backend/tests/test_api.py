@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import ClassVar
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,7 +23,9 @@ class FakeService:
 class FakeOpenSearch:
     """/api/source: returns the chunk only if the query's owner filter allows it."""
 
-    chunks = {"u-x#0": {"chunk_id": "u-x#0", "doc_id": "u-x", "owner": "alice", "text": "비밀"}}
+    chunks: ClassVar[dict] = {
+        "u-x#0": {"chunk_id": "u-x#0", "doc_id": "u-x", "owner": "alice", "text": "비밀"}
+    }
 
     def search(self, index, body):
         f = body["query"]["bool"]["filter"]

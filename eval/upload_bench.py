@@ -6,20 +6,19 @@ running API as one multipart request, polls /api/documents until no file is queu
 or processing, and reports wall time, files and chunks per minute, and the stage
 times recorded by the worker (worker/job.py).
 
-    python eval/upload_bench.py --api http://127.0.0.1:8001 --out data/eval/results/upload-local.json
+    cd backend && uv run python ../eval/upload_bench.py --api http://127.0.0.1:8001 \
+        --out ../data/eval/results/upload-local.json
 """
 
 import argparse
 import json
 import statistics
-import sys
 import time
 from pathlib import Path
 
 import httpx
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend" / "src"))
-from sdrag.ingest.corpus import load_corpus  # noqa: E402
+from sdrag.ingest.corpus import load_corpus
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 

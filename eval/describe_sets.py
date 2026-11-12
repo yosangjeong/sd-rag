@@ -1,6 +1,6 @@
 """Rewrite the "Composition" section of data/eval/README.md from the set files.
 
-    cd backend && uv run python ../eval/describe_sets.py
+cd backend && uv run python ../eval/describe_sets.py
 """
 
 from collections import Counter

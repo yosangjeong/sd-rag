@@ -36,5 +36,5 @@ jobs:
         working-directory: backend
         run: |
           uv run python ../eval/run_retrieval.py --set ../data/eval/dev.jsonl --out ../data/raw/ci-eval \
-            --systems bilingual+rerank@chunks-structure
+            --systems bilingual_union+rerank@chunks-structure
           uv run python ../eval/gate.py ../data/raw/ci-eval/summary.json ../data/eval/baseline-dev.json

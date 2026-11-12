@@ -87,6 +87,8 @@ def run_system(system: str, items, client, embedder, chat) -> list[dict]:
             hits, steps = res.hits[:DEPTH], res.steps
             chat.input_tokens += res.input_tokens  # the agent calls Converse itself
             chat.output_tokens += res.output_tokens
+        elif mode[9:10].isdigit():  # bilingual0.5: translation weight 0.5
+            hits = s.bilingual(it.question, size=DEPTH, translation_weight=float(mode[9:]))
         else:
             hits = getattr(s, mode)(it.question, size=DEPTH)
         if reranker:

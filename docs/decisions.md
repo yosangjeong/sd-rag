@@ -130,13 +130,58 @@ and cosine need no normalization, and the same code can merge per-language lists
 (13 documents per minute), 2.2M embedding tokens (about $0.06). Embedding calls take
 most of the time; HWPX/DOCX parse in under 0.1 s, the 210-page PDF in 8 s.
 
-**Open: how to search across languages.** In a smoke test (`eval/search_smoke.py`)
-BM25 and hybrid answered an English question about Korean law with US FMLA sections,
-while dense search found 근로기준법 제26조. Fusing one hybrid list per language fixes
-that but forces the other language into the top results even when it holds no
-answer (a Korean 포상금 article ranked first for "minimum wage for federal contracts
-in 2027"). Translating the query and searching with both versions is the candidate
-fix; to be decided on the evaluation set.
+**Retrieval as served: the question's hybrid top 20, plus up to 10 more from its
+translation, reranked by GLM-4.7** (`Searcher.bilingual_union`, `service.py`).
+Every choice was made on the dev set; the test and real sets were each scored once
+per system (`data/eval/results/`). hit@10 / MRR, span level:
+
+| System | dev | test (338) | real (137) | test ko->en | test en->ko | p50 | $/query |
+|---|---|---|---|---|---|---|---|
+| BM25 | 0.51 / 0.39 | 0.58 / 0.42 | 0.77 / 0.49 | 0.00 | 0.02 | 0.0 s | 0 |
+| dense | 0.82 / 0.56 | 0.79 / 0.58 | 0.83 / 0.59 | 0.59 | 0.64 | 0.3 s | 0 |
+| hybrid (BM25 + dense, RRF) | 0.76 / 0.51 | 0.78 / 0.53 | 0.88 / 0.59 | 0.47 | 0.53 | 0.3 s | 0 |
+| hybrid, fixed-size chunks | 0.78 / 0.47 | 0.75 / 0.53 | 0.86 / 0.53 | 0.41 | 0.44 | 0.3 s | 0 |
+| per-language hybrid, fused | 0.76 / 0.45 | 0.78 / 0.47 | 0.75 / 0.42 | 0.53 | 0.58 | 0.3 s | 0 |
+| hybrid + rerank | 0.85 / 0.81 | 0.84 / 0.80 | 0.95 / 0.89 | 0.59 | 0.64 | 1.4 s | 0.004 |
+| translation, fused (bilingual) | 0.85 / 0.56 | 0.83 / 0.57 | 0.78 / 0.47 | 0.80 | 0.77 | 1.2 s | 0.0001 |
+| translation, fused + rerank | 0.93 / 0.85 | 0.91 / 0.86 | 0.88 / 0.80 | 0.88 | 0.89 | 2.4 s | 0.004 |
+| **translation, union + rerank** | **0.95 / 0.88** | **0.94 / 0.88** | **0.95 / 0.88** | **0.90** | **0.91** | 4.0 s | 0.006 |
+| same, fixed-size chunks | | 0.92 / 0.86 | 0.94 / 0.86 | 0.82 | 0.86 | 3.3 s | 0.006 |
+| agent | 0.92 / 0.81 | 0.89 / 0.74 | 0.93 / 0.74 | 0.88 | 0.82 | 6.1 s | 0.016 |
+| agent + rerank | 0.92 / 0.86 | 0.91 / 0.83 | 0.96 / 0.87 | 0.92 | 0.85 | 6.0 s | 0.019 |
+
+How the served configuration was reached:
+
+- **Chunking**: structure chunks beat fixed windows in every configuration measured
+  (hybrid test MRR equal, hit@10 0.78 vs 0.75; final system 0.94 vs 0.92).
+- **Dense vs hybrid**: hybrid is best within a language (test en->en 0.97, ko->ko
+  0.90), dense across languages, where BM25 scores 0: the cross-lingual problem.
+- **Per-language fusion** (the earlier candidate) forces the other language into the
+  results even when it holds no answer: worst of all on the real set (0.75); dropped.
+- **Query translation** fixes BM25 across languages (test ko->en 0.47 -> 0.80).
+- **Reranker**: GLM-4.7 listwise over the candidates, MRR 0.53 -> 0.80 on hybrid.
+  gpt-oss-120b was tried and returned no ranking within 400 output tokens (its
+  reasoning used them), so its order fell back to the first stage's. Bedrock's
+  rerank models are not offered in ap-southeast-2.
+- **Union instead of fusion.** Fusing the question's and the translation's lists
+  scored well on test (0.91 / 0.86) but lost on the real set (0.88 vs 0.95 for hybrid
+  + rerank alone): real questions are all in the language of their law, and the
+  translation's results took candidate slots from the question's own. Weighting the
+  translation down (0.3, 0.5) was tried on dev and was within noise. Keeping the
+  question's top 20 whole and adding up to 10 of the translation's removes the cause:
+  same-language results match hybrid + rerank, cross-lingual ones are the best
+  measured. Disclosure: this change came after seeing the real set's scores of the
+  fused version; it was chosen on dev, and the real set was then scored once.
+- **Agent vs no agent** (the brief's comparison): the agent rewrites queries, searches
+  4.4 times on average, chooses methods and filters; with the same reranker it is
+  level on accuracy (test 0.91 / 0.83 vs 0.94 / 0.88; real 0.96 / 0.87 vs 0.95 / 0.88)
+  at 1.5x the latency and 3x the cost. It is offered as a mode in the UI; the
+  default is the pipeline. The agent model is GLM-4.7 (tool use in-region; Claude
+  is reachable here only through cross-Region inference).
+- **Answers**: GLM-4.7, fast (about 1 s) and in-region; the same model reranks.
+
+Latency is end to end from the local machine to Bedrock in Sydney; cost counts the
+tokens sent at US list prices (`eval/run_retrieval.py` `PRICES`).
 
 ## Evaluation set (`data/eval/`, `eval/`)
 

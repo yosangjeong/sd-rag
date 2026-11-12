@@ -2,10 +2,11 @@
 
 Two modes, compared in the evaluation (eval/run_retrieval.py):
 
-- ``basic``: the question and its translation into the other corpus language, each
-  searched with hybrid (BM25 + dense, RRF), fused, then the top 20 reranked by the LLM.
-  Chosen on the dev set: hit@10 0.93, MRR 0.85 against 0.76 / 0.51 for hybrid alone,
-  mostly from cross-lingual questions (docs/decisions.md).
+- ``basic``: hybrid search (BM25 + dense, RRF) for the question (top 20) and for its
+  translation into the other corpus language (up to 10 more), all reranked by the LLM.
+  Chosen on the dev set: hit@10 0.95, MRR 0.88 against 0.76 / 0.51 for hybrid alone
+  (docs/decisions.md). Fusing the two lists instead let the translation's results push
+  out the question's own, which cost same-language questions.
 - ``agent``: the tool-use agent (agent/search.py) decides the searches, then the same
   reranker orders what it found.
 
@@ -25,6 +26,7 @@ from sdrag.retrieval.search import Searcher
 
 ANSWER_SOURCES = 6
 RERANK_DEPTH = 20
+TRANSLATION_EXTRA = 10
 
 
 class RequestChat:
@@ -73,7 +75,7 @@ class RagService:
             for st in steps:
                 log("tool_call", request_id=request_id, tool=st["tool"], input=st["input"])
         else:
-            hits = s.bilingual(question, size=RERANK_DEPTH)
+            hits = s.bilingual_union(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA)
         hits = LlmReranker(chat).rerank(question, hits)
         log("retrieval", request_id=request_id, mode=mode,
             results=[{"chunk_id": h.chunk_id, "doc_id": h.source.get("doc_id")} for h in hits[:10]])  # fmt: skip

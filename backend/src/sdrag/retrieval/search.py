@@ -49,12 +49,13 @@ def _hits(resp: dict) -> list[Hit]:
     return [Hit(h["_id"], h["_score"], h["_source"]) for h in resp["hits"]["hits"]]
 
 
-def rrf(*lists: list[Hit], k: int = RRF_K, size: int = 10) -> list[Hit]:
+def rrf(*lists: list[Hit], k: int = RRF_K, size: int = 10, weights=None) -> list[Hit]:
+    """weights: one per list (default 1): a list's ranks count weight / (k + rank)."""
     scores: dict[str, float] = {}
     first: dict[str, Hit] = {}
-    for hits in lists:
+    for hits, w in zip(lists, weights or [1.0] * len(lists), strict=True):
         for rank, h in enumerate(hits, start=1):
-            scores[h.chunk_id] = scores.get(h.chunk_id, 0.0) + 1.0 / (k + rank)
+            scores[h.chunk_id] = scores.get(h.chunk_id, 0.0) + w / (k + rank)
             first.setdefault(h.chunk_id, h)
     best = sorted(scores, key=lambda c: (-scores[c], c))[:size]
     return [Hit(c, scores[c], first[c].source) for c in best]
@@ -112,7 +113,8 @@ class Searcher:
         )
 
     def bilingual(self, query: str, size: int = 10, depth: int = 50, doc_ids=None,
-                  translation: str | None = None) -> list[Hit]:  # fmt: skip
+                  translation: str | None = None,
+                  translation_weight: float = 1.0) -> list[Hit]:  # fmt: skip
         if translation is None:
             translation, _ = self.translator.to_other_language(query)
         if not translation.strip():  # the model returned nothing: search the question alone
@@ -121,4 +123,23 @@ class Searcher:
             self.hybrid(query, depth, depth, None, doc_ids),
             self.hybrid(translation, depth, depth, None, doc_ids),
             size=size,
+            weights=[1.0, translation_weight],
         )
+
+    def bilingual_union(self, query: str, size: int = 20, extra: int = 10, doc_ids=None,
+                        translation: str | None = None) -> list[Hit]:  # fmt: skip
+        """The question's own top `size`, then up to `extra` more from its translation.
+
+        For a reranker: the question's candidates are all kept (fusing the two lists
+        let the translation's results push them out, which cost same-language
+        questions), and the translation still adds the other language's best."""
+        if translation is None:
+            translation, _ = self.translator.to_other_language(query)
+        own = self.hybrid(query, size, 50, None, doc_ids)
+        if not translation.strip():
+            return own
+        seen = {h.chunk_id for h in own}
+        more = [
+            h for h in self.hybrid(translation, size, 50, None, doc_ids) if h.chunk_id not in seen
+        ]
+        return own + more[:extra]
