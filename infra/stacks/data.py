@@ -92,6 +92,14 @@ class DataStack(Stack):
             account_recovery=cognito.AccountRecovery.NONE,
             removal_policy=RemovalPolicy.DESTROY,
         )
+        # evaluator accounts go in this group: it unlocks the in-app log viewer
+        cognito.CfnUserPoolGroup(
+            self,
+            "Evaluators",
+            user_pool_id=self.user_pool.user_pool_id,
+            group_name="evaluators",
+            description="may read the service logs",
+        )
         # the prefix must be unique across AWS; the account id would be, but the login URL
         # is public, so a piece of this stack's UUID is used instead
         stack_uuid = Fn.select(2, Fn.split("/", self.stack_id))

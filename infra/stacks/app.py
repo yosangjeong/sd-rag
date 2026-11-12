@@ -191,6 +191,20 @@ class AppStack(Stack):
         )
         data.bucket.grant_read_write(self.ingest_task.task_role, "corpus/*")
 
+        # the log viewer (api/logs_api.py) runs Logs Insights queries on both groups
+        api.task_definition.default_container.add_environment(
+            "SDRAG_LOG_GROUPS", f"{api_logs.log_group_name},{worker_logs.log_group_name}"
+        )
+        api.task_definition.task_role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=["logs:StartQuery"],
+                resources=[api_logs.log_group_arn, worker_logs.log_group_arn],
+            )
+        )
+        api.task_definition.task_role.add_to_principal_policy(
+            iam.PolicyStatement(actions=["logs:GetQueryResults"], resources=["*"])
+        )  # takes no resource
+
         # ---- permissions ----
         bedrock = iam.PolicyStatement(
             actions=["bedrock:InvokeModel"],  # Converse calls are authorized as InvokeModel

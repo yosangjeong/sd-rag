@@ -40,6 +40,13 @@ body { margin: 0; background: var(--bg); }
 .ask .scope { max-width: 200px; }
 .source { width: 420px; border-left: 1px solid var(--line); padding: 12px; overflow-y: auto; background: var(--panel); }
 .source pre { white-space: pre-wrap; font: inherit; font-size: 14px; line-height: 1.6; }
+.logs { padding: 16px 24px; overflow: auto; }
+.logbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.logbar select, .logbar input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
+.tablewrap { overflow-x: auto; }
+.logs table { border-collapse: collapse; font-size: 12px; }
+.logs th, .logs td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; max-width: 360px; overflow-wrap: anywhere; }
+.error { color: #d33; }
 @media (max-width: 800px) {
   .layout { flex-direction: column; height: auto; min-height: 100vh; }
   .side, .source { width: 100%; border: 0; }

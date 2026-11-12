@@ -116,3 +116,22 @@ def test_follow_ups_get_the_conversation_and_scope(api):
     c.post("/api/chat", json=body, headers=as_user("alice"))
     assert [m["role"] for m in d.service.history] == ["user", "assistant"]
     assert d.service.scope == ["kr-a-law"]
+
+
+def test_logs_are_for_evaluators_only(api, monkeypatch):
+    c, _ = api
+    monkeypatch.setattr(main.logs_api, "query", lambda preset, minutes, rid: [{"preset": preset}])
+    assert c.get("/api/logs/recent", headers=as_user("alice")).status_code == 403
+    ev = {"X-Dev-User": "eva", "X-Dev-Groups": "evaluators"}
+    assert c.get("/api/logs/recent", headers=ev).json() == [{"preset": "recent"}]
+    assert c.get("/api/me", headers=ev).json()["evaluator"] is True
+    assert c.get("/api/me", headers=as_user("alice")).json()["evaluator"] is False
+
+
+def test_log_presets_reject_unknown_names_and_bad_ids():
+    from sdrag.api import logs_api
+
+    with pytest.raises(ValueError):
+        logs_api.query("drop table", 60, "")
+    with pytest.raises(ValueError):
+        logs_api.query("request", 60, "x' or 1=1")

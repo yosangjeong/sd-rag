@@ -17,6 +17,9 @@ export const api = {
       body: JSON.stringify({ message, conversation_id: conversationId, mode, documents }),
     }),
   library: () => call("/api/library"),
+  me: () => call("/api/me"),
+  logs: (preset, minutes, requestId) =>
+    call(`/api/logs/${preset}?minutes=${minutes}&request_id=${encodeURIComponent(requestId || "")}`),
   conversations: () => call("/api/conversations"),
   conversation: (id) => call(`/api/conversations/${id}`),
   documents: () => call("/api/documents"),

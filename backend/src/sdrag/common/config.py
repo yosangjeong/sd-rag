@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     upload_bucket: str = ""
     upload_queue_url: str = ""
     upload_dir: str = "/tmp/sdrag-uploads"
+    # log viewer for evaluators: CloudWatch log groups (comma-separated) in AWS; locally
+    # the file the API's stdout is redirected to
+    log_groups: str = ""
+    local_log_file: str = "../data/raw/api-local.log"
 
     @model_validator(mode="after")
     def _no_dev_auth_in_aws(self):

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { signOut } from "./auth";
+import Logs from "./Logs";
 
 function where(c) {
   const page = c.page_start ? ` p.${c.page_start}${c.page_end && c.page_end !== c.page_start ? `-${c.page_end}` : ""}` : "";
@@ -85,9 +86,11 @@ export default function App({ user }) {
   const [source, setSource] = useState(null);
   const [library, setLibrary] = useState([]);
   const [scope, setScope] = useState(""); // "": every document; otherwise one document id
+  const [evaluator, setEvaluator] = useState(false);
+  const [view, setView] = useState("chat"); // chat | logs
 
   const loadConvs = () => api.conversations().then(setConvs).catch(() => {});
-  useEffect(() => { loadConvs(); }, []);
+  useEffect(() => { loadConvs(); api.me().then((m) => setEvaluator(m.evaluator)).catch(() => {}); }, []);
   useEffect(() => {
     const load = () => api.library().then(setLibrary).catch(() => {});
     load();
@@ -130,6 +133,11 @@ export default function App({ user }) {
           <b>노동법 문서 검색</b>
           {user && <button className="link" onClick={signOut}>로그아웃</button>}
         </header>
+        {evaluator && (
+          <button className="link" onClick={() => setView(view === "logs" ? "chat" : "logs")}>
+            {view === "logs" ? "← 채팅으로" : "로그 보기 (평가자)"}
+          </button>
+        )}
         <Uploads />
         <button className="button" onClick={() => { setConvId(null); setMessages([]); setSource(null); }}>
           새 대화
@@ -141,6 +149,7 @@ export default function App({ user }) {
         </ul>
       </aside>
 
+      {view === "logs" ? <main className="chat"><Logs /></main> : (
       <main className="chat">
         <div className="messages">
           {messages.length === 0 && (
@@ -186,8 +195,9 @@ export default function App({ user }) {
           <button className="button" disabled={pending}>보내기</button>
         </form>
       </main>
+      )}
 
-      {source && (
+      {view === "chat" && source && (
         <aside className="source">
           <header>
             <b>{where(source)}</b>

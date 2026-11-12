@@ -10,8 +10,14 @@ Logs (14 days):
 | `SdRag-App-ApiLogs...` (stack output `ApiLogGroup`) | API: requests, questions, retrieval, tool calls, answers, errors, audit |
 | `SdRag-App-WorkerLogs...` (stack output `WorkerLogGroup`) | upload processing and the bulk corpus index |
 
-Evaluators get read access to CloudWatch Logs Insights in the console (Logs > Logs
-Insights, choose the log group, paste a query below). Every record has `ts` and
+**Evaluators: the app's log viewer.** Evaluator accounts are in the Cognito group
+`evaluators`; for them the app shows "로그 보기 (평가자)", which runs fixed Logs
+Insights queries (`backend/src/sdrag/api/logs_api.py`) over the API and worker logs:
+recent requests, latency and tokens per mode, agent tool calls, errors, the audit
+trail, upload processing, and every step of one request (by the `x-request-id` each
+response carries). Nothing free-form is accepted. Opening the viewer is itself
+audited. With console access, the same queries can be pasted into CloudWatch >
+Logs Insights. Every record has `ts` and
 `event`; records of one request share `request_id` (also returned to the browser in
 the `x-request-id` header).
 

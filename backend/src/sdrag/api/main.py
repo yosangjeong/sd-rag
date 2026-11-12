@@ -8,6 +8,8 @@ Endpoints (all but /health need a signed-in user; see auth.py):
 - POST /api/documents            upload files (PDF, DOCX, HWPX; many at once)
 - GET  /api/documents            the user's uploads and their processing status
 - GET  /api/library              documents the user can search (to scope a question)
+- GET  /api/logs/{preset}        fixed log queries, for the evaluators group only
+- GET  /api/me                   the signed-in user (hash) and whether an evaluator
 - GET  /api/source/{chunk_id}    the text of a cited chunk, to show where it is
 
 Isolation: the user id comes only from the verified token; searches are limited to the
@@ -29,7 +31,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from sdrag.api.auth import current_user
+from sdrag.api import logs_api
+from sdrag.api.auth import current_evaluator, current_user
 from sdrag.api.store import DynamoStore, MemoryStore, new_id
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat
@@ -71,7 +74,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SD RAG API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
-                   allow_headers=["Authorization", "Content-Type", "X-Dev-User"])  # fmt: skip
+                   allow_headers=["Authorization", "Content-Type", "X-Dev-User", "X-Dev-Groups"])  # fmt: skip
 
 
 @app.middleware("http")
@@ -176,6 +179,30 @@ async def upload(
 @app.get("/api/documents")
 def documents(user: str = Depends(current_user)) -> list[dict]:
     return sorted(deps().store.documents(user), key=lambda x: -float(x.get("queued", 0)))
+
+
+@app.get("/api/logs/{preset}")
+def logs(preset: str, request: Request, minutes: int = 60, request_id: str = "",
+         user: str = Depends(current_evaluator)) -> list[dict]:  # fmt: skip
+    """Fixed log queries for evaluator accounts (logs_api.PRESETS)."""
+    try:
+        rows = logs_api.query(preset, minutes, request_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    log("audit", action="logs", request_id=request.state.rid, user=user_hash(user), preset=preset)
+    return rows
+
+
+@app.get("/api/me")
+def me(request: Request, user: str = Depends(current_user)) -> dict:
+    """Who is signed in; the UI shows the log viewer to evaluators."""
+    h = request.headers
+    try:
+        current_evaluator(h.get("authorization"), h.get("x-dev-user"), h.get("x-dev-groups"))
+        evaluator = True
+    except HTTPException:
+        evaluator = False
+    return {"user": user_hash(user), "evaluator": evaluator}
 
 
 @app.get("/api/library")
