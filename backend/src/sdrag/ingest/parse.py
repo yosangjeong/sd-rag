@@ -622,7 +622,7 @@ class KoreanSpacing:
         return "\n".join(out)
 
 
-def parse_pdf(path: Path, ocr: OcrEngine | None = None) -> ParsedDocument:
+def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> ParsedDocument:
     """Pages without a text layer are read by `ocr` when given; their text then goes
     through the same clean-up as extracted text (headers, line wraps, headings), and
     their "| a | b |" tables become table blocks. Without `ocr` (or if it fails on a
@@ -632,7 +632,7 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None) -> ParsedDocument:
     raw = [page.extract_text() or "" for page in PdfReader(path).pages]
     blank = [i for i, t in enumerate(raw, start=1) if not t.strip()]
     if ocr is not None and blank:
-        for i, res in ocr_pages(path, blank, ocr).items():
+        for i, res in ocr_pages(path, blank, ocr, progress=progress).items():
             raw[i - 1] = res.text
             doc.ocr_pages.append(i)
         doc.ocr_pages.sort()
@@ -717,11 +717,11 @@ def sniff_format(path: Path) -> str:
     raise ValueError(f"{path.name}: unsupported format (PDF, DOCX, HWPX only)")
 
 
-def parse(path: str | Path, ocr: OcrEngine | None = None) -> ParsedDocument:
+def parse(path: str | Path, ocr: OcrEngine | None = None, progress=None) -> ParsedDocument:
     """Parse by content, not extension (an uploaded .hwpx may really be an HWP file).
-    `ocr` reads scanned PDF pages (see parse_pdf)."""
+    `ocr` reads scanned PDF pages (see parse_pdf); progress(done, total) follows them."""
     path = Path(path)
     fmt = sniff_format(path)
     if fmt == "pdf":
-        return parse_pdf(path, ocr)
+        return parse_pdf(path, ocr, progress)
     return {"hwpx": parse_hwpx, "docx": parse_docx}[fmt](path)

@@ -11,22 +11,28 @@ function where(c) {
   return `${c.title} › ${c.heading || ""}${page}`;
 }
 
-function Uploads() {
+const STATUS = { queued: "대기", processing: "처리 중", retrying: "재시도 대기", done: "완료", failed: "실패" };
+
+function Uploads({ onAsk }) {
   const [docs, setDocs] = useState([]);
   const [busy, setBusy] = useState(false);
   const input = useRef();
+  const [open, setOpen] = useState(false);
   const refresh = () => api.documents().then(setDocs).catch(() => {});
+  const working = docs.some((d) => ["queued", "processing", "retrying"].includes(d.status));
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 5000); // processing status
+    // poll fast while files are being processed, slowly otherwise
+    const t = setInterval(refresh, working ? 3000 : 15000);
     return () => clearInterval(t);
-  }, []);
+  }, [working]);
   const send = async (files) => {
     if (!files.length) return;
     setBusy(true);
     try {
       const r = await api.upload(files);
       if (r.rejected.length) alert(r.rejected.map((x) => `${x.file}: ${x.reason}`).join("\n"));
+      setOpen(true); // show the list so the progress is visible
     } finally {
       setBusy(false);
       input.current.value = "";
@@ -43,12 +49,21 @@ function Uploads() {
                onChange={(e) => send([...e.target.files])} />
       </label>
       {docs.length > 0 && (
-        <details>
-          <summary>내 문서 {done}/{docs.length} 처리됨</summary>
+        <details open={open} onToggle={(e) => setOpen(e.target.open)}>
+          <summary>내 문서 {done}/{docs.length} 처리됨{working ? " · 처리 중…" : ""}</summary>
           <ul>
             {docs.map((d) => (
               <li key={d.id} className={d.status}>
-                {d.file} <small>{d.status}{d.chunks ? ` · ${d.chunks}조각` : ""}{d.error ? ` · ${d.error}` : ""}</small>
+                <span className="file">{d.file}</span>
+                <small>
+                  {STATUS[d.status] || d.status}
+                  {d.stage ? ` · ${d.stage}` : ""}
+                  {d.chunks ? ` · ${d.chunks}조각` : ""}
+                  {d.status === "failed" && d.error ? ` · ${d.error}` : ""}
+                </small>
+                {d.status === "done" && d.doc && (
+                  <button className="link ask" onClick={() => onAsk(d.doc, d.file)}>이 문서에 질문</button>
+                )}
               </li>
             ))}
           </ul>
@@ -120,7 +135,9 @@ export default function App({ user }) {
             {view === "logs" ? "← 채팅으로" : "로그 보기 (평가자)"}
           </button>
         )}
-        <Uploads />
+        <Uploads onAsk={(id) => { setScope(id); setConvId(null); setMessages([]); setSource(null);
+                                  api.library().then(setLibrary).catch(() => {});
+                                  setTimeout(() => document.querySelector(".ask input")?.focus(), 0); }} />
         <button className="button" onClick={() => { setConvId(null); setMessages([]); setSource(null); }}>
           새 대화
         </button>

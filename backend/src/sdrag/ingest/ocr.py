@@ -168,10 +168,13 @@ def render_page(pdf: Path, page: int, dpi: int = RENDER_DPI) -> Image.Image:
 
 
 def ocr_pages(
-    pdf: Path, pages: list[int], engine: OcrEngine, workers: int = 4
+    pdf: Path, pages: list[int], engine: OcrEngine, workers: int = 4, progress=None
 ) -> dict[int, OcrResult]:
     """Transcribe pages (1-based) in parallel; a page that fails is left out and logged,
-    so one bad page does not stop the document."""
+    so one bad page does not stop the document. progress(done, total) is called as
+    pages finish (the upload status shows it: a 50-page scan takes minutes)."""
+    done = [0]
+    lock = threading.Lock()
 
     def one(page: int) -> tuple[int, OcrResult | None]:
         try:
@@ -179,6 +182,11 @@ def ocr_pages(
         except OcrError as e:
             log.warning("OCR failed on %s page %d: %s", pdf.name, page, e)
             return page, None
+        finally:
+            if progress:
+                with lock:
+                    done[0] += 1
+                    progress(done[0], len(pages))
 
     with ThreadPoolExecutor(workers) as pool:
         return {p: r for p, r in pool.map(one, pages) if r is not None}

@@ -54,10 +54,15 @@ def detect_lang(text: str) -> str:
 
 def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
     """deps: an object with store, client (OpenSearch), index, embedder, ocr."""
-    deps.store.update_document(user, doc_id, status="processing")
+    deps.store.update_document(user, doc_id, status="processing", stage="parsing")
     t0 = time.perf_counter()
+
+    def ocr_progress(done: int, total: int) -> None:  # every 5 pages and the last
+        if done == total or done % 5 == 0:
+            deps.store.update_document(user, doc_id, stage=f"OCR {done}/{total}")
+
     try:
-        parsed = parse(path, ocr=deps.ocr)
+        parsed = parse(path, ocr=deps.ocr, progress=ocr_progress)
         t1 = time.perf_counter()
         full = "\n".join(b.text for b in parsed.blocks)
         # a PDF is reported as a scan when at least half its pages needed OCR
@@ -66,13 +71,16 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
         file_type = "scan" if scanned else sniff_format(path)
         doc = CorpusDoc(f"u-{doc_id}", detect_lang(full), filename, file_type, ("upload",), path)
         chunks = chunk_structure(parsed, doc.id)
+        deps.store.update_document(user, doc_id, stage=f"embedding {len(chunks)} chunks")
         vectors = deps.embedder.embed([embed_input(c, doc.title) for c in chunks]) if chunks else []
         t2 = time.perf_counter()
         ocr = set(parsed.ocr_pages)
+        deps.store.update_document(user, doc_id, stage="indexing")
         bulk_index(deps.client, deps.index,
                    [to_source(doc, c, v, ocr, owner=user) for c, v in zip(chunks, vectors, strict=True)])  # fmt: skip
         t3 = time.perf_counter()
-        result = {"status": "done", "chunks": len(chunks), "lang": doc.lang, "file_type": file_type,
+        result = {"status": "done", "stage": "", "doc": doc.id, "chunks": len(chunks),
+                  "lang": doc.lang, "file_type": file_type,
                   "ocr_pages": len(ocr), "parse_s": round(t1 - t0, 2), "embed_s": round(t2 - t1, 2),
                   "index_s": round(t3 - t2, 2), "finished": time.time()}  # fmt: skip
     except Exception as e:  # noqa: BLE001 - a bad file must not stop the worker
