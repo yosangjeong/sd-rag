@@ -1,10 +1,11 @@
 """Bulk-index the public corpus inside AWS, as a one-off ECS task.
 
 The OpenSearch domain is in an isolated subnet, so the corpus is indexed from inside
-the VPC: infra/scripts/upload_corpus.sh puts data/ (manifest, raw files, the scans)
-and the OCR and embedding caches under s3://<bucket>/corpus/; this task downloads
-them, runs the same pipeline as locally (pipeline.py) and writes new cache entries
-back, so nothing already paid for (OCR pages, embeddings) is paid again.
+the VPC: infra/scripts/upload_corpus.sh puts three archives under s3://<bucket>/corpus/
+(the manifest and data/corpus/, the OCR cache, the embedding cache); this task
+unpacks them, runs the same pipeline as locally (pipeline.py) and writes the caches
+back if anything was added, so nothing already paid for (OCR pages, embeddings) is
+paid again.
 
     python -m sdrag.ingest.from_s3 --bucket <bucket> [--strategy structure]
 """
@@ -13,7 +14,7 @@ import argparse
 import os
 import subprocess
 import sys
-import time
+import tarfile
 from pathlib import Path
 
 import boto3
@@ -23,24 +24,19 @@ from sdrag.common.config import settings
 WORK = Path("/tmp/corpus")
 
 
-def sync_down(s3, bucket: str, prefix: str, dest: Path) -> int:
-    n = 0
-    for page in s3.get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=prefix):
-        for o in page.get("Contents", []):
-            path = dest / o["Key"][len(prefix) :]
-            path.parent.mkdir(parents=True, exist_ok=True)
-            s3.download_file(bucket, o["Key"], str(path))
-            n += 1
-    return n
+def fetch(s3, bucket: str, name: str, dest: Path) -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    archive = WORK / f"{name}.tgz"
+    s3.download_file(bucket, f"corpus/{name}.tgz", str(archive))
+    with tarfile.open(archive) as tar:
+        tar.extractall(dest, filter="data")  # no absolute paths or links out of dest
 
 
-def sync_up(s3, bucket: str, prefix: str, src: Path, since: float) -> int:
-    n = 0
-    for path in src.rglob("*"):
-        if path.is_file() and path.stat().st_mtime >= since:
-            s3.upload_file(str(path), bucket, prefix + str(path.relative_to(src)))
-            n += 1
-    return n
+def store(s3, bucket: str, name: str, src: Path, arcname: str) -> None:
+    archive = WORK / f"{name}-new.tgz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(src, arcname=arcname)
+    s3.upload_file(str(archive), bucket, f"corpus/{name}.tgz")
 
 
 def main() -> None:
@@ -49,17 +45,22 @@ def main() -> None:
     ap.add_argument("--strategy", default="structure")
     a = ap.parse_args()
     s3 = boto3.client("s3", region_name=settings.aws_region)
-    print("files:", sync_down(s3, a.bucket, "corpus/data/", WORK / "data"), flush=True)
-    for c in ("ocr", "embed"):
-        print(f"{c} cache:", sync_down(s3, a.bucket, f"corpus/cache/{c}/", WORK / c), flush=True)
-    started = time.time()
-    env = os.environ | {"SDRAG_OCR_CACHE_DIR": str(WORK / "ocr"),
-                        "SDRAG_EMBED_CACHE_DIR": str(WORK / "embed")}  # fmt: skip
+    WORK.mkdir(parents=True, exist_ok=True)
+    fetch(s3, a.bucket, "corpus", WORK)  # -> WORK/data/manifest.csv, WORK/data/corpus/
+    fetch(s3, a.bucket, "ocr", WORK)  # -> WORK/ocr-cache/
+    fetch(s3, a.bucket, "embed", WORK)  # -> WORK/embed-cache/
+    caches = {"ocr": WORK / "ocr-cache", "embed": WORK / "embed-cache"}
+    before = {k: sum(1 for _ in p.rglob("*.json")) for k, p in caches.items()}
+    env = os.environ | {"SDRAG_OCR_CACHE_DIR": str(caches["ocr"]),
+                        "SDRAG_EMBED_CACHE_DIR": str(caches["embed"])}  # fmt: skip
     code = subprocess.call([sys.executable, "-m", "sdrag.ingest.pipeline", "--data", str(WORK / "data"),
-                            "--strategy", a.strategy, "--index", settings.index,
+                            "--strategy", a.strategy, "--index", settings.index, "--replace-public",
                             "--stats", str(WORK / "stats.json")], env=env)  # fmt: skip
-    for c in ("ocr", "embed"):
-        print(f"{c} cache new:", sync_up(s3, a.bucket, f"corpus/cache/{c}/", WORK / c, started))
+    for k, p in caches.items():
+        added = sum(1 for _ in p.rglob("*.json")) - before[k]
+        print(f"{k} cache: {added} new entries", flush=True)
+        if added:
+            store(s3, a.bucket, k, p, f"{k}-cache")
     if (WORK / "stats.json").exists():
         s3.upload_file(str(WORK / "stats.json"), a.bucket, f"corpus/ingest-{a.strategy}.json")
     sys.exit(code)

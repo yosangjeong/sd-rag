@@ -15,13 +15,14 @@
   invoking models in this Region.
 - Logs: both services write JSON lines to CloudWatch Logs (14 days).
 - OpenSearch access: the task roles' identity policies (grant_read_write) plus the
-  security group; the domain has no resource policy of its own.
+  security group; the domain's own policy defers to IAM in this account (data.py).
 - The SPA's /config.json (Cognito settings) is written at deploy time.
 """
 
+import os
 from pathlib import Path
 
-from aws_cdk import CfnOutput, Duration, Fn, RemovalPolicy, Stack
+from aws_cdk import CfnOutput, DockerBuildSecret, Duration, Fn, RemovalPolicy, Stack
 from aws_cdk import aws_applicationautoscaling as appscaling
 from aws_cdk import aws_cloudfront as cf
 from aws_cdk import aws_cloudfront_origins as origins
@@ -52,18 +53,26 @@ class AppStack(Stack):
         cluster = ecs.Cluster(
             self, "Cluster", vpc=network.vpc, container_insights_v2=ecs.ContainerInsights.DISABLED
         )
-        image = ecs.ContainerImage.from_asset(str(ROOT / "backend"), platform=Platform.LINUX_AMD64)
+        # SDRAG_BUILD_CA: a CA to trust during the image build only, for a network that
+        # re-signs TLS (passed as a BuildKit secret, not copied into the image); unset in CI
+        ca = os.environ.get("SDRAG_BUILD_CA")
+        secrets = {"extra_ca": DockerBuildSecret.from_src(ca)} if ca else None
+        image = ecs.ContainerImage.from_asset(
+            str(ROOT / "backend"), platform=Platform.LINUX_AMD64, build_secrets=secrets
+        )
+        # log groups are kept when the stack is deleted or rolled back: the logs of a
+        # failed start are what explain it
         api_logs = logs.LogGroup(
             self,
             "ApiLogs",
             retention=logs.RetentionDays.TWO_WEEKS,
-            removal_policy=RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.RETAIN,
         )
         worker_logs = logs.LogGroup(
             self,
             "WorkerLogs",
             retention=logs.RetentionDays.TWO_WEEKS,
-            removal_policy=RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.RETAIN,
         )
         # a value only CloudFront and the ALB know: derived from this stack's UUID, which
         # is not in the repository
@@ -120,6 +129,7 @@ class AppStack(Stack):
                     "0.0.0.0",
                     "--port",
                     str(API_PORT),
+                    "--no-access-log",  # requests are logged as JSON by the app (masked)
                 ],
                 environment=env,
                 log_driver=ecs.LogDrivers.aws_logs(stream_prefix="api", log_group=api_logs),
@@ -191,6 +201,20 @@ class AppStack(Stack):
         )
         data.bucket.grant_read_write(self.ingest_task.task_role, "corpus/*")
 
+        # after an upload the API starts a worker task if there is none (worker/sqs.py)
+        api.task_definition.default_container.add_environment(
+            "SDRAG_WORKER_CLUSTER", cluster.cluster_name
+        )
+        api.task_definition.default_container.add_environment(
+            "SDRAG_WORKER_SERVICE", worker.service.service_name
+        )
+        api.task_definition.task_role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=["ecs:DescribeServices", "ecs:UpdateService"],
+                resources=[worker.service.service_arn],
+            )
+        )
+
         # the log viewer (api/logs_api.py) runs Logs Insights queries on both groups
         api.task_definition.default_container.add_environment(
             "SDRAG_LOG_GROUPS", f"{api_logs.log_group_name},{worker_logs.log_group_name}"
@@ -254,6 +278,9 @@ class AppStack(Stack):
             "WebClient",
             user_pool=data.user_pool,
             generate_secret=False,  # a browser app cannot keep a secret; PKCE instead
+            # admin password auth needs AWS credentials (scripted checks: eval/upload_bench.py);
+            # the browser signs in on the managed login page
+            auth_flows=cognito.AuthFlow(admin_user_password=True, user_srp=True),
             o_auth=cognito.OAuthSettings(
                 flows=cognito.OAuthFlows(authorization_code_grant=True),
                 scopes=[cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],

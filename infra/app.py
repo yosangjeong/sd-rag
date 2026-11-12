@@ -20,7 +20,9 @@ app = cdk.App()
 env = cdk.Environment(account=os.environ.get("CDK_DEFAULT_ACCOUNT"), region=REGION)
 
 network = NetworkStack(app, "SdRag-Network", env=env)
-data = DataStack(app, "SdRag-Data", network=network, env=env, termination_protection=True)
+# termination protection for the real deployment; a rehearsal passes -c rehearsal=true
+rehearsal = app.node.try_get_context("rehearsal") == "true"
+data = DataStack(app, "SdRag-Data", network=network, env=env, termination_protection=not rehearsal)
 AppStack(app, "SdRag-App", network=network, data=data, env=env)
 CiCdStack(app, "SdRag-CiCd", bucket_name=data.bucket.bucket_name, env=env)
 

@@ -60,7 +60,8 @@ def deps() -> SimpleNamespace:
     if settings.upload_queue_url:
         from sdrag.worker.sqs import SqsQueue
 
-        d.queue = SqsQueue(settings.upload_queue_url, settings.upload_bucket, settings.aws_region)
+        d.queue = SqsQueue(settings.upload_queue_url, settings.upload_bucket, settings.aws_region,
+                           settings.worker_cluster, settings.worker_service)  # fmt: skip
     else:
         d.queue = LocalQueue(d)
     return d
@@ -68,7 +69,12 @@ def deps() -> SimpleNamespace:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_index(deps().client, settings.index, settings.embed_dims)  # no-op if it exists
+    # a search outage must not keep the API (health checks, sign-in, logs) from starting:
+    # the error is logged and searches fail until the index is reachable
+    try:
+        create_index(deps().client, settings.index, settings.embed_dims)  # no-op if it exists
+    except Exception as e:  # noqa: BLE001
+        log("error", path="startup", error=f"create_index: {type(e).__name__}: {e}")
     yield
 
 
@@ -87,8 +93,9 @@ async def request_log(request: Request, call_next):
     except Exception as e:
         log("error", request_id=rid, path=request.url.path, error=f"{type(e).__name__}: {e}")
         raise
-    log("request", request_id=rid, method=request.method, path=request.url.path,
-        status=response.status_code, latency_ms=round(1000 * (time.perf_counter() - t)))  # fmt: skip
+    if request.url.path != "/health":  # the load balancer's checks, every 15 s per target
+        log("request", request_id=rid, method=request.method, path=request.url.path,
+            status=response.status_code, latency_ms=round(1000 * (time.perf_counter() - t)))  # fmt: skip
     response.headers["x-request-id"] = rid
     return response
 
@@ -171,6 +178,13 @@ async def upload(
                                     "status": "queued", "queued": time.time()})  # fmt: skip
         d.queue.send(user, doc_id, local, name)
         accepted.append({"id": doc_id, "file": name})
+    if accepted:
+        try:
+            d.queue.wake()
+        except Exception as e:  # noqa: BLE001 - the queue alarm still scales the worker
+            log(
+                "error", request_id=request.state.rid, path="wake", error=f"{type(e).__name__}: {e}"
+            )
     log("upload", request_id=request.state.rid, user=user_hash(user),
         accepted=len(accepted), rejected=len(rejected))  # fmt: skip
     return {"accepted": accepted, "rejected": rejected}

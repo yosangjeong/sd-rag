@@ -17,14 +17,21 @@ from aws_cdk import Duration, Fn, RemovalPolicy, Stack
 from aws_cdk import aws_cognito as cognito
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_iam as iam
 from aws_cdk import aws_opensearchservice as os_
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import custom_resources as cr
 from constructs import Construct
 
 from stacks.network import NetworkStack
 
 OPENSEARCH_VERSION = os_.EngineVersion.open_search("3.7")  # the version run locally
+# nori is an optional plugin on AWS OpenSearch Service: a ZIP-PLUGIN package per engine
+# version and Region, associated with the domain (aws opensearch describe-packages
+# --filters Name=PackageName,Value=analysis-nori). Found missing in the first deploy:
+# "Unknown tokenizer type [nori_tokenizer]"
+NORI_PACKAGE = {"ap-southeast-2": "G123153125"}  # analysis-nori for OpenSearch_3.7
 JOB_TIMEOUT = Duration.minutes(30)  # the longest file (a large scan) must fit
 
 
@@ -53,6 +60,47 @@ class DataStack(Stack):
             encryption_at_rest=os_.EncryptionAtRestOptions(enabled=True),
             removal_policy=RemovalPolicy.DESTROY,  # an index can be rebuilt from S3 in minutes
         )
+        # the domain defers to IAM: requests signed by this account's principals are let
+        # through to their identity policies, which only the app's task roles have
+        # (app.py grant_read_write); with no resource policy at all the domain denied them
+        self.search.add_access_policies(
+            iam.PolicyStatement(
+                principals=[iam.AccountRootPrincipal()],
+                actions=["es:ESHttp*"],
+                resources=[f"{self.search.domain_arn}/*"],
+            )
+        )
+
+        # associating a plugin runs a blue/green deployment of the domain (10-20 min); the
+        # index is created afterwards, by the corpus ingest task
+        nori = cr.AwsCustomResource(
+            self,
+            "Nori",
+            on_create=cr.AwsSdkCall(
+                service="OpenSearch",
+                action="associatePackage",
+                parameters={
+                    "PackageID": NORI_PACKAGE[self.region],
+                    "DomainName": self.search.domain_name,
+                },
+                physical_resource_id=cr.PhysicalResourceId.of("nori"),
+                ignore_error_codes_matching="Conflict.*|ResourceAlreadyExists.*|ValidationException",  # already associated
+            ),
+            policy=cr.AwsCustomResourcePolicy.from_statements(
+                [
+                    iam.PolicyStatement(
+                        actions=[
+                            "es:AssociatePackage",
+                            "es:DescribePackages",
+                            "es:DescribeDomain",
+                            "es:UpdatePackageScope",
+                        ],
+                        resources=["*"],
+                    )
+                ]
+            ),
+        )
+        nori.node.add_dependency(self.search)
 
         self.table = ddb.TableV2(
             self,

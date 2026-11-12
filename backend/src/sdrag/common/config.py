@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     upload_bucket: str = ""
     upload_queue_url: str = ""
     upload_dir: str = "/tmp/sdrag-uploads"
+    # the worker service the API wakes after an upload (worker/sqs.py)
+    worker_cluster: str = ""
+    worker_service: str = ""
     # log viewer for evaluators: CloudWatch log groups (comma-separated) in AWS; locally
     # the file the API's stdout is redirected to
     log_groups: str = ""

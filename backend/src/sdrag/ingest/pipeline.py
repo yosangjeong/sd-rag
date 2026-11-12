@@ -26,7 +26,7 @@ from sdrag.ingest.corpus import CorpusDoc, load_corpus
 from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr, OcrEngine
 from sdrag.ingest.parse import parse
 from sdrag.retrieval.embed import CachedEmbedder, Embedder, TitanEmbedder
-from sdrag.retrieval.index import bulk_index, create_index, to_source
+from sdrag.retrieval.index import PUBLIC, bulk_index, create_index, to_source
 
 
 @dataclass
@@ -72,6 +72,8 @@ def main() -> None:
     ap.add_argument("--strategy", choices=STRATEGIES, default="structure")
     ap.add_argument("--index", help="default: chunks-<strategy>")
     ap.add_argument("--recreate", action="store_true", help="drop and rebuild the index")
+    ap.add_argument("--replace-public", action="store_true",
+                    help="delete the public corpus's chunks first, keeping users' uploads")  # fmt: skip
     ap.add_argument("--stats", type=Path, help="write per-document stats (JSON)")
     a = ap.parse_args()
 
@@ -86,6 +88,9 @@ def main() -> None:
         ocr = CachedOcr(ocr, Path(settings.ocr_cache_dir))
 
     create_index(client, index, settings.embed_dims, recreate=a.recreate)
+    if a.replace_public:  # a re-index in service: chunks a new chunking no longer makes go too
+        client.delete_by_query(index=index, body={"query": {"term": {"owner": PUBLIC}}},
+                               refresh=True, request_timeout=300)  # fmt: skip
     t = time.perf_counter()
     stats = []
     for doc in load_corpus(a.data):
