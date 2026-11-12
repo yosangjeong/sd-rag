@@ -10,6 +10,9 @@ Fields:
 - ``embedding``: Titan v2 vector, Lucene HNSW, cosine similarity
 - where the chunk is, for citations and filters: doc_id, title, heading, page range,
   character span, lang, file_type (pdf | hwpx | docx | scan), ocr
+- ``owner``: "public" for the shared corpus, otherwise the id of the user who uploaded
+  the document. Every search filters on it (search.Searcher ``owners``), so one user's
+  uploads never reach another user's results
 
 Index names carry the chunking strategy (chunks-structure, chunks-fixed) so the
 ablation can query both side by side.
@@ -53,6 +56,7 @@ def mappings(dims: int) -> dict:
         "properties": {
             "chunk_id": {"type": "keyword"},
             "doc_id": {"type": "keyword"},
+            "owner": {"type": "keyword"},
             "title": {"type": "keyword"},
             "heading": {"type": "keyword"},
             "lang": {"type": "keyword"},
@@ -91,10 +95,15 @@ def create_index(client: OpenSearch, name: str, dims: int, recreate: bool = Fals
     client.indices.create(index=name, body={"settings": SETTINGS, "mappings": mappings(dims)})
 
 
-def to_source(doc: CorpusDoc, chunk: Chunk, vector: list[float], ocr_pages: set[int]) -> dict:
+PUBLIC = "public"
+
+
+def to_source(doc: CorpusDoc, chunk: Chunk, vector: list[float], ocr_pages: set[int],
+              owner: str = PUBLIC) -> dict:  # fmt: skip
     return {
         "chunk_id": chunk.id,
         "doc_id": doc.id,
+        "owner": owner,
         "title": doc.title,
         "heading": chunk.heading,
         "lang": doc.lang,
@@ -118,3 +127,20 @@ def bulk_index(client: OpenSearch, name: str, sources: list[dict]) -> None:
         chunk_size=200,
         request_timeout=120,
     )
+
+
+def list_documents(client: OpenSearch, name: str, owners: list[str]) -> list[dict]:
+    """The documents of these owners in the index: id, language, title, file type."""
+    body = {
+        "size": 0,
+        "query": {"terms": {"owner": owners}},
+        "aggs": {"docs": {"terms": {"field": "doc_id", "size": 1000}, "aggs": {
+            "one": {"top_hits": {"size": 1, "_source": ["title", "lang", "file_type"]}}}}},
+    }  # fmt: skip
+    out = []
+    for b in client.search(index=name, body=body)["aggregations"]["docs"]["buckets"]:
+        s = b["one"]["hits"]["hits"][0]["_source"]
+        out.append(
+            {"id": b["key"], "lang": s["lang"], "title": s["title"], "file_type": s["file_type"]}
+        )
+    return sorted(out, key=lambda d: d["id"])

@@ -89,3 +89,13 @@ def test_corpus_resolves_scans_and_skips_eval_truth(tmp_path):
     assert [(d.id, d.file_type) for d in docs] == [("kr-a-law", "scan"), ("us-b", "pdf")]
     assert docs[0].path == tmp_path / "raw" / "scans" / "kr-a-law.pdf"
     assert docs[1].path == tmp_path / "raw" / "us-b.pdf"
+
+
+def test_owners_filter_reaches_every_query():
+    client = FakeClient()
+    s = Searcher(client, "i", FakeEmbedder(), owners=["user-1", "public"])
+    s.hybrid("해고")
+    bm25, dense = client.bodies
+    want = {"terms": {"owner": ["user-1", "public"]}}
+    assert bm25["query"]["bool"]["filter"] == [want]
+    assert dense["query"]["knn"]["embedding"]["filter"] == {"bool": {"filter": [want]}}
