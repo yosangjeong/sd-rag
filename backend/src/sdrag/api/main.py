@@ -7,6 +7,7 @@ Endpoints (all but /health need a signed-in user; see auth.py):
 - GET  /api/conversations/{id}   one conversation with its messages
 - POST /api/documents            upload files (PDF, DOCX, HWPX; many at once)
 - GET  /api/documents            the user's uploads and their processing status
+- GET  /api/library              documents the user can search (to scope a question)
 - GET  /api/source/{chunk_id}    the text of a cited chunk, to show where it is
 
 Isolation: the user id comes only from the verified token; searches are limited to the
@@ -36,7 +37,7 @@ from sdrag.common.logs import log, user_hash
 from sdrag.common.search_client import make_client
 from sdrag.ingest.ocr import BedrockVisionOcr
 from sdrag.retrieval.embed import TitanEmbedder
-from sdrag.retrieval.index import PUBLIC, create_index
+from sdrag.retrieval.index import PUBLIC, create_index, list_documents
 from sdrag.service import RagService
 from sdrag.worker.job import ALLOWED, LocalQueue
 
@@ -99,15 +100,21 @@ class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     conversation_id: str | None = None
     mode: str = Field(default="basic", pattern="^(basic|agent)$")
+    documents: list[str] = Field(default_factory=list, max_length=50)  # search only these
 
 
 @app.post("/api/chat")
 def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> dict:
     d, rid = deps(), request.state.rid
-    if body.conversation_id and not d.store.conversation(user, body.conversation_id):
-        raise HTTPException(404, "conversation not found")
-    log("question", request_id=rid, user=user_hash(user), mode=body.mode, question=body.message)
-    reply = d.service.ask(user, body.message, body.mode, rid)
+    history = []
+    if body.conversation_id:
+        conv = d.store.conversation(user, body.conversation_id)
+        if not conv:
+            raise HTTPException(404, "conversation not found")
+        history = [{"role": m["role"], "text": m["text"]} for m in conv["messages"]]
+    log("question", request_id=rid, user=user_hash(user), mode=body.mode, question=body.message,
+        scope=body.documents)  # fmt: skip
+    reply = d.service.ask(user, body.message, body.mode, rid, history, body.documents)
     citations = [vars(c) for c in reply.answer.citations]
     log("audit", action="search", request_id=rid, user=user_hash(user),
         documents=sorted({c["doc_id"] for c in citations}))  # fmt: skip
@@ -120,6 +127,7 @@ def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> d
     d.store.add_message(user, conv, msg)
     return {"conversation_id": conv, "answer": reply.answer.text, "citations": citations,
             "mode": reply.mode, "latency_ms": round(reply.latency_ms), "steps": reply.steps,
+            "searched": reply.question,
             "tokens": {"input": reply.input_tokens, "output": reply.output_tokens}}  # fmt: skip
 
 
@@ -168,6 +176,14 @@ async def upload(
 @app.get("/api/documents")
 def documents(user: str = Depends(current_user)) -> list[dict]:
     return sorted(deps().store.documents(user), key=lambda x: -float(x.get("queued", 0)))
+
+
+@app.get("/api/library")
+def library(user: str = Depends(current_user)) -> list[dict]:
+    """Documents the user can search: the public corpus and their own uploads."""
+    d = deps()
+    docs = list_documents(d.client, d.index, [user, PUBLIC])
+    return [x | {"mine": x["id"].startswith("u-")} for x in docs]
 
 
 @app.get("/api/source/{chunk_id}")

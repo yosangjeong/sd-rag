@@ -99,3 +99,12 @@ def test_owners_filter_reaches_every_query():
     want = {"terms": {"owner": ["user-1", "public"]}}
     assert bm25["query"]["bool"]["filter"] == [want]
     assert dense["query"]["knn"]["embedding"]["filter"] == {"bool": {"filter": [want]}}
+
+
+def test_scope_limits_every_query_to_the_chosen_documents():
+    client = FakeClient()
+    Searcher(client, "i", FakeEmbedder(), owners=["u", "public"], scope=["kr-a-law"]).hybrid("해고")
+    bm25, dense = client.bodies
+    want = [{"terms": {"owner": ["u", "public"]}}, {"terms": {"doc_id": ["kr-a-law"]}}]
+    assert bm25["query"]["bool"]["filter"] == want
+    assert dense["query"]["knn"]["embedding"]["filter"] == {"bool": {"filter": want}}

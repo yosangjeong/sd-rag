@@ -36,8 +36,10 @@ class Hit:
     source: dict = field(repr=False)
 
 
-def _filters(langs, doc_ids, owners=None) -> list[dict]:
+def _filters(langs, doc_ids, owners=None, scope=None) -> list[dict]:
     f = [{"terms": {"owner": owners}}] if owners else []
+    if scope:
+        f.append({"terms": {"doc_id": scope}})
     if langs:
         f.append({"terms": {"lang": langs}})
     if doc_ids:
@@ -63,11 +65,12 @@ def rrf(*lists: list[Hit], k: int = RRF_K, size: int = 10, weights=None) -> list
 
 class Searcher:
     def __init__(self, client: OpenSearch, index: str, embedder: Embedder, translator=None,
-                 owners: list[str] | None = None) -> None:  # fmt: skip
+                 owners: list[str] | None = None, scope: list[str] | None = None) -> None:  # fmt: skip
         """owners: when set, every query is limited to chunks of these owners (the
-        service passes [user id, "public"]); None searches everything (evaluation)."""
+        service passes [user id, "public"]); None searches everything (evaluation).
+        scope: when set, every query is limited to these documents ("search this file")."""
         self.client, self.index, self.embedder = client, index, embedder
-        self.translator, self.owners = translator, owners
+        self.translator, self.owners, self.scope = translator, owners, scope
 
     def bm25(self, query: str, size: int = 10, langs=None, doc_ids=None) -> list[Hit]:
         body = {
@@ -82,7 +85,7 @@ class Searcher:
                             "type": "most_fields",
                         }
                     },
-                    "filter": _filters(langs, doc_ids, self.owners),
+                    "filter": _filters(langs, doc_ids, self.owners, self.scope),
                 }
             },
         }
@@ -91,7 +94,7 @@ class Searcher:
     def dense(self, query: str, size: int = 10, langs=None, doc_ids=None, vector=None) -> list[Hit]:
         vector = vector or self.embedder.embed([query])[0]
         knn = {"vector": vector, "k": size}
-        if f := _filters(langs, doc_ids, self.owners):
+        if f := _filters(langs, doc_ids, self.owners, self.scope):
             knn["filter"] = {"bool": {"filter": f}}  # Lucene filters while searching
         body = {"size": size, "_source": SOURCE, "query": {"knn": {"embedding": knn}}}
         return _hits(self.client.search(index=self.index, body=body))

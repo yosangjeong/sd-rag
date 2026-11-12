@@ -1,7 +1,7 @@
 from sdrag.agent.answer import answer
 from sdrag.agent.search import SearchAgent
 from sdrag.common.llm import Completion
-from sdrag.retrieval.rerank import LlmReranker, is_korean
+from sdrag.retrieval.rerank import LlmReranker, condense, is_korean
 from sdrag.retrieval.search import Hit
 
 
@@ -83,3 +83,13 @@ def test_agent_returns_picked_chunks_first_then_the_rest():
     assert [h.chunk_id for h in res.hits] == ["b", "a"]
     assert searcher.calls == [("bm25", "해고")]
     assert res.input_tokens == 200
+
+
+def test_condense_is_skipped_without_history_and_used_with_it():
+    chat = FakeChat("5인 미만 사업장도 해고 예고를 해야 하나요?")
+    assert condense(chat, [], "해고 예고?") == "해고 예고?" and chat.prompts == []
+    history = [{"role": "user", "text": "해고 예고?"}, {"role": "assistant", "text": "30일 전 [1]"}]
+    assert (
+        condense(chat, history, "그럼 5인 미만은?") == "5인 미만 사업장도 해고 예고를 해야 하나요?"
+    )
+    assert "그럼 5인 미만은?" in chat.prompts[0] and "30일 전" in chat.prompts[0]

@@ -37,6 +37,7 @@ body { margin: 0; background: var(--bg); }
 .ask { display: flex; gap: 8px; padding: 12px 24px; border-top: 1px solid var(--line); }
 .ask input, .ask select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
 .ask input { flex: 1; min-width: 0; }
+.ask .scope { max-width: 200px; }
 .source { width: 420px; border-left: 1px solid var(--line); padding: 12px; overflow-y: auto; background: var(--panel); }
 .source pre { white-space: pre-wrap; font: inherit; font-size: 14px; line-height: 1.6; }
 @media (max-width: 800px) {

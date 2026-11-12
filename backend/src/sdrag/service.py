@@ -21,7 +21,7 @@ from sdrag.agent.answer import Answer, answer
 from sdrag.agent.search import SearchAgent
 from sdrag.common.logs import log
 from sdrag.retrieval.index import PUBLIC, list_documents
-from sdrag.retrieval.rerank import LlmReranker, LlmTranslator
+from sdrag.retrieval.rerank import LlmReranker, LlmTranslator, condense
 from sdrag.retrieval.search import Searcher
 
 ANSWER_SOURCES = 6
@@ -54,20 +54,30 @@ class Reply:
     output_tokens: int
     steps: list[dict] = field(default_factory=list)  # agent tool calls
     retrieved: list[str] = field(default_factory=list)  # chunk ids, in order
+    question: str = ""  # what was searched: the follow-up made standalone
 
 
 class RagService:
     def __init__(self, client, index: str, embedder, chat) -> None:
         self.client, self.index, self.embedder, self.chat = client, index, embedder, chat
 
-    def ask(self, user_id: str, question: str, mode: str = "basic", request_id: str = "") -> Reply:
+    def ask(self, user_id: str, question: str, mode: str = "basic", request_id: str = "",
+            history: list[dict] | None = None, scope: list[str] | None = None) -> Reply:  # fmt: skip
+        """history: the conversation so far (follow-ups are made standalone first);
+        scope: document ids to search in (none: everything the user can see)."""
         t0 = time.perf_counter()
         chat = RequestChat(self.chat)
+        standalone = condense(chat, history or [], question)
+        if standalone != question:
+            log("rewrite", request_id=request_id, question=question, standalone=standalone)
+        question = standalone
         s = Searcher(self.client, self.index, self.embedder, LlmTranslator(chat),
-                     owners=[user_id, PUBLIC])  # fmt: skip
+                     owners=[user_id, PUBLIC], scope=scope or None)  # fmt: skip
         steps: list[dict] = []
         if mode == "agent":
             docs = list_documents(self.client, self.index, [user_id, PUBLIC])
+            if scope:
+                docs = [d for d in docs if d["id"] in scope]
             res = SearchAgent(chat.client, chat.model_id, s, docs).run(question)
             chat.input_tokens += res.input_tokens  # the agent calls Converse directly
             chat.output_tokens += res.output_tokens
@@ -85,4 +95,4 @@ class RagService:
             llm_input_tokens=chat.input_tokens, llm_output_tokens=chat.output_tokens,
             cited=[c.chunk_id for c in ans.citations])  # fmt: skip
         return Reply(ans, mode, ms, chat.input_tokens, chat.output_tokens, steps,
-                     [h.chunk_id for h in hits])  # fmt: skip
+                     [h.chunk_id for h in hits], standalone)  # fmt: skip

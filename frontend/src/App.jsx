@@ -83,9 +83,17 @@ export default function App({ user }) {
   const [mode, setMode] = useState("basic");
   const [pending, setPending] = useState(false);
   const [source, setSource] = useState(null);
+  const [library, setLibrary] = useState([]);
+  const [scope, setScope] = useState(""); // "": every document; otherwise one document id
 
   const loadConvs = () => api.conversations().then(setConvs).catch(() => {});
   useEffect(() => { loadConvs(); }, []);
+  useEffect(() => {
+    const load = () => api.library().then(setLibrary).catch(() => {});
+    load();
+    const t = setInterval(load, 30000); // new uploads appear once indexed
+    return () => clearInterval(t);
+  }, []);
 
   const open = async (id) => {
     setConvId(id);
@@ -101,10 +109,11 @@ export default function App({ user }) {
     setMessages((m) => [...m, { role: "user", text: q }]);
     setPending(true);
     try {
-      const r = await api.chat(q, convId, mode);
+      const r = await api.chat(q, convId, mode, scope ? [scope] : []);
       setConvId(r.conversation_id);
       setMessages((m) => [...m, { role: "assistant", text: r.answer, citations: r.citations, mode: r.mode,
-                                  latency_ms: r.latency_ms, steps: r.steps }]);
+                                  latency_ms: r.latency_ms, steps: r.steps,
+                                  searched: r.searched !== q ? r.searched : null }]);
       loadConvs();
     } catch (err) {
       setMessages((m) => [...m, { role: "assistant", text: `오류: ${err.message}`, citations: [] }]);
@@ -149,6 +158,7 @@ export default function App({ user }) {
                       ))}
                     </ol>
                   )}
+                  {m.searched && <small className="meta">검색한 질문: {m.searched}<br /></small>}
                   {m.latency_ms && <small className="meta">{m.mode === "agent" ? `에이전트 · 검색 ${m.steps.filter((s) => s.tool === "search").length}회 · ` : ""}{(m.latency_ms / 1000).toFixed(1)}초</small>}
                 </>
               ) : (
@@ -162,6 +172,15 @@ export default function App({ user }) {
           <select value={mode} onChange={(e) => setMode(e.target.value)} title="검색 방식">
             <option value="basic">기본 검색</option>
             <option value="agent">에이전트</option>
+          </select>
+          <select value={scope} onChange={(e) => setScope(e.target.value)} title="검색 범위" className="scope">
+            <option value="">모든 문서</option>
+            <optgroup label="내 문서">
+              {library.filter((d) => d.mine).map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}
+            </optgroup>
+            <optgroup label="공용 문서">
+              {library.filter((d) => !d.mine).map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}
+            </optgroup>
           </select>
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="질문을 입력하세요" maxLength={2000} />
           <button className="button" disabled={pending}>보내기</button>

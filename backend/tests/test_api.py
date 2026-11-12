@@ -14,8 +14,9 @@ class FakeService:
     def __init__(self):
         self.calls = []
 
-    def ask(self, user, question, mode="basic", request_id=""):
+    def ask(self, user, question, mode="basic", request_id="", history=None, scope=None):
         self.calls.append((user, question, mode))
+        self.history, self.scope = history, scope
         cite = Citation(1, "kr-a-law#3", "kr-a-law", "법", "제26조", None, None, 0, 10)
         return Reply(Answer("30일 전 [1]", [cite], [cite]), mode, 12.0, 100, 20)
 
@@ -102,3 +103,16 @@ def test_upload_accepts_supported_files_and_lists_them_per_user(api):
 def test_mode_is_validated(api):
     c, _ = api
     assert c.post("/api/chat", json={"message": "q", "mode": "rm -rf"}).status_code == 422
+
+
+def test_follow_ups_get_the_conversation_and_scope(api):
+    c, d = api
+    r = c.post("/api/chat", json={"message": "해고 예고?"}, headers=as_user("alice")).json()
+    body = {
+        "message": "그럼 5인 미만은?",
+        "conversation_id": r["conversation_id"],
+        "documents": ["kr-a-law"],
+    }
+    c.post("/api/chat", json=body, headers=as_user("alice"))
+    assert [m["role"] for m in d.service.history] == ["user", "assistant"]
+    assert d.service.scope == ["kr-a-law"]

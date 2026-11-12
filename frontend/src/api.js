@@ -10,12 +10,13 @@ async function call(path, options = {}) {
 }
 
 export const api = {
-  chat: (message, conversationId, mode) =>
+  chat: (message, conversationId, mode, documents) =>
     call("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, conversation_id: conversationId, mode }),
+      body: JSON.stringify({ message, conversation_id: conversationId, mode, documents }),
     }),
+  library: () => call("/api/library"),
   conversations: () => call("/api/conversations"),
   conversation: (id) => call(`/api/conversations/${id}`),
   documents: () => call("/api/documents"),
