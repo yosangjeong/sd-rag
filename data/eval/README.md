@@ -12,7 +12,8 @@ chunking strategy: a retrieved chunk is relevant when its range overlaps a gold 
 | `real.jsonl` | real user questions | reported next to `test`; never used for tuning |
 | `real_unanswerable.jsonl` | real questions the corpus does not answer | the agent should say it does not know |
 | `real_questions_candidates.csv` | the real questions as collected | input of `real.jsonl` |
-| `SHA256SUMS` | hashes of the four sets | committed before any system is tuned on `dev` |
+| `test_re.jsonl`, `dev_re.jsonl` | generated from the real-estate documents added later, 80% / 20% | same rules as test / dev |
+| `SHA256SUMS` | hashes of the sets | each set's hash committed before any system is tuned on its dev |
 
 Counts and breakdowns: see "Composition" below (filled by `eval/finalize_qa.py`).
 
@@ -65,6 +66,16 @@ Counts and breakdowns: see "Composition" below (filled by `eval/finalize_qa.py`)
 All prompts are in the scripts named above; all model calls are cached under
 `data/raw/eval-cache/llm/` (not committed), so the set is reproducible from the cache.
 
+## The real-estate set
+
+Added after the labor sets were frozen, with the 17 real-estate documents (manifest
+tag `realestate`). Built by the same scripts with `--set re`, sampling only from those
+documents (targets `sample_passages.TARGET_RE`, question ids `r0001`...): 185
+passages, 107 pass the check, pooling over the 70-document indexes adds 54 confirmed
+`also` spans, 4 duplicates dropped; 82 test, 21 dev. The labor sets are unchanged:
+`sample_passages --set labor` reproduces their passages byte for byte with the new
+documents present, and their files and hashes did not change.
+
 ## The real questions
 
 Question titles (no answers) from public FAQ pages, kept verbatim:
@@ -100,29 +111,29 @@ measured on the generated set.
 
 ## Composition
 
-| | test | dev | real | real_unanswerable |
-|---|---|---|---|---|
-| items | 338 | 85 | 137 | 27 |
-| question -> answer: en -> en | 68 | 16 | 60 | 0 |
-| question -> answer: en -> ko | 66 | 21 | 0 | 0 |
-| question -> answer: ko -> en | 49 | 13 | 0 | 0 |
-| question -> answer: ko -> ko | 155 | 35 | 77 | 0 |
-| answer file type: docx | 57 | 15 | 22 | 0 |
-| answer file type: docx+hwpx | 3 | 1 | 0 | 0 |
-| answer file type: docx+pdf | 4 | 1 | 0 | 0 |
-| answer file type: hwpx | 58 | 14 | 17 | 0 |
-| answer file type: hwpx+pdf | 2 | 1 | 0 | 0 |
-| answer file type: pdf | 160 | 39 | 98 | 0 |
-| answer file type: scan | 54 | 14 | 0 | 0 |
-| kind: fact | 293 | 75 | 0 | 0 |
-| kind: multi | 9 | 3 | 0 | 0 |
-| kind: real | 0 | 0 | 137 | 0 |
-| kind: table | 36 | 7 | 0 | 0 |
-| style: keywords | 66 | 22 | 0 | 0 |
-| style: question | 183 | 44 | 0 | 0 |
-| style: real | 0 | 0 | 137 | 0 |
-| style: situation | 89 | 19 | 0 | 0 |
-| with also-spans | 78 | 20 | 57 | 0 |
-| gold annotated by hand | 0 | 0 | 4 | 0 |
+| | test | dev | real | real_unanswerable | test_re | dev_re |
+|---|---|---|---|---|---|---|
+| items | 338 | 85 | 137 | 27 | 82 | 21 |
+| question -> answer: en -> en | 68 | 16 | 60 | 0 | 18 | 5 |
+| question -> answer: en -> ko | 66 | 21 | 0 | 0 | 15 | 7 |
+| question -> answer: ko -> en | 49 | 13 | 0 | 0 | 8 | 2 |
+| question -> answer: ko -> ko | 155 | 35 | 77 | 0 | 41 | 7 |
+| answer file type: docx | 57 | 15 | 22 | 0 | 13 | 3 |
+| answer file type: docx+hwpx | 3 | 1 | 0 | 0 | 1 | 0 |
+| answer file type: docx+pdf | 4 | 1 | 0 | 0 | 0 | 1 |
+| answer file type: hwpx | 58 | 14 | 17 | 0 | 17 | 5 |
+| answer file type: hwpx+pdf | 2 | 1 | 0 | 0 | 2 | 0 |
+| answer file type: pdf | 160 | 39 | 98 | 0 | 32 | 7 |
+| answer file type: scan | 54 | 14 | 0 | 0 | 17 | 5 |
+| kind: fact | 293 | 75 | 0 | 0 | 69 | 18 |
+| kind: multi | 9 | 3 | 0 | 0 | 3 | 1 |
+| kind: real | 0 | 0 | 137 | 0 | 0 | 0 |
+| kind: table | 36 | 7 | 0 | 0 | 10 | 2 |
+| style: keywords | 66 | 22 | 0 | 0 | 17 | 6 |
+| style: question | 183 | 44 | 0 | 0 | 50 | 8 |
+| style: real | 0 | 0 | 137 | 0 | 0 | 0 |
+| style: situation | 89 | 19 | 0 | 0 | 15 | 7 |
+| with also-spans | 78 | 20 | 57 | 0 | 28 | 6 |
+| gold annotated by hand | 0 | 0 | 4 | 0 | 0 | 0 |
 
 A real question's language is its source's: easylaw questions are Korean, dol.gov questions English, so the real set has no cross-lingual items.

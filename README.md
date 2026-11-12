@@ -2,13 +2,14 @@
 
 A RAG system on AWS: upload many PDF / DOCX / HWPX files (scans included), then ask
 questions in Korean or English and get answers that cite the document and the place
-(article, section, page) they come from. The public corpus is 53 statutes and
-regulations (Korean labor acts with their decrees and rules; US Code, CFR, Federal
-Register), and each user's uploads are searched only for that user.
+(article, section, page) they come from. The public corpus is 70 statutes and
+regulations (Korean labor and real-estate acts with their decrees and rules; US Code,
+CFR, Federal Register), and each user's uploads are searched only for that user.
 
-The focus is retrieval accuracy, measured on a 338-question held-out set plus 137
-real user questions (`data/eval/`): hit@10 0.94 and 0.95, MRR 0.88 on both, against
-0.78 / 0.53 and 0.88 / 0.59 for plain hybrid search (`docs/decisions.md`).
+The focus is retrieval accuracy, measured on held-out sets (`data/eval/`): 338
+generated labor-law questions, 137 real user questions and 82 real-estate questions.
+hit@10 / MRR: 0.93 / 0.87, 0.96 / 0.88 and 0.98 / 0.91, against 0.78 / 0.53,
+0.89 / 0.60 and 0.84 / 0.57 for plain hybrid search (`docs/decisions.md`).
 
 ## How it works
 

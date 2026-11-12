@@ -194,6 +194,7 @@ def main() -> None:
         p.stem: [json.loads(x) for x in p.read_text("utf-8").splitlines() if x]
         for p in sorted(out.glob("*.jsonl"))
     }
+    results = {k: v for k, v in results.items() if v}  # an interrupted run leaves an empty file
     summary = summarize(results, items, texts)
     (out / "summary.json").write_text(json.dumps(summary, indent=1, ensure_ascii=False), "utf-8")
     (out / "summary.md").write_text(to_markdown(summary), "utf-8")

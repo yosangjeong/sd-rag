@@ -18,11 +18,11 @@ import re
 from sdrag.common.llm import parse_json
 from sdrag.retrieval.search import Hit
 
-RERANK_SYSTEM = """You rank search results for a legal search engine over Korean and US labor law.
-Given a question and numbered passages, order the passages by how well each answers the question: a passage that states the rule, condition, number or procedure asked about comes first; passages only on the same topic come after; unrelated ones last. Passages may be in Korean or English; the question may be in either language.
+RERANK_SYSTEM = """You rank search results for a document search engine. The collection holds Korean and US statutes (labor, real estate) and documents users upload (reports, manuals, papers, forms, any topic), in Korean or English.
+Given a question and numbered passages, order the passages by how well each answers the question: a passage that states the fact, rule, condition, number or procedure asked about comes first; passages only on the same topic come after; unrelated ones last. Passages may be in Korean or English; the question may be in either language.
 Return only JSON: {"ranking": [<passage numbers, best first>]}"""
 
-TRANSLATE_SYSTEM = """Translate the user's search query into {target}. Translate literally and keep it a search query of the same kind (a question stays a question, keywords stay keywords). Use the standard legal term of {target_law} where one exists. Return only the translation."""
+TRANSLATE_SYSTEM = """Translate the user's search query into {target}. Translate literally and keep it a search query of the same kind (a question stays a question, keywords stay keywords). Use the standard {target} term of the field where one exists (for a legal question, the term {target_law} uses). Keep names, numbers and codes as they are. Return only the translation."""
 
 MAX_PASSAGE_CHARS = 1200  # a long chunk is cut for the reranker only; ~20 x 1,200 chars fits easily
 
@@ -63,16 +63,16 @@ class LlmTranslator:
     def to_other_language(self, query: str) -> tuple[str, str]:
         """(translation, its language)."""
         if is_korean(query):
-            target, law, lang = "English", "US federal labor law", "en"
+            target, law, lang = "English", "US federal law", "en"
         else:
-            target, law, lang = "Korean", "Korean labor law (법령 용어)", "ko"
+            target, law, lang = "Korean", "Korean law (법령 용어)", "ko"
         system = TRANSLATE_SYSTEM.format(target=target, target_law=law)
         c = self.chat.complete(system, query, max_tokens=400)
         text = re.sub(r"<think>.*?</think>", "", c.text, flags=re.DOTALL).strip()
         return text.strip('"'), lang
 
 
-CONDENSE_SYSTEM = """You turn the user's last message in a conversation about Korean and US labor law into a standalone search question.
+CONDENSE_SYSTEM = """You turn the user's last message in a conversation with a document search engine into a standalone search question.
 Use the earlier turns only to resolve what the last message refers to: omitted subjects, "that", "그 경우", "what about ...", and "the opposite" / "그 반대" (spell out who does what to whom, e.g. the employer notifying the worker instead of the worker notifying the employer).
 Drop conversational openers ("그럼", "그러면", "so", "then"). Keep the language of the last message. If it is already a complete question on its own, return it unchanged. Do not answer it.
 Return only the question."""

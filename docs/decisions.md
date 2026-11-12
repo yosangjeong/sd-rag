@@ -244,6 +244,36 @@ laws not in the corpus) are kept for the agent's "I don't know".
 Result: test 338 / dev 85 (split 80/20 per cell, seeded) / real 137; composition and
 limits in `data/eval/README.md`. Cost: about 10M judge and 0.5M generator input tokens, an estimated $5-7 of Bedrock calls, all cached.
 
+## Real-estate statutes and domain-neutral prompts (2026-11-13)
+
+**17 real-estate documents were added** (13 Korean: 공인중개사법, 부동산 거래신고법,
+부동산 가격공시법 with decrees and rules, 주택·상가건물 임대차보호법 with decrees; 4 US:
+Fair Housing Act, RESPA, 24 CFR 100 as a synthetic scan, Regulation X), 70 documents in
+all, formats rotated as for the labor statutes. The labor sets stay frozen (their
+passages re-sample byte for byte); a real-estate set is built the same way from the
+new documents only: 82 test, 21 dev (`data/eval/README.md`).
+
+**The prompts no longer say "labor law".** The interview's live test brings unknown
+files; the reranker, translation, follow-up rewriting, agent and answer prompts now
+describe a collection of statutes and user uploads of any topic, and the
+jurisdiction rule applies to legal questions only. Checked on dev (0.953 / 0.887
+against 0.953 / 0.881) and on the unseen-document questions (8 of 8 as before).
+
+Served system on the 70-document corpus (hit@10 / MRR), results in
+`data/eval/results-70/`:
+
+| | test (338) | real (137) | real-estate test (82) |
+|---|---|---|---|
+| hybrid | 0.78 / 0.53 | 0.89 / 0.60 | 0.84 / 0.57 |
+| hybrid + rerank | 0.84 / 0.80 | 0.96 / 0.89 | 0.90 / 0.84 |
+| served, labor-specific prompts | 0.94 / 0.87 | 0.96 / 0.88 | 0.98 / 0.90 |
+| **served, domain-neutral prompts** | **0.93 / 0.87** | **0.96 / 0.88** | **0.98 / 0.91** |
+| same, fixed-size chunks (labor prompts) | 0.92 / 0.86 | 0.94 / 0.85 | 0.96 / 0.90 |
+| agent + rerank (labor prompts) | | | 0.99 / 0.89 |
+
+The extra documents changed nothing measurable on the labor sets; the 1.2-point
+hit@10 difference on test between the two prompt versions is 4 questions.
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it
