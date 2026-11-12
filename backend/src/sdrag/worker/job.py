@@ -24,6 +24,25 @@ from sdrag.retrieval.index import bulk_index, to_source
 ALLOWED = {".pdf", ".docx", ".hwpx"}
 
 
+def _transient(e: Exception) -> bool:
+    from botocore.exceptions import ClientError, EndpointConnectionError
+    from opensearchpy import ConnectionError as SearchConnectionError
+    from opensearchpy import TransportError
+
+    from sdrag.retrieval.index import RETRYABLE
+
+    if isinstance(e, SearchConnectionError | EndpointConnectionError):
+        return True
+    if isinstance(e, TransportError):
+        return e.status_code in RETRYABLE
+    if isinstance(e, ClientError):
+        return e.response.get("Error", {}).get("Code") in (
+            "ThrottlingException",
+            "ServiceUnavailable",
+        )
+    return False
+
+
 def detect_lang(text: str) -> str:
     sample = text[:20000]
     return (
@@ -57,8 +76,11 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
                   "ocr_pages": len(ocr), "parse_s": round(t1 - t0, 2), "embed_s": round(t2 - t1, 2),
                   "index_s": round(t3 - t2, 2), "finished": time.time()}  # fmt: skip
     except Exception as e:  # noqa: BLE001 - a bad file must not stop the worker
+        # a busy or unreachable service is worth another try (the queue redelivers);
+        # a file that cannot be parsed is not
+        transient = _transient(e)
         result = {
-            "status": "failed",
+            "status": "retrying" if transient else "failed",
             "error": f"{type(e).__name__}: {e}"[:500],
             "finished": time.time(),
         }

@@ -65,10 +65,13 @@ def main() -> None:
                 with tempfile.TemporaryDirectory() as tmp:
                     path = Path(tmp) / Path(job["filename"]).name
                     s3.download_file(settings.upload_bucket, job["key"], str(path))
-                    process(job["user"], job["doc_id"], path, job["filename"], deps)
-                sqs.delete_message(
-                    QueueUrl=settings.upload_queue_url, ReceiptHandle=m["ReceiptHandle"]
-                )
+                    result = process(job["user"], job["doc_id"], path, job["filename"], deps)
+                url, handle = settings.upload_queue_url, m["ReceiptHandle"]
+                if result["status"] == "retrying":  # visible again in a minute; DLQ after 3
+                    sqs.change_message_visibility(QueueUrl=url, ReceiptHandle=handle,
+                                                  VisibilityTimeout=60)  # fmt: skip
+                else:
+                    sqs.delete_message(QueueUrl=url, ReceiptHandle=handle)
             finally:
                 protect(False)
 

@@ -10,7 +10,7 @@
   carrying a header CloudFront adds (X-Origin-Verify), so the ALB cannot be used
   directly. CloudFront gives HTTPS without a domain of our own.
 - Worker: scales on the upload queue's depth, 0 tasks when the queue is empty, up to
-  4 while files wait: throughput for a 50+ file batch without paying for idle tasks.
+  2 while files wait: throughput for a 50+ file batch without paying for idle tasks.
 - IAM: each task role gets only what it uses (grant_* calls), Bedrock limited to
   invoking models in this Region.
 - Logs: both services write JSON lines to CloudWatch Logs (14 days).
@@ -175,11 +175,11 @@ class AppStack(Stack):
             min_scaling_capacity=0,
             min_healthy_percent=0,
             circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
-            max_scaling_capacity=4,
+            max_scaling_capacity=2,  # a t3.small search node takes two bulk writers
             scaling_steps=[
                 appscaling.ScalingInterval(upper=0, change=-4),
                 appscaling.ScalingInterval(lower=1, change=+1),
-                appscaling.ScalingInterval(lower=20, change=+3),
+                appscaling.ScalingInterval(lower=20, change=+1),
             ],
             assign_public_ip=True,
             task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),

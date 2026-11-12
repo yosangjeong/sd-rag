@@ -70,5 +70,5 @@ def test_bedrock_access_is_limited_to_named_models():
 def test_worker_scales_to_zero():
     _, app = _templates()
     app.has_resource_properties(
-        "AWS::ApplicationAutoScaling::ScalableTarget", {"MinCapacity": 0, "MaxCapacity": 4}
+        "AWS::ApplicationAutoScaling::ScalableTarget", {"MinCapacity": 0, "MaxCapacity": 2}
     )

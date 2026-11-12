@@ -18,7 +18,9 @@ Index names carry the chunking strategy (chunks-structure, chunks-fixed) so the
 ablation can query both side by side.
 """
 
-from opensearchpy import OpenSearch, helpers
+import time
+
+from opensearchpy import OpenSearch, TransportError, helpers
 
 from sdrag.ingest.chunk import Chunk, embed_input
 from sdrag.ingest.corpus import CorpusDoc
@@ -120,13 +122,23 @@ def to_source(doc: CorpusDoc, chunk: Chunk, vector: list[float], ocr_pages: set[
     }
 
 
-def bulk_index(client: OpenSearch, name: str, sources: list[dict]) -> None:
-    helpers.bulk(
-        client,
-        ({"_index": name, "_id": s["chunk_id"], "_source": s} for s in sources),
-        chunk_size=200,
-        request_timeout=120,
-    )
+RETRYABLE = (429, 502, 503, 504)  # the node is busy (rehearsal on t3.small: 4 workers at once)
+
+
+def bulk_index(client: OpenSearch, name: str, sources: list[dict], attempts: int = 6) -> None:
+    """Index in batches of 200; documents the node rejects as busy (429) are retried by
+    the helper with backoff, and a whole request that fails busy is sent again after
+    2, 4, 8 ... seconds. Chunk ids are the document ids, so a repeat overwrites."""
+    actions = [{"_index": name, "_id": s["chunk_id"], "_source": s} for s in sources]
+    for attempt in range(attempts):
+        try:
+            helpers.bulk(client, actions, chunk_size=200, request_timeout=120,
+                         max_retries=5, initial_backoff=2, max_backoff=60)  # fmt: skip
+            return
+        except TransportError as e:
+            if e.status_code not in RETRYABLE or attempt == attempts - 1:
+                raise
+            time.sleep(2 ** (attempt + 1))
 
 
 def list_documents(client: OpenSearch, name: str, owners: list[str]) -> list[dict]:

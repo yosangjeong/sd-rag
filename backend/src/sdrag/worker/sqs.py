@@ -19,7 +19,9 @@ from pathlib import Path
 
 import boto3
 
-FILES_PER_WORKER, MAX_WORKERS = 10, 4  # MAX_WORKERS = the service's max (infra app.py)
+# MAX_WORKERS = the service's max (infra app.py): two, as a t3.small search node turned
+# away bulk requests from four at once (429) in the rehearsal
+FILES_PER_WORKER, MAX_WORKERS = 10, 2
 
 
 class SqsQueue:
