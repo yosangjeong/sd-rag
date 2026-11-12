@@ -18,7 +18,6 @@ Tools are read-only, and search results go back to the model as tool results (da
 under the same rule as the answer step: text in documents is never an instruction.
 """
 
-import json
 from dataclasses import dataclass, field
 
 from sdrag.retrieval.search import Hit, Searcher
@@ -149,13 +148,3 @@ class SearchAgent:
         rest = [h for cid, h in found.items() if cid not in res.picked]
         res.hits = [found[c] for c in res.picked] + rest
         return res
-
-
-def corpus_documents(manifest_rows) -> list[dict]:
-    return [{"id": d.id, "lang": d.lang, "title": d.title, "file_type": d.file_type}
-            for d in manifest_rows]  # fmt: skip
-
-
-def to_json(res: AgentResult) -> str:
-    return json.dumps({"picked": res.picked, "steps": res.steps, "finished": res.finished},
-                      ensure_ascii=False)  # fmt: skip

@@ -1,0 +1,36 @@
+{
+ "files": 53,
+ "megabytes": 36.2,
+ "done": 53,
+ "failed": [],
+ "chunks": 6499,
+ "wall_s": 154,
+ "upload_s": 5.5,
+ "files_per_min": 20.7,
+ "chunks_per_min": 2536,
+ "median_parse_s": 0.05,
+ "median_embed_s": 2.81,
+ "slowest": [
+  [
+   "kr-equal-employment-dec.pdf",
+   76.85999999999999
+  ],
+  [
+   "kr-wage-claim-rul.pdf",
+   57.93
+  ],
+  [
+   "kr-occupational-safety-rul.pdf",
+   34.629999999999995
+  ],
+  [
+   "us-fr-2026-20646.pdf",
+   32.61
+  ],
+  [
+   "kr-minimum-wage-rul.pdf",
+   18.91
+  ]
+ ],
+ "ocr_pages": 34
+}

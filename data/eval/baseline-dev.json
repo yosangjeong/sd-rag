@@ -1,0 +1,7 @@
+{
+ "bilingual+rerank@chunks-structure~glm-4.7": {
+  "span_hit@10": 0.9294,
+  "span_mrr": 0.8531,
+  "measured": "2026-11-12, dev set, local OpenSearch 3.7"
+ }
+}

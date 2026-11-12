@@ -33,11 +33,11 @@ from pathlib import Path
 from evalset import doc_texts, load_items, score
 from opensearchpy import OpenSearch
 
-from sdrag.agent.search import SearchAgent, corpus_documents
+from sdrag.agent.search import SearchAgent
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat
-from sdrag.ingest.corpus import load_corpus
 from sdrag.retrieval.embed import TitanEmbedder
+from sdrag.retrieval.index import PUBLIC, list_documents
 from sdrag.retrieval.rerank import LlmReranker, LlmTranslator
 from sdrag.retrieval.search import Searcher
 
@@ -69,11 +69,12 @@ class Meter:
 def run_system(system: str, items, client, embedder, chat) -> list[dict]:
     spec, index = system.split("@")
     mode, _, stage2 = spec.partition("+")
-    s = Searcher(client, index, embedder, LlmTranslator(chat))
+    # the public corpus only: user uploads in the same index must not change the scores
+    s = Searcher(client, index, embedder, LlmTranslator(chat), owners=[PUBLIC])
     reranker = LlmReranker(chat) if stage2 == "rerank" else None
     agent = None
     if mode == "agent":
-        docs = corpus_documents(load_corpus(Path(__file__).resolve().parents[1] / "data"))
+        docs = list_documents(client, index, [PUBLIC])
         agent = SearchAgent(chat.client, chat.model_id, s, docs)
     meter = Meter(embedder, chat)
     rows = []
@@ -167,7 +168,7 @@ def to_markdown(summary: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", type=Path, required=True)
-    ap.add_argument("--systems", nargs="+", required=True)
+    ap.add_argument("--systems", nargs="*", default=[], help="none: only rebuild the summary")
     ap.add_argument("--out", type=Path, help="default: ../data/eval/results/<set name>")
     ap.add_argument("--llm", default="zai.glm-4.7", help="reranker and translator model")
     a = ap.parse_args()
