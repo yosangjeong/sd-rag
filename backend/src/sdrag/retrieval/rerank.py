@@ -73,7 +73,8 @@ class LlmTranslator:
 
 
 CONDENSE_SYSTEM = """You turn the user's last message in a conversation about Korean and US labor law into a standalone search question.
-Use the earlier turns only to resolve what the last message refers to (omitted subjects, "that", "그럼", "그 경우", "what about ..."). Keep the language of the last message. If it is already a complete question on its own, return it unchanged. Do not answer it.
+Use the earlier turns only to resolve what the last message refers to: omitted subjects, "that", "그 경우", "what about ...", and "the opposite" / "그 반대" (spell out who does what to whom, e.g. the employer notifying the worker instead of the worker notifying the employer).
+Drop conversational openers ("그럼", "그러면", "so", "then"). Keep the language of the last message. If it is already a complete question on its own, return it unchanged. Do not answer it.
 Return only the question."""
 
 HISTORY_TURNS = 6  # the last three exchanges

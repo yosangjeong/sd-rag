@@ -3,31 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { signOut } from "./auth";
+import Answer, { Sources } from "./Answer";
 import Logs from "./Logs";
 
 function where(c) {
   const page = c.page_start ? ` p.${c.page_start}${c.page_end && c.page_end !== c.page_start ? `-${c.page_end}` : ""}` : "";
   return `${c.title} › ${c.heading || ""}${page}`;
-}
-
-// "[2]" in the answer text becomes a button that opens source 2
-function AnswerText({ text, citations, onOpen }) {
-  const byN = Object.fromEntries(citations.map((c) => [c.n, c]));
-  return (
-    <p className="answer">
-      {text.split(/(\[\d+\])/).map((part, i) => {
-        const m = part.match(/^\[(\d+)\]$/);
-        if (m && byN[m[1]]) {
-          return (
-            <button key={i} className="cite" title={where(byN[m[1]])} onClick={() => onOpen(byN[m[1]])}>
-              {m[1]}
-            </button>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </p>
-  );
 }
 
 function Uploads() {
@@ -55,8 +36,9 @@ function Uploads() {
   const done = docs.filter((d) => d.status === "done").length;
   return (
     <section className="uploads">
-      <label className="button">
-        {busy ? "올리는 중…" : "문서 올리기 (PDF·DOCX·HWPX)"}
+      <label className="button upload">
+        {busy ? "올리는 중…" : "문서 올리기"}
+        <small>PDF · DOCX · HWPX, 여러 개 가능</small>
         <input ref={input} type="file" multiple accept=".pdf,.docx,.hwpx" hidden
                onChange={(e) => send([...e.target.files])} />
       </label>
@@ -159,13 +141,9 @@ export default function App({ user }) {
             <div key={i} className={`msg ${m.role}`}>
               {m.role === "assistant" ? (
                 <>
-                  <AnswerText text={m.text} citations={m.citations || []} onOpen={openSource} />
+                  <Answer text={m.text} citations={m.citations || []} onOpen={openSource} label={where} />
                   {(m.citations || []).length > 0 && (
-                    <ol className="sources">
-                      {m.citations.map((c) => (
-                        <li key={c.n} value={c.n}><button className="link" onClick={() => openSource(c)}>{where(c)}</button></li>
-                      ))}
-                    </ol>
+                    <Sources citations={m.citations} onOpen={openSource} label={where} />
                   )}
                   {m.searched && <small className="meta">검색한 질문: {m.searched}<br /></small>}
                   {m.latency_ms && <small className="meta">{m.mode === "agent" ? `에이전트 · 검색 ${m.steps.filter((s) => s.tool === "search").length}회 · ` : ""}{(m.latency_ms / 1000).toFixed(1)}초</small>}
