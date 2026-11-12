@@ -48,6 +48,8 @@ LICENSES = {
     "US-PD-105": "Public domain - work of the U.S. Government (17 U.S.C. 105)",
     "KR-CA-7": "Not protected - Korean Copyright Act Art. 7 (statutes, notices, court decisions)",
     "KOGL-1": "Korea Open Government License Type 1 (attribution required)",
+    "MOLEG-EASYLAW": "Free use including commercial, source must be credited: "
+    "법제처 찾기쉬운 생활법령정보 (https://easylaw.go.kr/CSP/InfoCopyright.laf)",
 }
 
 
@@ -151,6 +153,18 @@ def write_sources() -> None:
             f"| {r['id']} | {r['lang']} | [{r['title']}]({r['url']}) | {r['source']} "
             f"| {r['format']} | {r['tags']} | {r['license']} |"
         )
+    lines += [
+        "",
+        "## Evaluation questions",
+        "",
+        "Real questions in `data/eval/real_questions_candidates.csv` (question titles only, "
+        "no answers) are quoted from:",
+        "",
+        "- 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 (easylaw.go.kr) - MOLEG-EASYLAW",
+        "- U.S. Department of Labor, Wage and Hour Division: FMLA and FLSA FAQs (dol.gov) - US-PD-105",
+        "",
+        "Generated questions are written by a model from the corpus above; see `data/eval/README.md`.",
+    ]
     (DATA / "SOURCES.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote SOURCES.md ({len(rows)} documents)")
 

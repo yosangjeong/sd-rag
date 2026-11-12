@@ -7,6 +7,7 @@ Generated from `data/manifest.csv` by `data/scripts/fetch.py --sources`. Do not 
 - **US-PD-105**: Public domain - work of the U.S. Government (17 U.S.C. 105)
 - **KR-CA-7**: Not protected - Korean Copyright Act Art. 7 (statutes, notices, court decisions)
 - **KOGL-1**: Korea Open Government License Type 1 (attribution required)
+- **MOLEG-EASYLAW**: Free use including commercial, source must be credited: 법제처 찾기쉬운 생활법령정보 (https://easylaw.go.kr/CSP/InfoCopyright.laf)
 
 ## Documents
 
@@ -67,3 +68,12 @@ Generated from `data/manifest.csv` by `data/scripts/fetch.py --sources`. Do not 
 | kr-foreign-workers-rul | ko | [외국인근로자의 고용 등에 관한 법률 시행규칙](https://www.law.go.kr/법령/외국인근로자의고용등에관한법률시행규칙) | 국가법령정보센터 (law.go.kr), 현행 법령 - 고용노동부령 제442호, 시행 2025-06-02; PDF 저장 (별표 포함) | pdf | legal;table | KR-CA-7 |
 | kr-occupational-safety-rul-truth | ko | [산업안전보건법 시행규칙](https://www.law.go.kr/법령/산업안전보건법시행규칙) | 국가법령정보센터 (law.go.kr), 현행 법령 - 고용노동부령 제477호, 시행 2026-08-01; HWPX 저장 (zip) - 표 추출 평가 정답용, 코퍼스 제외 | hwpx | legal;table;eval-truth | KR-CA-7 |
 | kr-industrial-accident-dec-truth | ko | [산업재해보상보험법 시행령](https://www.law.go.kr/법령/산업재해보상보험법시행령) | 국가법령정보센터 (law.go.kr), 현행 법령 - 대통령령 제36473호, 시행 2026-07-01; HWPX 저장 (zip) - 표 추출 평가 정답용, 코퍼스 제외 | hwpx | legal;table;eval-truth | KR-CA-7 |
+
+## Evaluation questions
+
+Real questions in `data/eval/real_questions_candidates.csv` (question titles only, no answers) are quoted from:
+
+- 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 (easylaw.go.kr) - MOLEG-EASYLAW
+- U.S. Department of Labor, Wage and Hour Division: FMLA and FLSA FAQs (dol.gov) - US-PD-105
+
+Generated questions are written by a model from the corpus above; see `data/eval/README.md`.
