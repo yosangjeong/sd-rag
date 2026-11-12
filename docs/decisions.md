@@ -183,6 +183,36 @@ How the served configuration was reached:
 Latency is end to end from the local machine to Bedrock in Sydney; cost counts the
 tokens sent at US list prices (`eval/run_retrieval.py` `PRICES`).
 
+## Answers (`agent/answer.py`, `eval/answers.py`)
+
+Answers are judged on 100 test items (spread over language and file type) and the 27
+real questions the corpus cannot answer, by DeepSeek V3.2 (another family than the
+GLM answers and the Qwen questions; prompts in the script):
+
+| | first run | after the fix |
+|---|---|---|
+| correct / partial / wrong (vs reference) | 71 / 23 / 6% | 71 / 23 / 5% |
+| unsupported by the cited sources | 10% | 5% |
+| a citation overlaps the gold | 93% | 93% |
+| unanswerable questions declined | 63% | 59% |
+
+The first run showed two rule violations, fixed in the prompt rather than tuned: the
+answer drifted into Korean for English questions when the sources were Korean (the
+language is now fixed by code, `is_korean`), and a question naming no country
+(dol.gov: "Are pay stubs required?") was answered with Korean law as if it were the
+answer; a question without a country is now taken to be about the country of its
+language, and the other country's law, if that is all there is, is labelled as such.
+Most answers counted as "answered" on unanswerable questions first say that the
+documents do not answer and then point to related provisions; the judge counts that
+strictly. Some of those 27 are partly answerable after all (the FLSA does not require
+pay stubs, which the corpus implies), a limit of the set. Both runs are kept
+(`data/eval/results/answers-v1/`, `answers/`).
+
+**One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document
+questions over 28 files, search scoped to the file: the gold passage is among the
+answer's 6 sources for 30 of 30, answers 80% correct, 17% partial, 3% wrong. The
+Claude and ChatGPT columns are filled by hand (`data/eval/single_file/README.md`).
+
 ## Evaluation set (`data/eval/`, `eval/`)
 
 **Gold answers are character ranges, written answer-first.** Passages are drawn from
