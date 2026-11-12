@@ -1,7 +1,7 @@
 """Stateful resources, in a stack of their own so app changes never replace them.
 
-- OpenSearch 3.7 domain (nori is built in on AWS OpenSearch Service), one
-  t3.medium.search node in an isolated subnet, reached only from the app security
+- OpenSearch 3.7 domain (with the optional nori plugin), one t3.small.search node
+  in an isolated subnet, reached only from the app security
   group, over HTTPS with IAM (SigV4) auth: no passwords anywhere
 - DynamoDB table for per-user records (conversations, upload status), on-demand
 - S3 bucket for uploads and for the corpus files / caches used by the bulk ingest
@@ -50,7 +50,9 @@ class DataStack(Stack):
             security_groups=[network.search_sg],
             capacity=os_.CapacityConfig(
                 data_nodes=1,
-                data_node_instance_type="t3.medium.search",
+                # t3.small (2 GB): the index is 33 MB and its vectors ~30 MB, so the JVM heap
+                # is ample; it halves the largest line of the bill
+                data_node_instance_type="t3.small.search",
                 multi_az_with_standby_enabled=False,
             ),
             ebs=os_.EbsOptions(volume_size=20, volume_type=ec2.EbsDeviceVolumeType.GP3),

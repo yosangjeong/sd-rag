@@ -43,8 +43,8 @@ class FakeQueue:
     def send(self, user, doc_id, path, filename):
         self.sent.append((user, filename))
 
-    def wake(self):
-        self.woken = True
+    def wake(self, files=1):
+        self.woken = files
 
 
 @pytest.fixture
@@ -98,7 +98,7 @@ def test_upload_accepts_supported_files_and_lists_them_per_user(api):
     r = c.post("/api/documents", files=files, headers=as_user("alice")).json()
     assert [a["file"] for a in r["accepted"]] == ["a.pdf"]
     assert r["rejected"][0]["file"] == "b.hwp"
-    assert d.queue.sent == [("alice", "a.pdf")] and d.queue.woken
+    assert d.queue.sent == [("alice", "a.pdf")] and d.queue.woken == 1
     assert len(c.get("/api/documents", headers=as_user("alice")).json()) == 1
     assert c.get("/api/documents", headers=as_user("bob")).json() == []
 

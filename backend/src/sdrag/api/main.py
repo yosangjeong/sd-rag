@@ -180,7 +180,7 @@ async def upload(
         accepted.append({"id": doc_id, "file": name})
     if accepted:
         try:
-            d.queue.wake()
+            d.queue.wake(len(accepted))
         except Exception as e:  # noqa: BLE001 - the queue alarm still scales the worker
             log(
                 "error", request_id=request.state.rid, path="wake", error=f"{type(e).__name__}: {e}"

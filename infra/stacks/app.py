@@ -201,6 +201,16 @@ class AppStack(Stack):
         )
         data.bucket.grant_read_write(self.ingest_task.task_role, "corpus/*")
 
+        # a worker marks itself protected from scale-in while it holds a job (worker/main.py)
+        worker.task_definition.task_role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=["ecs:UpdateTaskProtection", "ecs:GetTaskProtection"],
+                resources=[
+                    f"arn:aws:ecs:{self.region}:{self.account}:task/{cluster.cluster_name}/*"
+                ],
+            )
+        )
+
         # after an upload the API starts a worker task if there is none (worker/sqs.py)
         api.task_definition.default_container.add_environment(
             "SDRAG_WORKER_CLUSTER", cluster.cluster_name

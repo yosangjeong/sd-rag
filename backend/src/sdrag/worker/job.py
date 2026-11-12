@@ -81,5 +81,5 @@ class LocalQueue:
     def send(self, user: str, doc_id: str, path: Path, filename: str, key: str = "") -> None:
         self.pool.submit(process, user, doc_id, path, filename, self.deps)
 
-    def wake(self) -> None:
+    def wake(self, files: int = 1) -> None:
         pass  # threads are always there
