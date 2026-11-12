@@ -9,6 +9,9 @@ import os
 
 import aws_cdk as cdk
 
+from stacks.app import AppStack
+from stacks.cicd import CiCdStack
+from stacks.data import DataStack
 from stacks.network import NetworkStack
 
 REGION = "ap-southeast-2"
@@ -17,6 +20,9 @@ app = cdk.App()
 env = cdk.Environment(account=os.environ.get("CDK_DEFAULT_ACCOUNT"), region=REGION)
 
 network = NetworkStack(app, "SdRag-Network", env=env)
+data = DataStack(app, "SdRag-Data", network=network, env=env, termination_protection=True)
+AppStack(app, "SdRag-App", network=network, data=data, env=env)
+CiCdStack(app, "SdRag-CiCd", bucket_name=data.bucket.bucket_name, env=env)
 
 cdk.Tags.of(app).add("project", "sd-rag")
 

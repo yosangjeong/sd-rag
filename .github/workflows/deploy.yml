@@ -1,0 +1,31 @@
+# main only: build the frontend, then cdk deploy (CDK builds the backend image).
+# AWS credentials come from GitHub OIDC (infra/stacks/cicd.py, DeployRole); no keys
+# are stored in the repository or its secrets.
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write   # the OIDC token exchanged for AWS credentials
+concurrency: { group: deploy, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: aws
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}
+          aws-region: ap-southeast-2
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - run: npm ci && uv sync --frozen
+        working-directory: infra
+      - run: npx cdk deploy SdRag-Network SdRag-Data SdRag-App --require-approval never
+        working-directory: infra

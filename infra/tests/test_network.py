@@ -24,17 +24,13 @@ def test_two_azs_public_and_isolated():
 
 
 def test_s3_gateway_endpoint():
-    _template().has_resource_properties(
-        "AWS::EC2::VPCEndpoint", {"VpcEndpointType": "Gateway"}
-    )
+    _template().has_resource_properties("AWS::EC2::VPCEndpoint", {"VpcEndpointType": "Gateway"})
 
 
 def test_app_tasks_only_reachable_from_alb():
     # The app SG ingress must reference another SG (the ALB), never a CIDR.
     t = _template()
-    rules = t.find_resources(
-        "AWS::EC2::SecurityGroupIngress", {"Properties": {"FromPort": 8000}}
-    )
+    rules = t.find_resources("AWS::EC2::SecurityGroupIngress", {"Properties": {"FromPort": 8000}})
     assert len(rules) == 1
     props = next(iter(rules.values()))["Properties"]
     assert "SourceSecurityGroupId" in props and "CidrIp" not in props

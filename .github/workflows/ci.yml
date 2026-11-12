@@ -1,0 +1,29 @@
+# Every push and pull request: lint, unit tests, CDK synth checks, frontend build.
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff check src tests ../eval
+      - run: uv run ruff format --check src tests
+      - run: uv run pytest -q
+  infra:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - run: npm ci && uv sync --frozen && uv run pytest -q
+        working-directory: infra

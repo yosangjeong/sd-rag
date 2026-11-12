@@ -32,3 +32,6 @@ data/scripts/hwp2hwpx/build/
 
 # nori plugin for the local OpenSearch image (infra/local/opensearch/get-nori.sh)
 infra/local/opensearch/*.zip
+
+# CDK context lookups cache the account id: never commit
+infra/cdk.context.json
