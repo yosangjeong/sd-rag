@@ -85,10 +85,15 @@ def test_corpus_resolves_scans_and_skips_eval_truth(tmp_path):
         "us-b,en,s,Act,u,pdf,legal,US-PD-105,auto,x\n",
         encoding="utf-8",
     )
+    (tmp_path / "raw" / "kr-inbox").mkdir(parents=True)
     docs = load_corpus(tmp_path)
     assert [(d.id, d.file_type) for d in docs] == [("kr-a-law", "scan"), ("us-b", "pdf")]
     assert docs[0].path == tmp_path / "raw" / "scans" / "kr-a-law.pdf"
     assert docs[1].path == tmp_path / "raw" / "us-b.pdf"
+    # a fresh clone has no data/raw/: the packed copies in data/corpus/ are used
+    (tmp_path / "raw" / "kr-inbox").rmdir()
+    assert [d.path.name for d in load_corpus(tmp_path)] == ["kr-a-law.pdf", "us-b.pdf"]
+    assert load_corpus(tmp_path)[0].path.parent == tmp_path / "corpus"
 
 
 def test_owners_filter_reaches_every_query():
