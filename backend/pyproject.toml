@@ -13,6 +13,8 @@ dependencies = [
     "pdfplumber>=0.11.10",
     "boto3[crt]>=1.44.0",
     "opensearch-py>=3.2.0",
+    "pyjwt[crypto]>=2.9",
+    "python-multipart>=0.0.12",
 ]
 
 [dependency-groups]

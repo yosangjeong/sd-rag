@@ -20,6 +20,7 @@ from pathlib import Path
 from opensearchpy import OpenSearch
 
 from sdrag.common.config import settings
+from sdrag.common.search_client import make_client
 from sdrag.ingest.chunk import STRATEGIES, embed_input
 from sdrag.ingest.corpus import CorpusDoc, load_corpus
 from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr, OcrEngine
@@ -75,7 +76,7 @@ def main() -> None:
     a = ap.parse_args()
 
     index = a.index or f"chunks-{a.strategy}"
-    client = OpenSearch(hosts=[settings.opensearch_url], timeout=120)
+    client = make_client(settings.opensearch_url, settings.aws_region, 120)
     titan = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
     embedder: Embedder = titan
     if settings.embed_cache_dir:
