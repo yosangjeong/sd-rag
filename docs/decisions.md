@@ -244,6 +244,27 @@ laws not in the corpus) are kept for the agent's "I don't know".
 Result: test 338 / dev 85 (split 80/20 per cell, seeded) / real 137; composition and
 limits in `data/eval/README.md`. Cost: about 10M judge and 0.5M generator input tokens, an estimated $5-7 of Bedrock calls, all cached.
 
+## Deployment rehearsal (2026-11-12)
+
+The whole stack was deployed once to AWS, checked, measured and torn down. What it
+found, none of which a local run could show:
+
+| Found | Fix |
+|---|---|
+| "Unknown tokenizer type [nori_tokenizer]": nori is an optional plugin on AWS OpenSearch Service, not built in | associate the analysis-nori package for the engine version (custom resource in data.py); a blue/green deployment, 20 min |
+| the API died at start (index creation failed) and the circuit breaker rolled back, deleting the logs | a failed index creation is logged and the API starts; log groups are kept on rollback |
+| a domain with no access policy refused the task roles | the domain policy defers to IAM in the account; only the task roles have identity policies |
+| the first upload waited 4-5 min: the queue alarm behind the worker's scaling uses 5-minute periods | the API raises the worker service itself after an upload (one task per 10 files) |
+| scale-in stopped a worker in the middle of the last file (the alarm counts waiting messages, not in-flight ones); the file waited 30 min for its retry | ECS task scale-in protection while a worker holds a job |
+| on t3.small.search, four workers indexing at once got 429 Too Many Requests / 502 (7 of 70 files failed) | bulk writes retry with backoff, busy failures are redelivered after a minute, at most two workers |
+| 13,000 cache files to S3 one by one: 13 min | three archives |
+| health checks were logged every 15 s per target | not logged |
+
+Measured on AWS: chat answers in 3-5 s (11 s for the first, cold request); 53 files
+in 429 s before the fixes, the first done at 59 s after the worker wake-up; access
+controls as designed (401 without a token or with the dev header, 403 on the ALB
+directly and for non-evaluators on the log viewer).
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region
