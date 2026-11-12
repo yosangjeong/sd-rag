@@ -36,6 +36,15 @@ from sdrag.common.llm import BedrockChat, CachedChat, parse_json
 
 PASSAGES = CACHE / "qa" / "passages.jsonl"
 OUT = CACHE / "qa" / "generated.jsonl"
+
+
+def paths(name: str):
+    """(passages, generated) of a set (sample_passages.SETS)."""
+    if name == "labor":
+        return PASSAGES, OUT
+    return CACHE / "qa" / f"passages-{name}.jsonl", CACHE / "qa" / f"generated-{name}.jsonl"
+
+
 GEN_MODEL = "qwen.qwen3-next-80b-a3b"
 CHECK_MODEL = "deepseek.v3.2"
 SEED = 20261112
@@ -167,7 +176,7 @@ def build(p: dict, gen: dict, chk: dict | None, texts) -> tuple[dict | None, str
     if p["kind"] == "multi" and not c.get("needs_all"):
         return None, "check: multi answerable from one passage"
     item = {
-        "qid": p["pid"].replace("p", "g"),
+        "qid": p["pid"].replace("p", "g", 1),  # r-pids (real-estate set) stay r
         "question": q,
         "q_lang": p["q_lang"],
         "gold": gold,
@@ -189,10 +198,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, help="first N passages only (a trial run)")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--set", default="labor")
     a = ap.parse_args()
+    passages_path, out_path = paths(a.set)
 
     texts = doc_texts()
-    passages = [json.loads(x) for x in PASSAGES.read_text("utf-8").splitlines() if x]
+    passages = [json.loads(x) for x in passages_path.read_text("utf-8").splitlines() if x]
     rng = random.Random(SEED)
     for p in passages:  # style is drawn here, not at sampling, so it can be re-weighted
         p["style"] = rng.choices(list(STYLE_WEIGHTS), weights=list(STYLE_WEIGHTS.values()))[0]
@@ -216,7 +227,7 @@ def main() -> None:
         chks = list(pool.map(chk, zip(passages, gens)))
 
     items, dropped = [], Counter()
-    with OUT.open("w", encoding="utf-8") as f:
+    with out_path.open("w", encoding="utf-8") as f:
         for p, g, c in zip(passages, gens, chks):
             item, why = build(p, g, c, texts)
             f.write(json.dumps({"pid": p["pid"], "item": item, "dropped": why, "gen": g,

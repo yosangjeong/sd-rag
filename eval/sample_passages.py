@@ -34,7 +34,14 @@ from evalset import CACHE, DocText, doc_texts
 from sdrag.ingest.chunk import split_span
 
 SEED = 20261112
-OUT = CACHE / "qa" / "passages.jsonl"
+# two sets, by the documents their answers come from: "labor" (the original corpus,
+# frozen 2026-11-12) and "re" (real-estate statutes added later, manifest tag realestate)
+SETS = ("labor", "re")
+
+
+def out_path(name: str):
+    return CACHE / "qa" / ("passages.jsonl" if name == "labor" else f"passages-{name}.jsonl")
+
 
 # items per (answer lang, file type); 400 in all = 80 dev + 320 test. RESERVE times as
 # many passages are drawn: about a third fail generation or the check (boilerplate,
@@ -47,6 +54,11 @@ TARGET = {
     ("en", "pdf"): 160, ("en", "scan"): 15,
 }  # fmt: skip
 # share of each cell asked in the other language
+# the real-estate set: 116 items, 3 Korean formats + scan, English PDF + scan
+TARGET_RE = {
+    ("ko", "pdf"): 18, ("ko", "hwpx"): 22, ("ko", "docx"): 22, ("ko", "scan"): 12,
+    ("en", "pdf"): 30, ("en", "scan"): 12,
+}  # fmt: skip
 RESERVE = 1.6
 CROSS = {"ko": 0.33, "en": 0.45}
 TABLE_SHARE, MULTI_SHARE = 0.15, 0.12
@@ -137,9 +149,28 @@ def multi_pairs(texts: dict[str, DocText]) -> list[dict]:
     return pairs
 
 
+def set_docs(name: str) -> set[str]:
+    from evalset import DATA
+
+    from sdrag.ingest.corpus import load_corpus
+
+    re_docs = {d.id for d in load_corpus(DATA) if "realestate" in d.tags}
+    all_docs = {d.id for d in load_corpus(DATA)}
+    return re_docs if name == "re" else all_docs - re_docs
+
+
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--set", choices=SETS, default="labor")
+    a = ap.parse_args()
     rng = random.Random(SEED)
-    texts = doc_texts()
+    keep = set_docs(a.set)
+    texts = {k: v for k, v in doc_texts().items() if k in keep}
+    targets = TARGET if a.set == "labor" else TARGET_RE
+    prefix = "p" if a.set == "labor" else "r"
+    OUT = out_path(a.set)
     by_cell: dict[tuple, list[DocText]] = defaultdict(list)
     for d in texts.values():
         by_cell[(d.lang, d.file_type)].append(d)
@@ -147,7 +178,7 @@ def main() -> None:
     rng.shuffle(pairs)
 
     out = []
-    for cell, target in TARGET.items():
+    for cell, target in targets.items():
         n = round(target * RESERVE)
         docs = sorted(by_cell[cell], key=lambda d: d.id)
         lang, ftype = cell
@@ -184,7 +215,7 @@ def main() -> None:
 
     rng.shuffle(out)
     for i, c in enumerate(out, 1):
-        c["pid"] = f"p{i:04d}"
+        c["pid"] = f"{prefix}{i:04d}"
         for part in c["parts"]:
             part["text"] = texts[part["doc_id"]].text[part["start"] : part["end"]]
     OUT.parent.mkdir(parents=True, exist_ok=True)

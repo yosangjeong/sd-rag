@@ -33,10 +33,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from evalset import CACHE, DATA, Gold, Item, doc_texts, locate, overlaps, save_items
-from generate_qa import CHECK_MODEL
-from generate_qa import OUT as GENERATED
+from generate_qa import CHECK_MODEL, paths
 from opensearchpy import OpenSearch
-from sample_passages import SEED, TARGET
+from sample_passages import SEED, TARGET, TARGET_RE
 
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat, CachedChat, parse_json
@@ -176,7 +175,7 @@ def judge_real(
     return best, also, {"raw": c.text, "note": out.get("note", ""), "n_candidates": len(cands)}
 
 
-def fill(generated: list[dict], passages: dict[str, dict]) -> list[Item]:
+def fill(generated: list[dict], passages: dict[str, dict], targets: dict) -> list[Item]:
     """Every item that survived generation and the check. The reserve drawn at
     sampling was sized for losses; the cells it over-filled are kept whole (more
     items), and the ones it under-filled are reported against their target."""
@@ -186,7 +185,7 @@ def fill(generated: list[dict], passages: dict[str, dict]) -> list[Item]:
             p = passages[r["pid"]]
             per_cell[(p["answer_lang"], p["file_type"])] += 1
             items.append(Item(**(r["item"] | {"gold": [Gold(**g) for g in r["item"]["gold"]]})))
-    for cell, target in TARGET.items():
+    for cell, target in targets.items():
         print(f"  {cell}: {per_cell[cell]} (target {target})")
     return items
 
@@ -249,13 +248,15 @@ def sha256(path: Path) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--set", default="labor", help="labor (with the real questions) or re")
     a = ap.parse_args()
+    passages_path, generated_path = paths(a.set)
     texts = doc_texts()
     passages = {json.loads(x)["pid"]: json.loads(x)
-                for x in (CACHE / "qa" / "passages.jsonl").read_text("utf-8").splitlines() if x}  # fmt: skip
-    generated = [json.loads(x) for x in GENERATED.read_text("utf-8").splitlines() if x]
+                for x in passages_path.read_text("utf-8").splitlines() if x}  # fmt: skip
+    generated = [json.loads(x) for x in generated_path.read_text("utf-8").splitlines() if x]
     print("filling cells:")
-    items = fill(generated, passages)
+    items = fill(generated, passages, TARGET if a.set == "labor" else TARGET_RE)
 
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
@@ -286,6 +287,19 @@ def main() -> None:
     items, dropped = clean(items, texts)
     print(f"cleaning: {len(items)} kept, dropped {dict(dropped)}, "
           f"OCR-fixed {sum(1 for i in items if 'edited' in i.meta)}")  # fmt: skip
+
+    if a.set != "labor":  # an added set: generated items only, written next to the others
+        dev, test = split(items, texts)
+        names = (f"dev_{a.set}.jsonl", f"test_{a.set}.jsonl")
+        save_items(OUT / names[0], dev)
+        save_items(OUT / names[1], test)
+        sums = {ln.split()[1]: ln for ln in (OUT / "SHA256SUMS").read_text().splitlines() if ln}
+        sums |= {n: f"{sha256(OUT / n)}  {n}" for n in names}
+        (OUT / "SHA256SUMS").write_text("".join(v + "\n" for v in sums.values()))
+        print(f"{a.set}: dev {len(dev)}, test {len(test)}")
+        print("test", Counter((i.q_lang, "+".join(sorted(i.answer_langs(texts)))) for i in test),
+              Counter("+".join(sorted(i.file_types(texts))) for i in test), Counter(i.kind for i in test))  # fmt: skip
+        return
 
     with (DATA / "eval" / "real_questions_candidates.csv").open(encoding="utf-8") as f:
         real_rows = list(csv.DictReader(f))
