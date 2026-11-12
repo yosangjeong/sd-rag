@@ -282,6 +282,22 @@ def _docx_heading_level(para) -> int | None:
     return 0 if m.group(2) else int(m.group(1))
 
 
+def _docx_cell_text(cell) -> str:
+    """A cell's paragraphs and, in order, any table nested in it (rows "a · b", joined
+    by "; "): python-docx's cell.text leaves nested tables out, and their values were
+    lost (a figure table inside a summary table)."""
+    parts = []
+    for el in cell._tc.iterchildren():
+        if el.tag == f"{W}p":
+            parts.append(Paragraph(el, cell).text)
+        elif el.tag == f"{W}tbl":
+            inner = Table(el, cell)
+            parts.append(
+                "; ".join(" · ".join(_docx_cell_text(c) for c in r.cells) for r in inner.rows)
+            )
+    return "\n".join(p for p in parts if p.strip()).strip()
+
+
 def parse_docx(path: Path) -> ParsedDocument:
     doc = ParsedDocument(str(path), "docx")
     d = Document(str(path))
@@ -308,7 +324,9 @@ def parse_docx(path: Path) -> ParsedDocument:
                 for row in table.rows:
                     seen, cells = [], []  # keep element refs so lxml reuses the same proxies
                     for cell in row.cells:  # python-docx repeats merged cells; keep the first
-                        cells.append("" if any(cell._tc is t for t in seen) else cell.text.strip())
+                        cells.append(
+                            "" if any(cell._tc is t for t in seen) else _docx_cell_text(cell)
+                        )
                         seen.append(cell._tc)
                     rows.append(cells)
                 heads.update_annex(" ".join(rows[0]) if rows else "")
@@ -622,6 +640,25 @@ class KoreanSpacing:
         return "\n".join(out)
 
 
+class UnreadableFile(ValueError):
+    """A file that cannot be read at all; the message is shown to the user as is."""
+
+
+def _open_pdf(path: Path) -> PdfReader:
+    try:
+        reader = PdfReader(path)
+        if reader.is_encrypted and not reader.decrypt(""):  # an empty open password is common
+            raise UnreadableFile(
+                "암호가 걸린 PDF라 읽을 수 없습니다 (암호를 풀고 다시 올려 주세요)"
+            )
+        _ = len(reader.pages)  # a broken page tree fails here
+        return reader
+    except UnreadableFile:
+        raise
+    except Exception as e:  # pypdf raises several types for a damaged file
+        raise UnreadableFile(f"손상되었거나 끝까지 받지 못한 PDF입니다 ({type(e).__name__})") from e
+
+
 def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> ParsedDocument:
     """Pages without a text layer are read by `ocr` when given; their text then goes
     through the same clean-up as extracted text (headers, line wraps, headings), and
@@ -629,7 +666,9 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     page) such pages are only listed in needs_ocr_pages."""
     doc = ParsedDocument(str(path), "pdf")
     heads = HeadingTracker()
-    raw = [page.extract_text() or "" for page in PdfReader(path).pages]
+    reader = _open_pdf(path)
+    raw = [page.extract_text() or "" for page in reader.pages]
+    rotated = {i for i, page in enumerate(reader.pages, start=1) if page.rotation % 360}
     blank = [i for i, t in enumerate(raw, start=1) if not t.strip()]
     if ocr is not None and blank:
         for i, res in ocr_pages(path, blank, ocr, progress=progress).items():
@@ -638,7 +677,7 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
         doc.ocr_pages.sort()
     kept = strip_running_lines(raw)
     pages: list[tuple[int, list[tuple[str, object]]]] = []
-    with pdfplumber.open(path) as plumber:
+    with pdfplumber.open(path, password="") as plumber:
         for i, (orig, text, page) in enumerate(zip(raw, kept, plumber.pages), start=1):
             if not orig.strip():
                 doc.needs_ocr_pages.append(i)
@@ -646,7 +685,9 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
             if i in doc.ocr_pages:
                 pages.append((i, split_markdown(text)))
                 continue
-            tables = _pdf_tables(page)
+            # a turned page: pdfplumber's boxes come back in unturned coordinates and the
+            # table and column logic garbled the text; pypdf's text reads it in order
+            tables = [] if i in rotated else _pdf_tables(page)
             if not tables:
                 pages.append((i, [("text", text)]))
                 continue

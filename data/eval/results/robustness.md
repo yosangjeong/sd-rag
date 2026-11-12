@@ -29,3 +29,18 @@ Found and fixed by this check (`eval/robustness.py` prints per-file parse stats)
 - **No headings outside statutes**: DOCX heading styles (Title, Heading N, 제목 N)
   now give the heading path ("1. Leave / 1.1 Annual"). PDFs without statute
   structure are cited by page.
+
+## Awkward files (2026-11-12, `eval/robustness_files.py`)
+
+| File | Before | After |
+|---|---|---|
+| rotated.pdf (every page turned 90 degrees) | text garbled, 1,882 of 3,560 characters | read in order, 3,512 characters: pdfplumber's table and column logic is skipped on turned pages |
+| encrypted.pdf (open password) | FileNotDecryptedError | "암호가 걸린 PDF라 읽을 수 없습니다 ..." (an empty password is tried first) |
+| truncated.pdf (broken download) | PdfReadError | "손상되었거나 끝까지 받지 못한 PDF입니다 ..." |
+| nested.docx (a table in a table cell) | the inner table's values lost | kept as "국내 · 120억 원; 해외 · 85억 원" |
+| empty.docx | "done, 0 chunks" | failed: "문서에서 글자를 찾지 못했습니다 ..." |
+| big.pdf (3 PDFs, ~150 pages) | 9.5 s, 319 chunks | unchanged |
+
+No corpus document's text changed. Messages written for users come from
+`parse.UnreadableFile`; other errors show only their type to the user and the
+details in the log.

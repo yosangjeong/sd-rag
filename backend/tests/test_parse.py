@@ -295,3 +295,34 @@ def test_docx_heading_styles_become_headings(tmp_path):
     heads = [(b.heading, b.text) for b in parse(tmp_path / "g.docx").blocks]
     assert heads[3] == ("1. Leave / 1.1 Annual", "15 days after one year.")
     assert heads[5] == ("2. Pay", "Monthly.")
+
+
+def test_nested_docx_tables_keep_their_values(tmp_path):
+    from docx import Document
+
+    d = Document()
+    t = d.add_table(rows=1, cols=2)
+    t.rows[0].cells[0].text = "매출"
+    inner = t.rows[0].cells[1].add_table(rows=1, cols=2)
+    inner.rows[0].cells[0].text, inner.rows[0].cells[1].text = "국내", "120억 원"
+    d.save(tmp_path / "n.docx")
+    rows = parse(tmp_path / "n.docx").blocks[0].rows
+    assert rows == [["매출", "국내 · 120억 원"]]
+
+
+def test_encrypted_and_broken_pdfs_fail_with_a_readable_reason(tmp_path):
+    import pypdf
+
+    from sdrag.ingest.parse import UnreadableFile
+
+    w = pypdf.PdfWriter()
+    w.add_blank_page(100, 100)
+    w.encrypt(user_password="pw", owner_password="o")
+    w.write(tmp_path / "e.pdf")
+    (tmp_path / "b.pdf").write_bytes(b"%PDF-1.7\n1 0 obj <<")
+    for name, words in (("e.pdf", "암호"), ("b.pdf", "손상")):
+        try:
+            parse(tmp_path / name)
+            raise AssertionError("should fail")
+        except UnreadableFile as e:
+            assert words in str(e)

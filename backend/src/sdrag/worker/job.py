@@ -18,7 +18,7 @@ from pathlib import Path
 from sdrag.common.logs import log, user_hash
 from sdrag.ingest.chunk import chunk_structure, embed_input
 from sdrag.ingest.corpus import CorpusDoc
-from sdrag.ingest.parse import parse, sniff_format
+from sdrag.ingest.parse import UnreadableFile, parse, sniff_format
 from sdrag.retrieval.index import bulk_index, to_source
 
 ALLOWED = {".pdf", ".docx", ".hwpx"}
@@ -71,6 +71,10 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
         file_type = "scan" if scanned else sniff_format(path)
         doc = CorpusDoc(f"u-{doc_id}", detect_lang(full), filename, file_type, ("upload",), path)
         chunks = chunk_structure(parsed, doc.id)
+        if not chunks:
+            raise UnreadableFile(
+                "문서에서 글자를 찾지 못했습니다 (빈 문서이거나 읽을 수 없는 이미지)"
+            )
         deps.store.update_document(user, doc_id, stage=f"embedding {len(chunks)} chunks")
         vectors = deps.embedder.embed([embed_input(c, doc.title) for c in chunks]) if chunks else []
         t2 = time.perf_counter()
@@ -87,9 +91,13 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
         # a busy or unreachable service is worth another try (the queue redelivers);
         # a file that cannot be parsed is not
         transient = _transient(e)
+        # UnreadableFile messages are written for the user; anything else is reported
+        # by type, with the details in the log only
+        shown = str(e) if isinstance(e, UnreadableFile) else f"처리 중 오류 ({type(e).__name__})"
+        log("error", path="ingest", doc_id=doc_id, error=f"{type(e).__name__}: {e}"[:1000])
         result = {
             "status": "retrying" if transient else "failed",
-            "error": f"{type(e).__name__}: {e}"[:500],
+            "error": shown[:300],
             "finished": time.time(),
         }
     deps.store.update_document(user, doc_id, **result)
