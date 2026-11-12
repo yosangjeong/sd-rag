@@ -187,30 +187,41 @@ tokens sent at US list prices (`eval/run_retrieval.py` `PRICES`).
 
 Answers are judged on 100 test items (spread over language and file type) and the 27
 real questions the corpus cannot answer, by DeepSeek V3.2 (another family than the
-GLM answers and the Qwen questions; prompts in the script):
+GLM answers and the Qwen questions; prompts in the script). Four prompt versions,
+each measured once (`data/eval/results/answers-v1/`, `-v2-labor-prompts/`,
+`-v3-neutral/`, and `answers/` for the one served):
 
-| | first run | after the fix |
-|---|---|---|
-| correct / partial / wrong (vs reference) | 71 / 23 / 6% | 71 / 23 / 5% |
-| unsupported by the cited sources | 10% | 5% |
-| a citation overlaps the gold | 93% | 93% |
-| unanswerable questions declined | 63% | 59% |
+| | v1 | v2 language + jurisdiction fixed | v3 domain-neutral | **v4 served** |
+|---|---|---|---|---|
+| corpus | 53 docs | 53 docs | 70 docs | 70 docs |
+| correct / partial / wrong | 71 / 23 / 6% | 71 / 23 / 5% | 74 / 18 / 6% | 73 / 17 / 7% |
+| unsupported by the cited sources | 10% | 5% | 4% | 5% |
+| a citation overlaps the gold | 93% | 93% | 89% | 89% |
+| unanswerable questions declined | 63% | 59% | 41% | 48% |
+| one file (30 items) correct | | 80% | 83% | 77% |
 
-The first run showed two rule violations, fixed in the prompt rather than tuned: the
-answer drifted into Korean for English questions when the sources were Korean (the
-language is now fixed by code, `is_korean`), and a question naming no country
-(dol.gov: "Are pay stubs required?") was answered with Korean law as if it were the
-answer; a question without a country is now taken to be about the country of its
-language, and the other country's law, if that is all there is, is labelled as such.
-Most answers counted as "answered" on unanswerable questions first say that the
-documents do not answer and then point to related provisions; the judge counts that
-strictly. Some of those 27 are partly answerable after all (the FLSA does not require
-pay stubs, which the corpus implies), a limit of the set. Both runs are kept
-(`data/eval/results/answers-v1/`, `answers/`).
+- v1 -> v2: English questions were answered in Korean when the sources were Korean
+  (the language is now fixed by code, `is_korean`), and country-less questions got
+  the other country's law as the answer (a question without a country is now taken
+  to be about its language's country).
+- v2 -> v3: the prompts stopped saying "labor law" (unknown uploads at the live test);
+  the jurisdiction rule was limited to legal questions, and declining fell: a Korean
+  question on tips got US tip-credit rules, an English one on evaluations Korean law.
+- v3 -> v4: the rule now says what makes a question legal (what a law requires or
+  allows: wages, leave, leases, penalties ...), never to present the other country's
+  law as the answer, and that other documents have no jurisdiction rule. Declining
+  recovered to 48%; then stopped, as the 27-item set is small and noisy (some of it
+  is partly answerable) and further rounds would tune to it.
+- Known limit: an English legal question naming no country can still get Korean law
+  first ("Are pay stubs required?"). Next step: label every source with its
+  jurisdiction ([KR] / [US]) in the answer prompt, or filter the sources by the
+  question's implied country.
+- The one-file numbers move by one or two items out of 30 between versions.
 
 **One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document
 questions over 28 files, search scoped to the file: the gold passage is among the
-answer's 6 sources for 30 of 30, answers 80% correct, 17% partial, 3% wrong. The
+answer's 6 sources for 30 of 30; answers 77% correct, 17% partial, 7% wrong with the
+served prompts (80% / 83% with earlier versions). The
 Claude and ChatGPT columns are filled by hand (`data/eval/single_file/README.md`).
 
 ## Evaluation set (`data/eval/`, `eval/`)

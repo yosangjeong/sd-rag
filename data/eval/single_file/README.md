@@ -25,6 +25,6 @@ used neither for our answers nor for writing the questions).
 
 | System | correct | partial | wrong | no answer | gold passage retrieved |
 |---|---|---|---|---|---|
-| ours (GLM-4.7 answers, 2026-11-12) | 80% | 17% | 3% | 0% | 30 / 30 in the top 6 |
+| ours (GLM-4.7 answers, served prompts, 2026-11-13) | 77% | 17% | 7% | 0% | 30 / 30 in the top 6 |
 | Claude | | | | | |
 | ChatGPT | | | | | |

@@ -125,3 +125,4 @@ document). Queries for evaluators: `docs/operations.md`.
 | Uploads | deleted after 30 days in S3; chunks stay until removed | per-document delete, retention policy |
 | Cost tracking | tokens in logs, list prices | Bedrock invocation logs and cost allocation tags |
 | English tables | CFR tables without ruling lines are read as text | a layout model for borderless tables |
+| Jurisdiction | the answer prompt infers the country from the question's language; a country-less English legal question can still get Korean law first | label sources [KR] / [US] for the answer step, or filter sources by the implied country |

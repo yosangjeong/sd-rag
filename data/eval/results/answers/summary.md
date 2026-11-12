@@ -4,8 +4,8 @@ Test sample: 100 items spread over language and file type; unanswerable: 27 real
 
 | Measure | Result |
 |---|---|
-| correctness (vs reference) | correct 71%, partial 23%, wrong 5%, no_answer 1% |
-| groundedness (vs cited sources) | supported 86%, partly 9%, unsupported 5% |
-| a citation overlaps the gold | 93% |
-| unanswerable: declined | declined 59%, answered 41% |
-| latency p50 | 7.6 s |
+| correctness (vs reference) | correct 73%, partial 17%, wrong 7%, no_answer 3% |
+| groundedness (vs cited sources) | supported 88%, partly 7%, unsupported 5% |
+| a citation overlaps the gold | 89% |
+| unanswerable: declined | answered 52%, declined 48% |
+| latency p50 | 4.9 s |
