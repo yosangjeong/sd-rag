@@ -279,3 +279,19 @@ def test_korean_line_wraps_are_rejoined_from_the_documents_own_words():
     assert spacing.reflow(wrapped) == (
         "필요한 사항을 규정함을 목적으로 한다. 그 밖에 필요한 사항을 정한다.\n① 사업주는"
     )
+
+
+def test_docx_heading_styles_become_headings(tmp_path):
+    from docx import Document
+
+    d = Document()
+    d.add_heading("Guide", 0)
+    d.add_heading("1. Leave", 1)
+    d.add_heading("1.1 Annual", 2)
+    d.add_paragraph("15 days after one year.")
+    d.add_heading("2. Pay", 1)
+    d.add_paragraph("Monthly.")
+    d.save(tmp_path / "g.docx")
+    heads = [(b.heading, b.text) for b in parse(tmp_path / "g.docx").blocks]
+    assert heads[3] == ("1. Leave / 1.1 Annual", "15 days after one year.")
+    assert heads[5] == ("2. Pay", "Monthly.")

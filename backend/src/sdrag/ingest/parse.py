@@ -126,6 +126,7 @@ class HeadingTracker:
         self.annex: str | None = None
         self.in_addenda = False
         self.fr_part: str | None = None  # current "I." part, parent of "A." headings
+        self.outline_path: list[str] = []  # style-marked headings (DOCX), outer first
 
     def update_annex(self, text: str) -> bool:
         """Annex header: starts the text, possibly after "■ <statute title> "."""
@@ -170,6 +171,13 @@ class HeadingTracker:
                 self.fr_part = self.article = label
             else:
                 self.article = f"{self.fr_part} / {label}" if self.fr_part else label
+
+    def outline(self, text: str, level: int) -> None:
+        """A heading marked by the document's own styles (DOCX "Heading 2", "Title"),
+        for documents that are not statutes: the heading is the path of open levels."""
+        self.outline_path = self.outline_path[: max(level - 1, 0)]
+        self.outline_path.append(re.sub(r"\s+", " ", text)[:100])
+        self.article = " / ".join(self.outline_path)
 
     @property
     def current(self) -> str | None:
@@ -260,6 +268,20 @@ def parse_hwpx(path: Path) -> ParsedDocument:
 # ---------- DOCX ----------
 
 
+RE_DOCX_HEADING = re.compile(r"^(?:Heading|제목)\s*(\d)$|^(Title)$", re.IGNORECASE)
+
+
+def _docx_heading_level(para) -> int | None:
+    """Outline level of a paragraph styled as a heading: Title = 0, Heading N = N."""
+    try:
+        m = RE_DOCX_HEADING.match(para.style.name or "")
+    except (KeyError, AttributeError):  # a style id missing from styles.xml
+        return None
+    if not m:
+        return None
+    return 0 if m.group(2) else int(m.group(1))
+
+
 def parse_docx(path: Path) -> ParsedDocument:
     doc = ParsedDocument(str(path), "docx")
     d = Document(str(path))
@@ -268,9 +290,12 @@ def parse_docx(path: Path) -> ParsedDocument:
     def walk(container_el, parent):
         for el in container_el.iterchildren():
             if el.tag == f"{W}p":
-                text = Paragraph(el, parent).text.strip()
+                para = Paragraph(el, parent)
+                text = para.text.strip()
                 if text:
                     heads.update(text)
+                    if (level := _docx_heading_level(para)) is not None and heads.annex is None:
+                        heads.outline(text, level)
                     doc.blocks.append(Block("text", text, len(doc.blocks), heading=heads.current))
             elif el.tag == f"{W}tbl":
                 table = Table(el, parent)
@@ -383,6 +408,9 @@ def _pdf_cell(cell: str | None) -> str:
     return out
 
 
+MIN_CELL_COVERAGE = 0.8
+
+
 def _pdf_tables(page) -> list:
     """Ruled tables of a page, top to bottom.
 
@@ -392,6 +420,9 @@ def _pdf_tables(page) -> list:
       text like in HWPX and DOCX.
     - Two columns whose second one never holds more than 2 characters are a framed
       paragraph whose border clips the last letter ("...이상으로 한다 | ."), not a table.
+    - A table whose cells hold less than MIN_CELL_COVERAGE of the characters inside its
+      box lost text to cells pdfplumber could not assign (seen on a ministry press
+      release: quotes in a 3-column box came out empty); its area is read as text.
     """
     v = [e for e in page.edges if e["orientation"] == "v"]
     settings = (
@@ -404,6 +435,10 @@ def _pdf_tables(page) -> list:
         rows = t.extract()
         cols = max((len(r) for r in rows), default=0)
         if cols < 2 or (cols == 2 and all(len((r[-1] or "").strip()) <= 2 for r in rows)):
+            continue
+        inside = sum(not c["text"].isspace() for c in page.within_bbox(t.bbox).chars)
+        kept = sum(len(re.sub(r"\s", "", cell or "")) for r in rows for cell in r)
+        if inside and kept < MIN_CELL_COVERAGE * inside:
             continue
         tables.append(t)
     return sorted(tables, key=lambda t: t.bbox[1])
