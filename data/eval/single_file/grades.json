@@ -1,0 +1,182 @@
+[
+ {
+  "qid": "g0027",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that a hazardous risk prevention plan must be submitted for expansion (construction/renovation) of a cold storage warehouse with a total floor area of 5,000 square meters or more, matching the key condition and requirement from the reference."
+ },
+ {
+  "qid": "g0029",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that the update occurs annually, matching the reference answer's core information."
+ },
+ {
+  "qid": "g0034",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer correctly lists the first three required records and the condition about reporting the tip credit change in writing, but it incorrectly adds a requirement to record hours and earnings in tipped occupations, which is not in the reference."
+ },
+ {
+  "qid": "g0054",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that a special education assistant who signs for deaf students is an instructional employee under the FMLA, matching the key fact from the reference."
+ },
+ {
+  "qid": "g0143",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that the law allows various forms of remuneration as long as minimum wage and overtime requirements are met, matching the key facts from the reference, and the additional detail about bonuses does not contradict the reference."
+ },
+ {
+  "qid": "g0163",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states both key rules for determining pay/working conditions when a dispatched worker is directly hired, matching the reference's two conditions exactly."
+ },
+ {
+  "qid": "g0201",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer states the correct duration of 5 years but omits the required condition of being a major in labor-related studies and the specific types of institutions and positions."
+ },
+ {
+  "qid": "g0207",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key conditions of having no officers, no operation for over a year, and the administrative authority obtaining a resolution from the Labor Relations Commission, matching the reference."
+ },
+ {
+  "qid": "g0233",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that a female worker diagnosed with a disease under Appendix 3 during pregnancy is considered at risk of miscarriage or premature birth, matching the key fact in the reference."
+ },
+ {
+  "qid": "g0241",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the maximum number of members is within 10, matching the key fact from the reference."
+ },
+ {
+  "qid": "g0248",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the upper limit of the daily wage for calculating job-seeking benefits is 11,3500 won, matching the key fact in the reference."
+ },
+ {
+  "qid": "g0266",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer lists all four types of organizations exactly as specified in the reference, including the condition for the fourth type."
+ },
+ {
+  "qid": "g0274",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the requirement for a written contract with the specified details and accurately references the relevant article of the law, matching the key facts in the reference."
+ },
+ {
+  "qid": "g0276",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that a false submission of the male/female worker status incurs a penalty of 3 million won, matching the reference."
+ },
+ {
+  "qid": "g0277",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly lists all the entities (Secretary of Labor, Secretary of Health and Human Services, and the employee's physician upon request) to whom the medical record must be furnished, matching the reference."
+ },
+ {
+  "qid": "g0281",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly lists all the required methods (mail, written delivery, information network transmission, or other agreed-upon methods) for the company to inform the subscriber about the fund's status, matching the key facts in the reference."
+ },
+ {
+  "qid": "g0287",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the 3-year waiting period after the confirmation notice for the most recent support, matching the key fact in the reference."
+ },
+ {
+  "qid": "g0294",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly lists all the key financial institution types from the reference, including the specific banks and the categories under the Financial Investment Services and Capital Markets Act."
+ },
+ {
+  "qid": "g0327",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states both the methods (written and instrument/apparatus tests) and the condition under which the apparatus test can be omitted (approval/recognition by the head of the employment security agency)."
+ },
+ {
+  "qid": "g0350",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer includes the three key points from the reference but adds two extra points not present in the reference, making it partially correct but over-inclusive."
+ },
+ {
+  "qid": "g0396",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that additional safety and health education is required when assigning workers to hazardous or dangerous work, matching the reference."
+ },
+ {
+  "qid": "g0399",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer accurately states both the general effective date from the doctor's diagnosis and the alternative effective date from the occurrence or change if clearly known, matching the key facts in the reference."
+ },
+ {
+  "qid": "g0412",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that the refresher training time for safety managers is 24 hours or more, matching the reference."
+ },
+ {
+  "qid": "g0450",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly lists the two required documents: a copy of the written bargaining request and materials proving the employer's announcement differed from the union's application, matching the reference answer."
+ },
+ {
+  "qid": "g0496",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that one representative each from the worker and employer sides must be elected, matching the key fact in the reference."
+ },
+ {
+  "qid": "g0558",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that a labor committee member can continue duties until a successor is elected, matching the reference."
+ },
+ {
+  "qid": "g0597",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer correctly states that a simple statement is insufficient and more details are required, but it incorrectly claims the reference's specific condition (that a statement of serious health condition on the leave expiration date is sufficient) is only for leave extension or inability to return, whereas the reference passage explicitly states that such a certification is sufficient for the leave to be approved."
+ },
+ {
+  "qid": "g0609",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer exactly matches the reference answer in stating that worker members are recommended from a national federation of labor unions and employer members are recommended from a nationwide employer organization designated by the Minister of Employment and Labor."
+ },
+ {
+  "qid": "g0634",
+  "system": "ours",
+  "grade": "wrong",
+  "why": "The candidate answer incorrectly states that the listed pay components are excluded from the minimum wage calculation, while the reference answer explicitly states they are included."
+ },
+ {
+  "qid": "g0635",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer correctly identifies the authorities to which the application is made, but it does not mention the specific legal provision (Enforcement Decree Article 6-2(6)) that defines this as an administrative task, which is a key part of the reference answer."
+ }
+]
