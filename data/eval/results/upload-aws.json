@@ -1,0 +1,44 @@
+{
+ "files": 70,
+ "megabytes": 66.3,
+ "done": 63,
+ "failed": [
+  "kr-real-estate-transaction-law.hwpx: TransportError: TransportError(429, 'Too Many Requests')",
+  "kr-foreign-workers-rul.pdf: TransportError: TransportError(429, 'Too Many Requests')",
+  "kr-employment-insurance-dec.hwpx: TransportError: TransportError(429, 'Too Many Requests')",
+  "kr-employment-insurance-law.pdf: TransportError: TransportError(429, 'Too Many Requests')",
+  "kr-trade-union-rul.docx: TransportError: TransportError(429, 'Too Many Requests')",
+  "kr-labor-standards-law.pdf: TransportError: TransportError(502, '<html>\\r\\n<head><title>502 Bad Gateway</title></head>\\r\\n<body>\\r\\n<center><h1>502 Bad Gateway</h1></center>\\r\\n</body>\\r\\n</html>\\r\\n')",
+  "us-usc42-ch45.pdf: TransportError: TransportError(429, 'Too Many Requests')"
+ ],
+ "chunks": 6943,
+ "wall_s": 517,
+ "upload_s": 8.6,
+ "files_per_min": 7.3,
+ "chunks_per_min": 806,
+ "median_parse_s": 0.36,
+ "median_embed_s": 0.55,
+ "slowest": [
+  [
+   "us-cfr24-100.pdf",
+   108.6
+  ],
+  [
+   "us-cfr29-778.pdf",
+   77.76
+  ],
+  [
+   "kr-equal-employment-dec.pdf",
+   70.33
+  ],
+  [
+   "kr-real-estate-transaction-rul.pdf",
+   63.97
+  ],
+  [
+   "kr-wage-claim-rul.pdf",
+   60.05
+  ]
+ ],
+ "ocr_pages": 78
+}
