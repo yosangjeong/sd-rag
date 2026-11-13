@@ -60,6 +60,21 @@ cd ../frontend && npm ci && npm run dev                                  # http:
 The corpus files are downloaded by `data/scripts/fetch.py` (sources and licenses:
 `data/SOURCES.md`).
 
+## Deploy (AWS, one Region: ap-southeast-2)
+
+```bash
+cd frontend && npm ci && npm run build && cd ../infra && npm ci && uv sync
+AWS_PROFILE=<profile> npx cdk deploy SdRag-Network SdRag-Data SdRag-App \
+  --outputs-file ../data/raw/deploy/cdk-outputs.json        # about 30 min the first time
+cd .. && AWS_PROFILE=<profile> infra/scripts/after_deploy.sh corpus   # index the corpus inside the VPC
+AWS_PROFILE=<profile> infra/scripts/after_deploy.sh user <email> evaluator   # an evaluator account
+```
+
+`SdRag-CiCd` (GitHub OIDC roles) is deployed once by hand; its outputs go to the
+repository variables `DEPLOY_ROLE_ARN`, `EVAL_ROLE_ARN` and `CORPUS_BUCKET`, after which
+pushes to `main` deploy and retrieval changes are gated on the dev sets. Behind a
+TLS-inspecting proxy, set `SDRAG_BUILD_CA` to its CA for the image build.
+
 ## Evaluate
 
 ```bash
