@@ -585,7 +585,7 @@ class KoreanSpacing:
     88% / 85% correct on the two statutes with HWPX ground truth (36% before;
     eval/pdf_spacing.py). A
     corpus-wide vocabulary scored 2-4 points more but would tie every upload to the
-    labor-law corpus.
+    public corpus's vocabulary.
     """
 
     def __init__(self, texts: list[str]) -> None:

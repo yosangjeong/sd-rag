@@ -2,7 +2,8 @@
 the corpus has no answer.
 
 Runs the served pipeline (service.RagService, basic mode) on a stratified sample of
-the test set and on every real question the corpus cannot answer, then:
+the test set and on every real question the corpus cannot answer (``--set labor``),
+or on the real-estate test set (``--set re``, all 82 items, no unanswerable set), then:
 
 - correctness (judge vs the reference answer): correct | partial | wrong | no_answer
 - groundedness (judge vs the cited sources' text): supported | partly | unsupported,
@@ -87,10 +88,17 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--version", required=True, help="folder name under results/answers/")
+    ap.add_argument("--set", choices=("labor", "re"), default="labor")
     a = ap.parse_args()
     texts = doc_texts()
-    test = sample(load_items(DATA / "eval" / "test.jsonl"), texts, a.n)
-    unanswerable = load_items(DATA / "eval" / "real_unanswerable.jsonl")
+    if a.set == "labor":
+        test = sample(load_items(DATA / "eval" / "test.jsonl"), texts, a.n)
+        unanswerable = load_items(DATA / "eval" / "real_unanswerable.jsonl")
+        correct_system = CORRECT_SYSTEM
+    else:
+        test = sample(load_items(DATA / "eval" / "test_re.jsonl"), texts, a.n)
+        unanswerable = []
+        correct_system = CORRECT_SYSTEM.replace("labor law", "real-estate law")
 
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
@@ -117,7 +125,7 @@ def main() -> None:
             overlaps(vars(c), s) for c in ans.citations for s in [*it.gold, *it.also]
         )
         ref = it.meta.get("check_answer") or it.meta.get("answer", "")
-        row["correct"] = judge(jllm, CORRECT_SYSTEM, f"Question: {it.question}\nReference answer: {ref}\n"
+        row["correct"] = judge(jllm, correct_system, f"Question: {it.question}\nReference answer: {ref}\n"
                                f"Passage: {g.quote}\n\nCandidate answer: {ans.text}")  # fmt: skip
         cited = "\n\n".join(
             f"[{c.n}] {texts[c.doc_id].text[c.start : c.end][:2000]}" for c in ans.citations
@@ -132,12 +140,17 @@ def main() -> None:
         un = list(ex.map(lambda it: run(it, False), unanswerable))
     OUT = RESULTS / a.version
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, rs in (("test_sample", rows), ("unanswerable", un)):
+    names = ("test_sample", "unanswerable") if a.set == "labor" else ("test_re", None)
+    for name, rs in zip(names, (rows, un), strict=True):
+        if name is None:
+            continue
         (OUT / f"{name}.jsonl").write_text(
             "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rs), "utf-8"
         )
 
     def share(rs, key):
+        if not rs:
+            return "-"
         c = Counter(r[key]["grade"] for r in rs)
         return ", ".join(f"{k} {v / len(rs):.0%}" for k, v in c.most_common())
 
@@ -145,9 +158,9 @@ def main() -> None:
         "# Answer quality (served pipeline: translation union + rerank + GLM-4.7 answers)",
         "",
         (
-            f"Test sample: {len(rows)} items spread over language and file type; unanswerable: "
-            f"{len(un)} real questions the corpus does not answer. Judge: {JUDGE_MODEL} "
-            "(prompts in eval/answers.py)."
+            f"{'Test' if a.set == 'labor' else 'Real-estate test'} sample: {len(rows)} items "
+            f"spread over language and file type; unanswerable: {len(un)} real questions the "
+            f"corpus does not answer. Judge: {JUDGE_MODEL} (prompts in eval/answers.py)."
         ),
         "",
         "| Measure | Result |",
@@ -158,7 +171,8 @@ def main() -> None:
         f"| unanswerable: declined | {share(un, 'decline')} |",
         f"| latency p50 | {statistics.median(r['latency_ms'] for r in rows + un) / 1000:.1f} s |",
     ]
-    (OUT / "summary.md").write_text("\n".join(lines) + "\n", "utf-8")
+    summary = "summary.md" if a.set == "labor" else "summary-re.md"
+    (OUT / summary).write_text("\n".join(lines) + "\n", "utf-8")
     print("\n".join(lines))
 
 

@@ -1,5 +1,6 @@
 # Retrieval evaluation gate: changes to parsing, chunking or retrieval are scored on
-# the dev set (never the test set) and fail if accuracy drops (eval/gate.py).
+# the dev sets (labor and real estate; never the test sets) and fail if accuracy
+# drops (eval/gate.py).
 # Runs a local OpenSearch with nori in the runner, indexes the corpus in data/corpus/
 # with the OCR and embedding caches from S3 (EvalRole: read them, invoke the models),
 # then queries.
@@ -24,17 +25,23 @@ jobs:
           aws-region: ap-southeast-2
       - name: OpenSearch with nori
         run: infra/local/opensearch/get-nori.sh && infra/local/opensearch/up.sh
-      - name: OCR and embedding caches from S3 
+      - name: OCR and embedding caches from S3 (archives from infra/scripts/upload_corpus.sh)
         run: |
-          aws s3 sync "s3://${{ vars.CORPUS_BUCKET }}/corpus/cache/ocr" /home/runner/cache/ocr
-          aws s3 sync "s3://${{ vars.CORPUS_BUCKET }}/corpus/cache/embed" /home/runner/cache/embed
+          mkdir -p /home/runner/cache
+          for c in ocr embed; do
+            aws s3 cp --only-show-errors "s3://${{ vars.CORPUS_BUCKET }}/corpus/$c.tgz" /tmp/$c.tgz
+            tar -xzf /tmp/$c.tgz -C /home/runner/cache   # -> /home/runner/cache/<c>/
+          done
       - name: Index
         working-directory: backend
         env: { SDRAG_OCR_CACHE_DIR: /home/runner/cache/ocr, SDRAG_EMBED_CACHE_DIR: /home/runner/cache/embed }
         run: uv sync --frozen && uv run python -m sdrag.ingest.pipeline --strategy structure --recreate
-      - name: Score the dev set and compare with the baseline
+      - name: Score the dev sets (served system) and compare with the baselines
         working-directory: backend
         run: |
-          uv run python ../eval/run_retrieval.py --set ../data/eval/dev.jsonl --out ../ci-eval \
-            --systems bilingual_union+rerank@chunks-structure
-          uv run python ../eval/gate.py ../ci-eval/summary.json ../data/eval/baseline-dev.json
+          for s in dev dev_re; do
+            uv run python ../eval/run_retrieval.py --set ../data/eval/$s.jsonl --out ../ci-eval/$s \
+              --systems bilingual_union+rerank+jur@chunks-structure
+          done
+          uv run python ../eval/gate.py ../ci-eval/dev/summary.json ../data/eval/baseline-dev.json
+          uv run python ../eval/gate.py ../ci-eval/dev_re/summary.json ../data/eval/baseline-dev_re.json

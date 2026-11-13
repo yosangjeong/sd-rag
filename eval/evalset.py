@@ -12,7 +12,7 @@ longer holds the quote at the stored offsets, ``anchor`` finds it again (nearest
 occurrence to the old offset) or reports the item as broken.
 
 Canonical texts are cached per document (``doc_texts``) so building and scoring the
-set does not re-parse 53 files, and scanned pages come from the OCR cache: what the
+set does not re-parse 70 files, and scanned pages come from the OCR cache: what the
 index holds is what the gold spans point into.
 """
 

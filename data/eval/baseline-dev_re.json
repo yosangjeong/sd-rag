@@ -1,0 +1,8 @@
+{
+ "bilingual_union+rerank+jur@chunks-structure~glm-4.7": {
+  "span_hit@10": 0.9048,
+  "span_mrr": 0.8429,
+  "tolerance": 0.05,
+  "measured": "2026-11-13, real-estate dev set (21 questions), 70-document corpus, served system with the jurisdiction filter, local OpenSearch 3.7"
+ }
+}

@@ -107,7 +107,13 @@ measured on the generated set.
   generated set reflects real questions.
 - **English tables**: the only English table is in one Federal Register notice; CFR
   tables have no ruling lines and are parsed as text.
-- **English scan**: one document (a short notice), so few items.
+- **English scan**: one labor document (a short notice), so few labor items; the
+  real-estate set adds 24 CFR 100 as a scan.
+- **Real-estate questions were written with the labor-law generation prompt** (it
+  says "labor law" and "a worker, employer or HR person"): the set was built before
+  the prompts were made domain-neutral. Checked: 3 of 82 test questions use
+  employment words, one of them rightly (RESPA referral fees paid to employees); the
+  set is kept as built.
 
 ## Composition
 

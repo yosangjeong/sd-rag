@@ -24,6 +24,8 @@ QUESTIONS = [
     "What is the minimum wage for federal contracts in 2027?",  # en -> en (scanned FR notice)
     "미국 연방 계약 최저임금은 얼마인가요?",  # ko -> en (scanned FR notice)
     "체불 임금등 융자 신청",  # ko, the statute whose OCR reads 융자 as 용자
+    "주택 임대차 계약이 끝나도 보증금을 못 받으면 어떻게 하나요?",  # ko -> ko (주택임대차보호법)
+    "Can a landlord refuse to rent to a family with children?",  # en -> en (Fair Housing Act)
 ]
 
 

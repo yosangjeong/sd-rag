@@ -127,7 +127,7 @@ export default function App({ user }) {
     <div className="layout">
       <aside className="side">
         <header>
-          <b>노동법 문서 검색</b>
+          <b>법령 문서 검색</b>
           {user && <button className="link" onClick={signOut}>로그아웃</button>}
         </header>
         {evaluator && (
@@ -152,7 +152,7 @@ export default function App({ user }) {
       <main className="chat">
         <div className="messages">
           {messages.length === 0 && (
-            <p className="hint">한국·미국 노동법 문서와 올린 문서를 근거로 답합니다. 한국어나 영어로 물어보세요.</p>
+            <p className="hint">한국·미국 법령(노동, 부동산)과 올린 문서를 근거로 답합니다. 한국어나 영어로 물어보세요.</p>
           )}
           {messages.map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>

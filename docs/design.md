@@ -15,7 +15,7 @@ queries in `docs/operations.md`; the evaluation set in `data/eval/README.md`.
                                                          |  |  |         GLM-4.7, Qwen3-VL  |
           DynamoDB (conversations, uploads) <------------+  |  +--> OpenSearch 3.7         |
                                                             |       (isolated subnet, IAM) |
-          S3 uploads/ --> SQS (+DLQ) --> worker (Fargate, 0-4 tasks on queue depth) -------+
+          S3 uploads/ --> SQS (+DLQ) --> worker (Fargate, 0-2 tasks on queue depth) -------+
                                                                                             |
           CloudWatch Logs (JSON, masked) <-- API, worker                                    |
  GitHub Actions --OIDC--> deploy role (cdk deploy) / eval role (models + corpus, read-only) |
@@ -31,7 +31,7 @@ whose value is derived from the stack's UUID (not in the repository).
 
 **Compute (ECS Fargate).** One image (`backend/Dockerfile`), three uses: the API
 (1 task, 0.5 vCPU / 1 GB, always on), the upload worker (1 vCPU / 4 GB, scaled on
-the queue: 0 when idle, up to 4) and a one-off task that bulk-indexes the corpus
+the queue: 0 when idle, up to 2; the API wakes it on upload) and a one-off task that bulk-indexes the corpus
 from S3 inside the VPC.
 
 **Request path (chat).** `api/main.py` -> `service.py`:

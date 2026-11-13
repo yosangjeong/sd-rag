@@ -18,12 +18,12 @@ def own(question: str) -> str:
     return "kr" if hangul > len(re.findall(r"[A-Za-z]", question)) / 3 else "us"
 
 
+EVAL = Path(__file__).resolve().parents[1] / "data" / "eval"
 GOLD = {}
-for line in (
-    (Path(__file__).resolve().parents[1] / "data/eval/test.jsonl").read_text("utf-8").splitlines()
-):
-    it = json.loads(line)
-    GOLD[it["qid"]] = it["gold"][0]["doc_id"].split("-", 1)[0]
+for s in ("test", "test_re"):
+    for line in (EVAL / f"{s}.jsonl").read_text("utf-8").splitlines():
+        it = json.loads(line)
+        GOLD[it["qid"]] = it["gold"][0]["doc_id"].split("-", 1)[0]
 
 
 def other_cited(row: dict) -> bool:
@@ -32,7 +32,9 @@ def other_cited(row: dict) -> bool:
 
 
 for run in map(Path, sys.argv[1:]):
-    for name in ("test_sample", "unanswerable"):
+    for name in ("test_sample", "unanswerable", "test_re"):
+        if not (run / f"{name}.jsonl").exists():
+            continue
         rows = [json.loads(x) for x in (run / f"{name}.jsonl").read_text("utf-8").splitlines()]
         n = sum(other_cited(r) for r in rows)
         print(f"{run.name:32} {name:12} other country cited: {n} / {len(rows)}")

@@ -6,11 +6,17 @@ Scripts named here are in the repository; their raw outputs are kept under
 
 ## Data
 
-**One domain: labor and employment law, Korean and US.** 53 documents: 42 Korean
-statutes (14 acts x act / enforcement decree / enforcement rule) and 11 US documents
-(US Code, CFR, Federal Register). A single domain gives hard distractors (the same
-topic in several statutes and in both languages) and keeps evaluation authoring
-tractable. Licenses: Korean statutes are not protected (Copyright Act art. 7); US
+**Two fields of law, Korean and US: labor and employment first, real estate added.**
+70 documents. Labor (the first corpus, 53): 42 Korean statutes (14 acts x act /
+enforcement decree / enforcement rule) and 11 US documents (US Code, CFR, Federal
+Register). Real estate (added 2026-11-13, 17): 13 Korean (공인중개사법, 부동산
+거래신고법, 부동산 가격공시법 with decrees and rules, 주택·상가건물 임대차보호법 with
+decrees) and 4 US (Fair Housing Act, RESPA, 24 CFR 100, Regulation X); see "Real-estate
+statutes" below. One field at first gave hard distractors (the same topic in several
+statutes and in both languages) and kept evaluation authoring tractable; the second
+field checks that nothing was tuned to labor law and that unrelated documents do not
+crowd out the answers. The labor evaluation sets stay frozen; the real-estate ones
+are separate (`data/eval/README.md`). Licenses: Korean statutes are not protected (Copyright Act art. 7); US
 federal works are public domain (17 U.S.C. 105). Rejected: employer documents (the
 brief forbids real company data) and KLRI English translations (redistribution
 forbidden). See `data/SOURCES.md`.
@@ -25,8 +31,9 @@ text and table count survive.
 differ byte-wise on every build (zip timestamps); they are verified by content
 instead. Source integrity and conversion correctness are separate checks.
 
-**Scanned PDFs are synthetic.** The brief requires scanned PDFs; four corpus documents
-(34 pages, Korean and English, with tables) are served only as image-only scans made
+**Scanned PDFs are synthetic.** The brief requires scanned PDFs; seven corpus documents
+(four labor, 34 pages; three real-estate, 44 pages; Korean and English, with tables)
+are served only as image-only scans made
 by `data/scripts/make_scans.py` (skew, blur, noise, JPEG), so the source text is the
 OCR ground truth and no statute is indexed twice. One real English scan
 (Federal Register 1938) is kept. A real Korean scan (the 1953 gazette) was dropped:
@@ -229,6 +236,11 @@ each measured once (`data/eval/results/answers/v1/`, `v2-labor-prompts/`,
   context"), three of the flipped items became correct and one is a decline without
   citations; 5 items of 100 is within the noise of one judging run, so kept and noted
   (`eval/jurisdiction_check.py` counts the other-country citations).
+- Real-estate test set, all 82 items, v6 (`answers.py --set re`, `summary-re.md`):
+  correct / partial / wrong 74 / 22 / 4%, unsupported 6%, a citation overlaps the gold
+  95%, the other country's law cited 0 of 82. The partial share is higher than on
+  labor: answers to procedural questions (documents to submit, who handles a
+  dispute) often give part of a list.
 - The one-file numbers move by one or two items out of 30 between versions.
 
 **One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document

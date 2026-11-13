@@ -1,7 +1,7 @@
 """Upload throughput: send every corpus file in one request, wait until all are indexed.
 
 The brief asks to upload 50+ PDF / DOCX / HWPX files at once and to measure ingestion
-throughput and duration. This posts the 53 corpus files (4 of them scans) to a
+throughput and duration. This posts the corpus files (70 since the real-estate statutes; 53 before) to a
 running API as one multipart request, polls /api/documents until no file is queued
 or processing, and reports wall time, files and chunks per minute, and the stage
 times recorded by the worker (worker/job.py).

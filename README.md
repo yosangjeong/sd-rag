@@ -1,4 +1,4 @@
-# sd-rag: retrieval-augmented search over Korean and US labor law
+# sd-rag: retrieval-augmented search over Korean and US labor and real-estate law
 
 A RAG system on AWS: upload many PDF / DOCX / HWPX files (scans included), then ask
 questions in Korean or English and get answers that cite the document and the place
@@ -10,7 +10,8 @@ The focus is retrieval accuracy, measured on held-out sets (`data/eval/`): 338
 generated labor-law questions, 137 real user questions and 82 real-estate questions.
 hit@10 / MRR: 0.94 / 0.88, 0.94 / 0.90 and 0.98 / 0.91, against 0.78 / 0.53,
 0.89 / 0.60 and 0.84 / 0.57 for plain hybrid search (`docs/decisions.md`). Answers:
-77% correct, 92% cite the gold passage, 63% of unanswerable questions declined.
+77% correct, 92% cite the gold passage (real estate: 74%, 95%), 63% of unanswerable
+questions declined.
 
 ## How it works
 
