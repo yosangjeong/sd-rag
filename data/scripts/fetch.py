@@ -160,6 +160,14 @@ def write_sources() -> None:
         "- 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 (easylaw.go.kr) - MOLEG-EASYLAW",
         "- U.S. Department of Labor, Wage and Hour Division: FMLA and FLSA FAQs (dol.gov) - US-PD-105",
         "",
+        "Real-estate real questions in `data/eval/real_re_questions_candidates.csv` (titles only):",
+        "",
+        "- 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 - 부동산/임대차 (easylaw.go.kr) - MOLEG-EASYLAW",
+        "- Consumer Financial Protection Bureau: RESPA FAQs and Mortgage Servicing FAQs (2021) "
+        "(consumerfinance.gov) - US-PD-105",
+        "- HUD and DOJ: Joint Statement, Reasonable Modifications under the Fair Housing Act (2008) "
+        "(justice.gov) - US-PD-105",
+        "",
         "Generated questions are written by a model from the corpus above; see `data/eval/README.md`.",
     ]
     (DATA / "SOURCES.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

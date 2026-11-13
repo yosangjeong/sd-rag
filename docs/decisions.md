@@ -338,6 +338,63 @@ back to no filter.
 - Limit: an English question about Korean law that names neither Korea nor a Korean
   statute is taken to be about US law.
 
+## Real estate measured like labor (2026-11-13)
+
+Everything measured on the labor statutes was repeated for the real-estate ones.
+
+**Real questions** (`data/eval/real_re.jsonl`, `eval/real_re.py`, sources in
+`data/eval/README.md`): 83 answerable (43 Korean easylaw, 40 English CFPB and HUD /
+DOJ), 30 unanswerable. hit@10 / MRR (`results/retrieval-70docs/real_re/`):
+
+| System | real-estate real (83) | labor real (137) | p50 | $/query |
+|---|---|---|---|---|
+| BM25 | 0.70 / 0.42 | 0.78 / 0.49 | 0.0 s | 0 |
+| dense | 0.73 / 0.48 | 0.83 / 0.59 | 0.3 s | 0 |
+| hybrid | 0.75 / 0.51 | 0.89 / 0.60 | 0.3 s | 0 |
+| hybrid, fixed-size chunks | 0.78 / 0.50 | 0.86 / 0.54 | 0.3 s | 0 |
+| hybrid + rerank | 0.88 / 0.84 | 0.96 / 0.89 | 1.6 s | 0.004 |
+| **served** (translation union + rerank + jurisdiction) | **0.87 / 0.83** | **0.94 / 0.90** | 3.6 s | 0.006 |
+| agent + rerank | 0.95 / 0.86 | 0.96 / 0.88 (53 docs) | 9.6 s | 0.022 |
+
+- The served system finds the right document (doc hit@10 0.98) but misses the
+  article on 11 of 83: situation questions ("주변에서 계약기간을 1년으로 하라고 합니다.
+  어떻게 하는 것이 좋을까요?") whose answer is a rule the question does not name. The
+  agent rewrites them into several searches and finds 8 of the 11. Three of the 11 are
+  the hand-annotated gold (no pooled system found them by construction; the agent,
+  not in the pool, found two).
+- The agent stays an option, not the default: on labor it matches the served system,
+  and it costs 4x and takes 2.7x as long. These situation questions are where
+  agent mode is worth its cost; a user can switch to it per question.
+- Fixed-size chunks beat structure chunks on hybrid hit@10 here (3 questions of 83),
+  not on MRR; the other sets favor structure chunks.
+
+**Answers** (`answers.py --set re`): unanswerable real-estate questions declined 93%
+(28 of 30; labor 63%): most ask about laws outside the corpus (Civil Act, taxes), which
+the answer step recognizes; none cites the other country's law.
+
+**Single file** (`data/eval/single_file/`): 10 real-estate rows added to the 30 labor
+ones (8 cells); ours: 80% correct, 20% partial, the gold passage in the sources for
+10 of 10. The Claude / ChatGPT columns are filled by hand for all 40.
+
+**OCR on every scanned page** (`eval/ocr_corpus.py`, `results/ocr-corpus.md`; cached
+transcriptions the index holds, no new calls): real estate 44 pages, CER 2.4%, recall
+99.5%; labor 34 pages, CER 4.8%, recall 99.0%. The worst page set is the short labor
+English notice (CER 9.5%, a three-column table).
+
+**Tables in PDFs** (`eval/pdf_tables.py`), against structured editions:
+
+| Document | tables found | cell exact | cell in table | row match | chars kept |
+|---|---|---|---|---|---|
+| 산업안전보건법 시행규칙 (labor) | 44 / 33 | 65.6% | 95.7% | 58.1% | 100% |
+| 산업재해보상보험법 시행령 (labor) | 9 / 10 | 61.8% | 67.1% | 52.1% | 100% |
+| 주택임대차보호법 시행령 (real estate) | 2 / 2 | 94.6% | 94.6% | 89.3% | 100% |
+| 12 CFR 1024, Regulation X (English, vs govinfo XML) | 8 / 7 | 5.0% | 64.9% | 0.0% | 97.9% |
+
+The English figure measures the known limit: CFR tables have no ruling lines, so
+pdfplumber's line-based detection returns fragments (a column's numbers in one cell);
+the text is kept (97.9%) and searchable, the cell structure is not. A layout model for
+borderless tables is the production fix (design.md, limitations).
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it

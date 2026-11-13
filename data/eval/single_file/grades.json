@@ -178,5 +178,65 @@
   "system": "ours",
   "grade": "partial",
   "why": "The candidate answer correctly identifies the general administrative body (Ministry of Employment and Labor and its local offices) involved in handling such applications, which is part of the procedural context, but it fails to state the key fact that the application is defined as an administrative task under a specific article of the enforcement decree as stated in the reference."
+ },
+ {
+  "qid": "r0037",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer correctly identifies the excessive security deposit condition but incorrectly includes other circumstances not mentioned in the reference."
+ },
+ {
+  "qid": "r0047",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer lists all the required documents from the reference, including the specific form numbers and additional details, which matches the key facts."
+ },
+ {
+  "qid": "r0049",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that the lease relationship is deemed to continue until the deposit is returned, matching the reference."
+ },
+ {
+  "qid": "r0051",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states both the qualification (expertise in law, economics, or real estate, appointed by the Minister of Justice) and the term (2 years) as in the reference."
+ },
+ {
+  "qid": "r0074",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that the priority repayment (half the building's value) is divided among tenants in proportion to each tenant's specific deposit amount, matching the key facts of the reference."
+ },
+ {
+  "qid": "r0103",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly identifies the certificate as '외국인 부동산등 취득·계속보유 신고확인증', which matches the key fact from the reference."
+ },
+ {
+  "qid": "r0146",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states the key fact that a false report under Article 3 results in a penalty of 30 million won, which matches the reference."
+ },
+ {
+  "qid": "r0164",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states that the servicer must use the date the complete application is received after resubmission, which matches the key fact in the reference answer."
+ },
+ {
+  "qid": "r0172",
+  "system": "ours",
+  "grade": "correct",
+  "why": "The candidate answer correctly states both required conditions: fulfilling the requirements for opposing power under Article 3(1) and obtaining a fixed date on the lease contract from the competent tax office, matching the key facts in the reference."
+ },
+ {
+  "qid": "r0176",
+  "system": "ours",
+  "grade": "partial",
+  "why": "The candidate answer correctly identifies the need for a public official certificate and the 별지 제27호서식 for the Korean Association of Public Real Estate Agents inspection, but incorrectly states 별지 제26호서식 for the brokerage office inspection instead of the required 별지 제27호서식 as per the reference."
  }
 ]

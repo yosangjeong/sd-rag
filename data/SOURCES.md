@@ -28,6 +28,7 @@ Generated from `data/manifest.csv` by `data/scripts/fetch.py --sources`. Do not 
 | us-usc12-ch27 | en | [12 U.S.C. Chapter 27 - Real Estate Settlement Procedures](https://www.govinfo.gov/content/pkg/USCODE-2023-title12/pdf/USCODE-2023-title12-chap27.pdf) | govinfo (US Code 2023) | pdf | legal;realestate | US-PD-105 |
 | us-cfr24-100 | en | [24 CFR Part 100 - Discriminatory Conduct Under the Fair Housing Act](https://www.govinfo.gov/content/pkg/CFR-2024-title24-vol1/pdf/CFR-2024-title24-vol1-part100.pdf) | govinfo (CFR 2024); synthetic scan (data/scripts/make_scans.py) | scan | legal;scan;realestate | US-PD-105 |
 | us-cfr12-1024 | en | [12 CFR Part 1024 - Real Estate Settlement Procedures Act (Regulation X)](https://www.govinfo.gov/content/pkg/CFR-2024-title12-vol8/pdf/CFR-2024-title12-vol8-part1024.pdf) | govinfo (CFR 2024) | pdf | legal;table;realestate | US-PD-105 |
+| us-cfr12-1024-truth | en | [12 CFR Part 1024 - Real Estate Settlement Procedures Act (Regulation X)](https://www.govinfo.gov/content/pkg/CFR-2024-title12-vol8/xml/CFR-2024-title12-vol8-part1024.xml) | govinfo (CFR 2024), XML edition of the same part - table extraction ground truth, not in the corpus | xml | legal;table;eval-truth;realestate | US-PD-105 |
 | kr-labor-standards-law | ko | [근로기준법](https://www.law.go.kr/법령/근로기준법) | 국가법령정보센터 (law.go.kr), 현행 법령 - 법률 제21533호, 시행 2026-10-08; PDF 저장 (별표 포함) | pdf | legal;table;recent | KR-CA-7 |
 | kr-labor-standards-dec | ko | [근로기준법 시행령](https://www.law.go.kr/법령/근로기준법시행령) | 국가법령정보센터 (law.go.kr), 현행 법령 - 대통령령 제35436호, 시행 2025-10-23; HWPX 저장 (zip), 별표 HWP->HWPX 변환 후 병합 | hwpx | legal;table | KR-CA-7 |
 | kr-labor-standards-rul | ko | [근로기준법 시행규칙](https://www.law.go.kr/법령/근로기준법시행규칙) | 국가법령정보센터 (law.go.kr), 현행 법령 - 고용노동부령 제436호, 시행 2025-02-23; HWPX 저장 (zip), 별표 HWP->HWPX 변환 후 병합, DOCX 변환 | docx | legal;table | KR-CA-7 |
@@ -85,6 +86,7 @@ Generated from `data/manifest.csv` by `data/scripts/fetch.py --sources`. Do not 
 | kr-commercial-lease-dec | ko | [상가건물 임대차보호법 시행령](https://www.law.go.kr/법령/상가건물임대차보호법시행령) | 국가법령정보센터 (law.go.kr), 현행 법령 - 대통령령 제36423호, 시행 2026-07-01; PDF 저장 (별표 포함); 합성 스캔 (data/scripts/make_scans.py) | scan | legal;table;recent;scan;realestate | KR-CA-7 |
 | kr-occupational-safety-rul-truth | ko | [산업안전보건법 시행규칙](https://www.law.go.kr/법령/산업안전보건법시행규칙) | 국가법령정보센터 (law.go.kr), 현행 법령 - 고용노동부령 제477호, 시행 2026-08-01; HWPX 저장 (zip) - 표 추출 평가 정답용, 코퍼스 제외 | hwpx | legal;table;eval-truth | KR-CA-7 |
 | kr-industrial-accident-dec-truth | ko | [산업재해보상보험법 시행령](https://www.law.go.kr/법령/산업재해보상보험법시행령) | 국가법령정보센터 (law.go.kr), 현행 법령 - 대통령령 제36473호, 시행 2026-07-01; HWPX 저장 (zip) - 표 추출 평가 정답용, 코퍼스 제외 | hwpx | legal;table;eval-truth | KR-CA-7 |
+| kr-housing-lease-dec-truth | ko | [주택임대차보호법 시행령](https://www.law.go.kr/법령/주택임대차보호법시행령) | 국가법령정보센터 (law.go.kr), 현행 법령 - 대통령령 제36423호, 시행 2026-07-01; HWPX 저장 (zip) - 표 추출 평가 정답용, 코퍼스 제외 | hwpx | legal;table;eval-truth;realestate | KR-CA-7 |
 
 ## Evaluation questions
 
@@ -92,5 +94,11 @@ Real questions in `data/eval/real_questions_candidates.csv` (question titles onl
 
 - 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 (easylaw.go.kr) - MOLEG-EASYLAW
 - U.S. Department of Labor, Wage and Hour Division: FMLA and FLSA FAQs (dol.gov) - US-PD-105
+
+Real-estate real questions in `data/eval/real_re_questions_candidates.csv` (titles only):
+
+- 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 - 부동산/임대차 (easylaw.go.kr) - MOLEG-EASYLAW
+- Consumer Financial Protection Bureau: RESPA FAQs and Mortgage Servicing FAQs (2021) (consumerfinance.gov) - US-PD-105
+- HUD and DOJ: Joint Statement, Reasonable Modifications under the Fair Housing Act (2008) (justice.gov) - US-PD-105
 
 Generated questions are written by a model from the corpus above; see `data/eval/README.md`.

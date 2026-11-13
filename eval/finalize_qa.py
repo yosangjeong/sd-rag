@@ -69,6 +69,16 @@ Return only JSON: {{"best": {{"n": <number>, "quote": "..."}} | null, "also": [{
 JURISDICTION = {
     "el": ("easylaw.go.kr, the Korean government's guide to everyday law", "Korean law"),
     "dol": ("dol.gov, the US Department of Labor's website", "US federal law"),
+    # the real-estate real questions (eval/real_re.py)
+    "elr": ("easylaw.go.kr, the Korean government's guide to everyday law", "Korean law"),
+    "cfpb": (
+        "consumerfinance.gov, the US Consumer Financial Protection Bureau's website",
+        "US federal law",
+    ),
+    "hud": (
+        "a joint statement of the US housing (HUD) and justice (DOJ) departments",
+        "US federal law",
+    ),
 }
 
 
@@ -77,13 +87,13 @@ Given a question, its reference answer and one passage: does the passage, read o
 Return only JSON: {"same_answer": true | false, "why": "<one short sentence>"}"""
 
 
-def confirm(llm, question: str, answer: str, g: Gold, texts) -> bool:
+def confirm(llm, question: str, answer: str, g: Gold, texts, system: str = "") -> bool:
     d = texts[g.doc_id]
     b = d.block_at(g.start)
     context = d.text[max(b.start, g.start - 300) : min(b.end, g.end + 300)]
     user = (f"Question: {question}\nReference answer: {answer}\n\n"
             f"Passage ({d.title} > {b.heading or ''}):\n{context}")  # fmt: skip
-    out = parse_json(llm.complete(CONFIRM_SYSTEM, user, max_tokens=800).text)
+    out = parse_json(llm.complete(system or CONFIRM_SYSTEM, user, max_tokens=800).text)
     return isinstance(out, dict) and out.get("same_answer") is True
 
 
@@ -146,11 +156,11 @@ def judge_generated(llm, texts, item: Item, cands: list[dict]) -> tuple[list[Gol
 
 
 def judge_real(
-    llm, texts, qid: str, question: str, cands: list[dict]
+    llm, texts, qid: str, question: str, cands: list[dict], system: str = ""
 ) -> tuple[Gold | None, list[Gold], dict]:
     site, law = JURISDICTION[qid.split("-")[0]]
     user = f"Question: {question}\n\nCandidates:\n\n{candidates_block(cands)}"
-    c = llm.complete(REAL_SYSTEM.format(site=site, law=law), user, max_tokens=1500)
+    c = llm.complete((system or REAL_SYSTEM).format(site=site, law=law), user, max_tokens=1500)
     out = parse_json(c.text)
     if not isinstance(out, dict):
         return None, [], {"raw": c.text, "error": "no JSON"}

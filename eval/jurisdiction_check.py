@@ -32,7 +32,7 @@ def other_cited(row: dict) -> bool:
 
 
 for run in map(Path, sys.argv[1:]):
-    for name in ("test_sample", "unanswerable", "test_re"):
+    for name in ("test_sample", "unanswerable", "test_re", "unanswerable_re"):
         if not (run / f"{name}.jsonl").exists():
             continue
         rows = [json.loads(x) for x in (run / f"{name}.jsonl").read_text("utf-8").splitlines()]

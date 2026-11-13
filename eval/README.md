@@ -21,6 +21,8 @@ The decisions they support are in `docs/decisions.md`.
 | `run_retrieval.py` | retrieval systems on a set: `<mode>[+rerank][+jur]@<index>` |
 | `answers.py` | answer quality of the served pipeline: correct, grounded, citing the gold, declining |
 | `jurisdiction_check.py` | answers citing the other country's law, per answer version |
+| `real_re.py` | the real-estate real questions: gold by the same pooling as the labor ones |
+| `ocr_corpus.py` | OCR accuracy on every scanned corpus page (cached results, no calls) |
 | `single_file.py` | the brief's one-file comparison with Claude and ChatGPT |
 | `upload_bench.py` | upload throughput through the API |
 | `gate.py` | CI: fail when dev retrieval falls below `data/eval/baseline-dev.json` |
@@ -33,5 +35,5 @@ The decisions they support are in `docs/decisions.md`.
 |---|---|
 | `ocr_bench.py` | the OCR model (Qwen3-VL), on synthetic scans of our own pages |
 | `embed_bench.py` | the embedding model (Titan v2), within and across languages |
-| `pdf_tables.py`, `pdf_spacing.py` | PDF table and Korean line-wrap parsing, against the HWPX edition |
+| `pdf_tables.py`, `pdf_spacing.py` | PDF table and Korean line-wrap parsing, against the HWPX (Korean) or govinfo XML (CFR) edition |
 | `robustness_files.py`, `robustness.py` | awkward inputs (damaged, encrypted, rotated ...) and how parsing copes |

@@ -1,0 +1,29 @@
+{
+ "note": "Gold for real-estate real questions the pooled judge marked unanswerable but the corpus answers; found by searching the statutes directly (Claude Code, 2026-11-13). Each is the provision the question names (RESPA section 8 = 12 U.S.C. 2607) or the remedy a Korean housing-lease guide gives (임차권등기명령 before moving out).",
+ "gold": {
+  "cfpb-002": [
+   {
+    "doc_id": "us-usc12-ch27",
+    "start": 65084,
+    "end": 65383,
+    "quote": "No person shall give and no person shall accept any fee, kickback, or thing of value pursuant to any agreement or understanding, oral or \notherwise, that business incident to or a part of \na real estate settlement service involving a federally related mortgage loan shall be referred to \nany person."
+   }
+  ],
+  "cfpb-003": [
+   {
+    "doc_id": "us-usc12-ch27",
+    "start": 65408,
+    "end": 65700,
+    "quote": "No person shall give and no person shall accept any portion, split, or percentage of any \ncharge made or received for the rendering of a \nreal estate settlement service in connection \nwith a transaction involving a federally related \nmortgage loan other than for services actually \nperformed."
+   }
+  ],
+  "elr-021": [
+   {
+    "doc_id": "kr-housing-lease-law",
+    "start": 2891,
+    "end": 2980,
+    "quote": "임대차가 끝난 후 보증금이 반환되지 아니한 경우 임차인은 임차주택의 소재지를 관할하는 지방법원ㆍ지방법원지원 또는 시ㆍ군 법원에 임차권등기명령을 신청할 수 있다."
+   }
+  ]
+ }
+}

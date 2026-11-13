@@ -2,9 +2,11 @@
 
 Three steps:
 
-1. ``select``: 30 test items whose gold is in one document, spread over answer language,
-   file type and question language (seeded). Writes data/eval/single_file/compare.csv
-   with the file to upload, the question and the reference answer.
+1. ``select``: 30 labor test items whose gold is in one document, spread over file
+   type and question language (seeded); ``select-re`` appends 10 real-estate test items
+   chosen the same way (the 30 stay as they were). Writes data/eval/single_file/compare.csv
+   with the file to upload (the committed copy in data/corpus/), the question and the
+   reference answer.
 2. ``ours``: our system with the search scoped to that file (as a user who uploaded
    it and asks about it): answer and whether the gold span is in the top 6 sources.
    Fills the ``ours`` column.
@@ -29,7 +31,7 @@ from sdrag.agent.answer import answer
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat, CachedChat, parse_json
 from sdrag.common.search_client import make_client
-from sdrag.ingest.corpus import load_corpus
+from sdrag.ingest.corpus import corpus_path, load_corpus
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.retrieval.index import PUBLIC
 from sdrag.retrieval.rerank import LlmReranker, LlmTranslator
@@ -37,7 +39,7 @@ from sdrag.retrieval.search import Searcher
 
 OUT = DATA / "eval" / "single_file"
 CSV = OUT / "compare.csv"
-N, SEED = 30, 20261112
+N, N_RE, SEED = 30, 10, 20261112
 FIELDS = ["qid", "file", "pages", "q_lang", "file_type", "question", "reference", "gold_quote",
           "ours", "ours_gold_in_sources", "claude", "chatgpt"]  # fmt: skip
 JUDGE_MODEL = "deepseek.v3.2"  # not the answer model (GLM) nor the question writer (Qwen)
@@ -52,9 +54,17 @@ Judge the content, not the language or style.
 Return only JSON: {"grade": "correct" | "partial" | "wrong" | "no_answer", "why": "<one sentence>"}"""
 
 
-def select() -> None:
+def upload_file(doc_id: str) -> str:
+    """The file a tester uploads: the committed copy (data/corpus/), so the path holds
+    in any clone and does not move with data/raw/."""
+    d = next(d for d in load_corpus(DATA) if d.id == doc_id)
+    return str(corpus_path(DATA, d.id, d.file_type, d.tags, packed=True).relative_to(DATA.parent))
+
+
+def pick(set_file: str, n: int) -> list:
+    """n single-document items, round-robin over (file type, question language)."""
     texts = doc_texts()
-    items = [i for i in load_items(DATA / "eval" / "test.jsonl")
+    items = [i for i in load_items(DATA / "eval" / set_file)
              if len({g.doc_id for g in i.gold}) == 1 and i.kind in ("fact", "table")]  # fmt: skip
     rng = random.Random(SEED)
     rng.shuffle(items)
@@ -63,40 +73,71 @@ def select() -> None:
     for it in items:
         cells.setdefault((texts[it.gold[0].doc_id].file_type, it.q_lang), []).append(it)
     chosen, used_docs = [], Counter()
-    while len(chosen) < N and any(cells.values()):
+    while len(chosen) < n and any(cells.values()):
         for key in sorted(cells):
             pool = cells[key]
             # prefer documents not chosen yet, so the files to upload vary
             pool.sort(key=lambda i: used_docs[i.gold[0].doc_id])
-            if pool and len(chosen) < N:
+            if pool and len(chosen) < n:
                 it = pool.pop(0)
                 chosen.append(it)
                 used_docs[it.gold[0].doc_id] += 1
-    paths = {d.id: d.path for d in load_corpus(DATA)}
+    rows = []
+    for it in sorted(chosen, key=lambda i: i.qid):
+        g = it.gold[0]
+        d = texts[g.doc_id]
+        b = d.block_at(g.start)
+        rows.append({"qid": it.qid, "file": upload_file(g.doc_id),
+                     "pages": b.page or "", "q_lang": it.q_lang, "file_type": d.file_type,
+                     "question": it.question,
+                     "reference": it.meta.get("check_answer") or it.meta.get("answer", ""),
+                     "gold_quote": g.quote})  # fmt: skip
+    print(f"{len(chosen)} items, {len(used_docs)} files")
+    print(Counter((texts[i.gold[0].doc_id].file_type, i.q_lang) for i in chosen))
+    return rows
+
+
+def write(rows: list[dict]) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     with CSV.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
-        for it in sorted(chosen, key=lambda i: i.qid):
-            g = it.gold[0]
-            d = texts[g.doc_id]
-            b = d.block_at(g.start)
-            w.writerow({"qid": it.qid, "file": str(paths[g.doc_id].relative_to(DATA.parent)),
-                        "pages": b.page or "", "q_lang": it.q_lang, "file_type": d.file_type,
-                        "question": it.question,
-                        "reference": it.meta.get("check_answer") or it.meta.get("answer", ""),
-                        "gold_quote": g.quote})  # fmt: skip
-    print(f"{len(chosen)} items, {len(used_docs)} files -> {CSV}")
-    print(Counter((texts[i.gold[0].doc_id].file_type, i.q_lang) for i in chosen))
+        w.writerows(rows)
+
+
+JUDGE_RE_SYSTEM = JUDGE_SYSTEM.replace("labor law", "real-estate law")
+
+
+def select() -> None:
+    write(pick("test.jsonl", N))
+
+
+def select_re() -> None:
+    """Append the real-estate items, keep the labor rows (and any answers pasted in);
+    file paths are refreshed to the committed copies."""
+    rows = list(csv.DictReader(CSV.open(encoding="utf-8")))
+    rows = [r | {"file": upload_file(load_doc_id(r))} for r in rows if not r["qid"].startswith("r")]
+    write(rows + pick("test_re.jsonl", N_RE))
+
+
+def load_doc_id(row: dict) -> str:
+    items = {
+        i.qid: i for s in ("test.jsonl", "test_re.jsonl") for i in load_items(DATA / "eval" / s)
+    }
+    return items[row["qid"]].gold[0].doc_id
 
 
 def ours() -> None:
     rows = list(csv.DictReader(CSV.open(encoding="utf-8")))
-    items = {i.qid: i for i in load_items(DATA / "eval" / "test.jsonl")}
+    items = {
+        i.qid: i for s in ("test.jsonl", "test_re.jsonl") for i in load_items(DATA / "eval" / s)
+    }
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
     chat = BedrockChat(settings.llm_model, settings.aws_region)
     for r in rows:
+        if r.get("ours", "").strip():  # answered in an earlier run
+            continue
         it = items[r["qid"]]
         s = Searcher(client, settings.index, emb, LlmTranslator(chat), owners=[PUBLIC],
                      scope=[it.gold[0].doc_id])  # fmt: skip
@@ -117,26 +158,30 @@ def grade() -> None:
     judge = CachedChat(
         BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
     )
-    grades, tally = [], {s: Counter() for s in ("ours", "claude", "chatgpt")}
+    systems = ("ours", "claude", "chatgpt")
+    grades, tally = [], {(s, f): Counter() for f in ("labor", "real estate") for s in systems}
     for r in rows:
-        for system, counts in tally.items():
+        field = "real estate" if r["qid"].startswith("r") else "labor"
+        for system in systems:
+            counts = tally[(system, field)]
             if not r.get(system, "").strip():
                 continue
             user = (f"Question: {r['question']}\nReference answer: {r['reference']}\n"
                     f"Passage: {r['gold_quote']}\n\nCandidate answer: {r[system]}")  # fmt: skip
-            out = parse_json(judge.complete(JUDGE_SYSTEM, user, max_tokens=300).text) or {}
+            system_prompt = JUDGE_SYSTEM if not r["qid"].startswith("r") else JUDGE_RE_SYSTEM
+            out = parse_json(judge.complete(system_prompt, user, max_tokens=300).text) or {}
             g = out.get("grade", "unparsed")
             counts[g] += 1
             grades.append(
                 {"qid": r["qid"], "system": system, "grade": g, "why": out.get("why", "")}
             )
     (OUT / "grades.json").write_text(json.dumps(grades, ensure_ascii=False, indent=1), "utf-8")
-    for system, c in tally.items():
+    for (system, field), c in tally.items():
         n = sum(c.values())
         if n:
-            print(f"{system:8} n={n:3}  correct {c['correct'] / n:.0%}  partial {c['partial'] / n:.0%}  "
+            print(f"{system:8} {field:12} n={n:3}  correct {c['correct'] / n:.0%}  partial {c['partial'] / n:.0%}  "
                   f"wrong {c['wrong'] / n:.0%}  no answer {c['no_answer'] / n:.0%}")  # fmt: skip
 
 
 if __name__ == "__main__":
-    {"select": select, "ours": ours, "grade": grade}[sys.argv[1]]()
+    {"select": select, "select-re": select_re, "ours": ours, "grade": grade}[sys.argv[1]]()

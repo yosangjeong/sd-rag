@@ -7,7 +7,8 @@ regulations (Korean labor and real-estate acts with their decrees and rules; US 
 CFR, Federal Register), and each user's uploads are searched only for that user.
 
 The focus is retrieval accuracy, measured on held-out sets (`data/eval/`): 338
-generated labor-law questions, 137 real user questions and 82 real-estate questions.
+generated labor-law questions, 137 real labor questions, 82 generated and 83 real
+real-estate questions (the last: hit@10 / MRR 0.87 / 0.83 served, 0.95 / 0.86 agent).
 hit@10 / MRR: 0.94 / 0.88, 0.94 / 0.90 and 0.98 / 0.91, against 0.78 / 0.53,
 0.89 / 0.60 and 0.84 / 0.57 for plain hybrid search (`docs/decisions.md`). Answers:
 77% correct, 92% cite the gold passage (real estate: 74%, 95%), 63% of unanswerable

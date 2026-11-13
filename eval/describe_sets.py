@@ -8,7 +8,8 @@ from collections import Counter
 from evalset import DATA, doc_texts, load_items
 
 README = DATA / "eval" / "README.md"
-SETS = ("test", "dev", "real", "real_unanswerable", "test_re", "dev_re")
+SETS = ("test", "dev", "real", "real_unanswerable", "test_re", "dev_re", "real_re",
+        "real_re_unanswerable")  # fmt: skip
 
 
 def main() -> None:

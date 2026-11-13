@@ -3,7 +3,7 @@ the corpus has no answer.
 
 Runs the served pipeline (service.RagService, basic mode) on a stratified sample of
 the test set and on every real question the corpus cannot answer (``--set labor``),
-or on the real-estate test set (``--set re``, all 82 items, no unanswerable set), then:
+or on the real-estate test set and its unanswerable real questions (``--set re``), then:
 
 - correctness (judge vs the reference answer): correct | partial | wrong | no_answer
 - groundedness (judge vs the cited sources' text): supported | partly | unsupported,
@@ -89,6 +89,8 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--version", required=True, help="folder name under results/answers/")
     ap.add_argument("--set", choices=("labor", "re"), default="labor")
+    ap.add_argument("--reuse", action="store_true",
+                    help="keep the version's existing result files, run only what is missing")  # fmt: skip
     a = ap.parse_args()
     texts = doc_texts()
     if a.set == "labor":
@@ -97,7 +99,7 @@ def main() -> None:
         correct_system = CORRECT_SYSTEM
     else:
         test = sample(load_items(DATA / "eval" / "test_re.jsonl"), texts, a.n)
-        unanswerable = []
+        unanswerable = load_items(DATA / "eval" / "real_re_unanswerable.jsonl")
         correct_system = CORRECT_SYSTEM.replace("labor law", "real-estate law")
 
     client = make_client(settings.opensearch_url, settings.aws_region)
@@ -135,15 +137,20 @@ def main() -> None:
         )
         return row
 
-    with ThreadPoolExecutor(a.workers) as ex:
-        rows = list(ex.map(lambda it: run(it, True), test))
-        un = list(ex.map(lambda it: run(it, False), unanswerable))
     OUT = RESULTS / a.version
     OUT.mkdir(parents=True, exist_ok=True)
-    names = ("test_sample", "unanswerable") if a.set == "labor" else ("test_re", None)
+    names = ("test_sample", "unanswerable") if a.set == "labor" else ("test_re", "unanswerable_re")
+
+    def kept(name: str) -> list[dict] | None:
+        path = OUT / f"{name}.jsonl"
+        if a.reuse and path.exists():
+            return [json.loads(x) for x in path.read_text("utf-8").splitlines() if x]
+        return None
+
+    with ThreadPoolExecutor(a.workers) as ex:
+        rows = kept(names[0]) or list(ex.map(lambda it: run(it, True), test))
+        un = kept(names[1]) or list(ex.map(lambda it: run(it, False), unanswerable))
     for name, rs in zip(names, (rows, un), strict=True):
-        if name is None:
-            continue
         (OUT / f"{name}.jsonl").write_text(
             "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rs), "utf-8"
         )
