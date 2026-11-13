@@ -375,6 +375,35 @@ back to no filter.
 - Limit: an English question about Korean law that names neither Korea nor a Korean
   statute is taken to be about US law.
 
+## Amended articles not yet in force (2026-11-13)
+
+**Found while grading by hand**: law.go.kr's 현행 법령 files carry amendments that are
+enacted but not yet in force right after the article in force (남녀고용평등법 제18조의3:
+"최초 2일은 유급" in force, then "최초 4일은 유급 ... [시행일: 2026. 11. 27.]"). Both
+versions had the same heading, so they were chunked together, and the answer gave both
+rules side by side and dated the amendment by its `<개정 2026. 5. 26.>` (the enactment
+date, not the effective one). 86 such markers in 14 of the 55 Korean statutes, in every
+format; many take effect on 2026-12-08, during the interview week.
+
+- **Parsing** (`ingest/parse.py` `mark_versions`, every format, uploads too): the amended
+  version gets the heading "<article> [2026. 11. 27. 시행]", the version before it
+  "<article> [개정 전, 2026. 11. 27. 전까지]": facts that hold on any day, and distinct
+  headings keep the versions in separate chunks (8,023 -> 8,051 chunks). 85 amended
+  versions labelled, 55 with an earlier version (the rest are new articles).
+- **Answering** (`agent/answer.py` `version_status`): which version is in force is
+  computed from today's date in Korea and written into the source as
+  status="in force today (until 2026-11-26; ...)" / "not in force today (amended version,
+  takes effect 2026-11-27)"; the prompt says to answer with the version in force and add
+  one sentence on the other. First tried giving only today's date and leaving the
+  comparison to the model: it called the version taking effect in two weeks the current
+  law. With the status computed: on 2026-11-13 "2 days now, 4 from 2026-11-27"; with the
+  date set to 2026-12-01, "4 days now, 2 until the change".
+- **Evaluation**: 20 test items touch an article with two versions; 7 items across the
+  sets have their gold only in a version not yet in force on the grading date, so their
+  reference answers are only right later: flagged "date" in `data/eval/item_flags.json`
+  (`eval/version_flags.py`). Retrieval scoring is unaffected (gold spans are offsets in
+  the same text).
+
 ## Real estate measured like labor (2026-11-13)
 
 Everything measured on the labor statutes was repeated for the real-estate ones.

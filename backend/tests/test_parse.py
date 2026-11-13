@@ -326,3 +326,28 @@ def test_encrypted_and_broken_pdfs_fail_with_a_readable_reason(tmp_path):
             raise AssertionError("should fail")
         except UnreadableFile as e:
             assert words in str(e)
+
+
+def test_amended_article_versions_get_their_own_headings():
+    from sdrag.ingest.parse import Block, ParsedDocument, mark_versions
+
+    texts = [
+        (
+            "제18조의3(난임치료휴가) ① ... 최초 2일은 유급으로 한다.<개정 2024. 10. 22.>",
+            "제18조의3(난임치료휴가)",
+        ),
+        ("[본조신설 2017. 11. 28.]", "제18조의3(난임치료휴가)"),
+        (
+            "제18조의3(난임치료휴가) ① ... 최초 4일은 유급으로 한다.<개정 2024. 10. 22., 2026. 5. 26.>",
+            "제18조의3(난임치료휴가)",
+        ),
+        ("[본조신설 2017. 11. 28.]\n[시행일: 2026. 11. 27.] 제18조의3", "제18조의3(난임치료휴가)"),
+        ("제19조(육아휴직) ① ...", "제19조(육아휴직)"),
+    ]
+    doc = ParsedDocument(
+        "x", "hwpx", [Block("text", t, i, heading=h) for i, (t, h) in enumerate(texts)]
+    )
+    heads = [b.heading for b in mark_versions(doc).blocks]
+    assert heads[:2] == ["제18조의3(난임치료휴가) [개정 전, 2026. 11. 27. 전까지]"] * 2
+    assert heads[2:4] == ["제18조의3(난임치료휴가) [2026. 11. 27. 시행]"] * 2
+    assert heads[4] == "제19조(육아휴직)"

@@ -32,6 +32,34 @@
   "g0308": {
    "part": "question",
    "reason": "premise reversed: 근로기준법 has the Minister request the data from 근로복지공단, not 근로복지공단 request it from employers; the reference repeats the premise"
+  },
+  "g0175": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2026-12-10; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
+  },
+  "g0218": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2026-11-27; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
+  },
+  "g0436": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2028-01-01; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
+  },
+  "g0460": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2027-01-01; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
+  },
+  "g0515": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2026-12-10; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
+  },
+  "g0529": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2027-04-28; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
+  },
+  "g0405": {
+   "part": "date",
+   "reason": "the gold is an amended article in force from 2026-11-27; on 2026-11-13 the version before it applies, so the reference answer is not yet right"
   }
  }
 }

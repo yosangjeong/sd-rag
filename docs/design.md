@@ -129,4 +129,5 @@ document). Queries for evaluators: `docs/operations.md`.
 | Uploads | deleted after 30 days in S3; chunks stay until removed | per-document delete, retention policy |
 | Cost tracking | tokens in logs, list prices | Bedrock invocation logs and cost allocation tags |
 | English tables | CFR tables without ruling lines are read as text | a layout model for borderless tables |
+| Statute versions | amended articles not yet in force are labelled at parse time and the version in force is chosen by today's date when answering | a statute API with point-in-time versions (law.go.kr OpenAPI), so the corpus follows amendments without re-downloading |
 | Jurisdiction | an LLM label (KR / US / none) filters the public statutes by country; a country-less English question about Korean law is taken as US | ask the user's country once (profile), or show "answering under US law" with a switch |

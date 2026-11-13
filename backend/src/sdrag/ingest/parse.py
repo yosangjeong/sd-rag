@@ -764,5 +764,63 @@ def parse(path: str | Path, ocr: OcrEngine | None = None, progress=None) -> Pars
     path = Path(path)
     fmt = sniff_format(path)
     if fmt == "pdf":
-        return parse_pdf(path, ocr, progress)
-    return {"hwpx": parse_hwpx, "docx": parse_docx}[fmt](path)
+        doc = parse_pdf(path, ocr, progress)
+    else:
+        doc = {"hwpx": parse_hwpx, "docx": parse_docx}[fmt](path)
+    return mark_versions(doc)
+
+
+# law.go.kr's "현행 법령" carries amendments not yet in force: the article appears twice,
+# the version in force first, then the amended one ending in "[시행일: 2026. 11. 27.]
+# 제18조의3". Both share a heading, so they were chunked together and an answer gave
+# the two rules side by side, dating the amendment by its <개정 ...> date (the date it
+# was enacted, not the one it takes effect). 87 such markers in 14 corpus statutes, in
+# every format; many take effect on 2026-12-08.
+RE_EFFECTIVE = re.compile(r"\[시행일\s*:\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*\]([^\n]*)")
+RE_ARTICLE_ID = re.compile(r"제\s*(\d+)\s*조(?:\s*의\s*(\d+))?")
+
+
+def _article_id(heading: str | None) -> str | None:
+    m = RE_ARTICLE_ID.match(heading or "")
+    return f"제{m.group(1)}조" + (f"의{m.group(2)}" if m.group(2) else "") if m else None
+
+
+def mark_versions(doc: ParsedDocument) -> ParsedDocument:
+    """Give the two versions of an amended article headings of their own.
+
+    For each "[시행일: D] 제N조 ..." marker, the amended version runs from the last block
+    that starts article 제N조 up to the marker; it gets "<heading> [D 시행]". The version
+    before it (the previous run of 제N조) gets "<heading> [개정 전, D 전까지]". Both
+    labels are facts that hold on any day; which one is in force is decided when a
+    question is answered (agent/answer.py gets today's date). Distinct headings also
+    keep the versions in separate chunks."""
+    blocks = doc.blocks
+
+    def starts(i: int, aid: str) -> bool:
+        m = RE_ARTICLE.match(blocks[i].text)
+        return bool(m) and _article_id(re.sub(r"\s+", "", m.group(1))) == aid
+
+    for k, b in enumerate(blocks):
+        m = RE_EFFECTIVE.search(b.text)
+        if not m:
+            continue
+        date = f"{m.group(1)}. {int(m.group(2))}. {int(m.group(3))}."
+        ids = []
+        for x in RE_ARTICLE_ID.finditer(m.group(4)):
+            aid = f"제{x.group(1)}조" + (f"의{x.group(2)}" if x.group(2) else "")
+            if aid not in ids:
+                ids.append(aid)
+        for aid in ids:
+            new = next((i for i in range(k, -1, -1) if starts(i, aid)), None)
+            if new is None or "[" in (blocks[new].heading or "").split(")")[-1]:
+                continue  # article not found before the marker, or already labelled
+            base = blocks[new].heading
+            for i in range(new, k + 1):
+                if blocks[i].heading == base:
+                    blocks[i].heading = f"{base} [{date} 시행]"
+            old = next((i for i in range(new - 1, -1, -1) if starts(i, aid)), None)
+            if old is not None and blocks[old].heading == base:
+                for i in range(old, new):
+                    if blocks[i].heading == base:
+                        blocks[i].heading = f"{base} [개정 전, {date} 전까지]"
+    return doc
