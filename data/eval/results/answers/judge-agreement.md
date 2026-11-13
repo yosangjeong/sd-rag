@@ -1,8 +1,8 @@
-# Judge vs hand grading (20 answers, v6)
+# Judge vs a reference grading (20 answers, v6)
 
-20 answers of the v6 answer run (labor 100 + real estate 82), seeded draw: 10 the v2 judge graded correct, 10 it graded partial / wrong. Graded by hand (Claude Code, 2026-11-13) before looking at the judge's grade, against the gold passage and the statutes themselves (an answer stating a rule from another article of the corpus is checked there).
+20 answers of the v6 answer run (labor 100 + real estate 82), seeded draw: 10 the v2 judge graded correct, 10 it graded partial / wrong. Reference grades by Claude Code (the AI coding assistant this project was built with; Claude is used nowhere in the pipeline), 2026-11-13, made before looking at the judge's grade, against the gold passage and the statutes themselves (an answer stating a rule from another article of the corpus is checked there). This is a better-informed model's reading, not a human one.
 
-| # | qid | hand | judge v1 | judge v2 | note |
+| # | qid | reference | judge v1 | judge v2 | note |
 |---|---|---|---|---|---|
 | 1 | r0176 | correct | wrong | wrong | the question asks about inspecting a broker: form 26 is right; the reference is the association form 27 |
 | 2 | g0218 | partial | partial | partial | gives the repealed 2 days next to the current 4 |
@@ -25,10 +25,10 @@
 | 19 | g0413 | correct | correct | correct |  |
 | 20 | g0167 | correct | correct | correct |  |
 
-Agreement: judge v1 10/20, judge v2 11/20. Every disagreement is the judge being stricter than the hand grade; none the other way.
+Agreement: judge v1 10/20, judge v2 11/20. Every disagreement is the judge being stricter than the reference grade; none the other way.
 
-- Judge said correct (10): hand agrees 10 of 10.
-- Judge said partial / wrong (10): hand says correct for 8, partial for 2 (the judge's wrong for g0279 is a partial).
+- Judge said correct (10): the reference agrees 10 of 10.
+- Judge said partial / wrong (10): the reference says correct for 8, partial for 2 (the judge's wrong for g0279 is a partial).
 - Cause: the judge sees the question, the reference and the gold passage only, so a correct rule the answer takes from another article (the decree's exemption, a later item of the same list) reads as invented. The groundedness judge, which sees the cited sources, rated all 8 of them supported.
 - So the correctness figures are a lower bound. Scaling by this sample (judge-correct kept, 8 of 10 judge-non-correct correct), v6's 141 of 182 judge-correct becomes about 174 of 182 (95%); with 10 items behind the 8/10 the interval is wide (roughly 85-98%).
-- Comparisons between versions and systems stand: all are graded by the same judge, and the strictness is the same for all. For the Claude / ChatGPT comparison the non-correct grades of all three systems are read by hand the same way.
+- Comparisons between versions and systems stand: all are graded by the same judge, and the strictness is the same for all. For the Claude / ChatGPT comparison the non-correct grades of all three systems are read again the same way.

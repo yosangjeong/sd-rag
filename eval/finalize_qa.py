@@ -12,13 +12,14 @@ Real questions (data/eval/real_questions_candidates.csv: easylaw.go.kr, dol.gov)
 no gold yet: the same pool is judged without a reference answer; the candidates the
 judge says answer the question become the gold (the best one) and ``also``
 (the rest). A few the judge missed although the corpus answers them were annotated
-by hand (``real_manual_gold.json``, marked ``meta.manual``). Questions nothing in the corpus answers are kept apart
+outside the judge, by Claude Code searching the statutes (``real_manual_gold.json``,
+marked ``meta.manual``). Questions nothing in the corpus answers are kept apart
 (``real_unanswerable.jsonl``) for testing that the agent says it does not know.
 
 Split: 20% of each (answer language, file type) cell of the generated items goes to
 the dev set (tuning), 80% to the test set (reported once). The real set is test only.
 
-    cd backend && AWS_PROFILE=sd-assignment SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
+    cd backend && AWS_PROFILE=<profile> SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
         uv run python ../eval/finalize_qa.py
 """
 

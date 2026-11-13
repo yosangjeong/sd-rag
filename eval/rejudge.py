@@ -7,7 +7,7 @@ versions under both judges, with and without the flagged items
 (data/eval/item_flags.json). Only the correctness judge changed; groundedness and
 declining keep their grades.
 
-    cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/rejudge.py
+    cd backend && AWS_PROFILE=<profile> uv run python ../eval/rejudge.py
 """
 
 import json

@@ -250,7 +250,8 @@ each measured once (`data/eval/results/answers/v1/`, `v2-labor-prompts/`,
   and items whose reference answer is itself wrong. Two fixes, both applied to every
   version and every system alike:
   - **Faulty items**: every item used for answer grading (198) was checked by a third
-    family (gpt-oss, `eval/check_items.py`) and the flags read by hand; 8 are faulty
+    family (gpt-oss, `eval/check_items.py`) and its flags checked against the statutes by
+    Claude Code (the coding assistant; not a model the pipeline uses); 8 are faulty
     (`data/eval/item_flags.json`: a reference saying "150 million" for 150만원, one
     reversing "excluded" from the minimum wage, a garbled question ...). They stay in
     the sets (their gold spans are right); answer results are given with and without.
@@ -260,15 +261,18 @@ each measured once (`data/eval/results/answers/v1/`, `v2-labor-prompts/`,
 - Re-graded (correct / partial / wrong): v6 labor 77/15/5 (v1) -> 82/10/7 (v2) ->
   85/9/4 without the flagged items; real estate 74/22/4 -> 72/23/5 -> 74/22/4. The order
   of the versions is the same under both judges.
-- **Agreement with hand grading** on a seeded 20 (10 judge-correct, 10 not): 11 of 20.
-  Judge-correct was right 10 of 10; of the 10 judge-non-correct, 8 are correct by hand.
+- **Agreement with a reference grading** on a seeded 20 (10 judge-correct, 10 not): 11 of
+  20. The reference grades are Claude Code's, reading the statutes in full before seeing
+  the judge's grade (a better-informed model, not a person). Judge-correct was right 10
+  of 10; of the 10 judge-non-correct, the reference grades 8 correct.
   Every disagreement is the judge being stricter: it sees only the gold passage, so a
   correct rule from another article (a decree's exemption, a later item of the list)
   looks invented; the groundedness judge, which sees the cited sources, rated all 8
   supported. The correctness figures are therefore a lower bound (scaled by the sample,
   about 95% for v6, with a wide interval); comparisons stand, as every system meets the
   same judge. Stopped there rather than tuning the judge further to our answers; the
-  final Claude / ChatGPT comparison reads the non-correct grades of all three by hand.
+  final Claude / ChatGPT comparison has the non-correct grades of all three read again
+  the same way.
 
 **One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document
 questions over 28 files, search scoped to the file: the gold passage is among the
@@ -300,8 +304,8 @@ committee, form or table row. Without the confirmation a sample of 12 had 3 wron
 
 **Real questions as a check on the generated ones.** 164 FAQ titles (easylaw.go.kr,
 dol.gov), verbatim; the judge is told the source's jurisdiction (without it, three
-dol.gov questions were matched to Korean law). 137 have gold (4 annotated by hand
-after the judge missed them), 27 the corpus cannot answer (court cases, guidance,
+dol.gov questions were matched to Korean law). 137 have gold (4 annotated outside the
+judge, by Claude Code searching the statutes, after the judge missed them), 27 the corpus cannot answer (court cases, guidance,
 laws not in the corpus) are kept for the agent's "I don't know".
 
 Result: test 338 / dev 85 (split 80/20 per cell, seeded) / real 137; composition and
@@ -316,8 +320,8 @@ all, formats rotated as for the labor statutes. The labor sets stay frozen (thei
 passages re-sample byte for byte); a real-estate set is built the same way from the
 new documents only: 82 test, 21 dev (`data/eval/README.md`).
 
-**The prompts no longer say "labor law".** The interview's live test brings unknown
-files; the reranker, translation, follow-up rewriting, agent and answer prompts now
+**The prompts no longer say "labor law".** A live test with files never seen before is
+expected; the reranker, translation, follow-up rewriting, agent and answer prompts now
 describe a collection of statutes and user uploads of any topic, and the
 jurisdiction rule applies to legal questions only. Checked on dev (0.953 / 0.887
 against 0.953 / 0.881) and on the unseen-document questions (8 of 8 as before).

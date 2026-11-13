@@ -18,7 +18,7 @@ items does it need both passages. Items that fail are dropped and counted.
 The quote is located in the canonical text (exact, then ignoring whitespace); an item
 whose quote is not in its passage is dropped too.
 
-    cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/generate_qa.py
+    cd backend && AWS_PROFILE=<profile> uv run python ../eval/generate_qa.py
 """
 
 import argparse

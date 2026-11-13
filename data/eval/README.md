@@ -87,7 +87,7 @@ Question titles (no answers) from public FAQ pages, kept verbatim:
 
 The pages were read with a fetching tool that returns page text through a summarizing
 model; spot checks against the pages matched character for character (including a
-typo of the source, "알르바이트"), but not every title was checked by hand.
+typo of the source, "알르바이트"), but not every title was checked against its page.
 
 Gold spans: the same 8-system pool (top 10 each) is judged with the source's
 jurisdiction stated (easylaw: Korean law, dol.gov: US federal law; the other
@@ -116,18 +116,24 @@ Gold: the same pool and judge, the prompts saying "real-estate law" for "labor l
 83 answered (43 Korean, 40 English), 30 unanswerable (25 Korean, 5 English): many
 easylaw questions are about the Civil Act (repairs, subletting, prescription,
 co-ownership), registration, taxes or the Housing Act, none in the corpus. Three the
-judge missed were annotated by hand (`real_re_manual_gold.json`): RESPA section 8(a)
+judge missed were annotated outside the judge, by Claude Code searching the statutes
+(`real_re_manual_gold.json`): RESPA section 8(a)
 and 8(b) are 12 U.S.C. 2607(a) and (b), and moving out before the deposit is returned
 is answered by the 임차권등기명령 article.
 
 ## Faulty items and the answer judge
 
+"Manual" checks in this folder (extra gold spans, item flags, the reference grading of
+the judge) were done by Claude Code (the AI coding assistant this project was built with; Claude is used nowhere in the pipeline), reading the statutes directly; they are a second,
+better-informed model's reading, not a human one.
+
 Answer grading compares an answer with the item's reference answer (written by the
 question model). Every item used for answer grading was checked (`eval/check_items.py`,
-gpt-oss, then read by hand); the 8 found faulty, with reasons, are in
-`item_flags.json`. A random hand-graded sample found 2 of them, so about 5-10% of
+gpt-oss; its flags were then checked against the statutes by Claude Code); the 8
+found faulty, with reasons, are in `item_flags.json`. A random sample graded the same
+way found 2 of them, so about 5-10% of
 references may be faulty; retrieval scores are unaffected (the gold spans are right).
-The correctness judge's prompts and its agreement with hand grading:
+The correctness judge's prompts and its agreement with the reference grading:
 `eval/judges.py`, `results/answers/judge-agreement.md`.
 
 ## Known limits
@@ -173,6 +179,6 @@ The correctness judge's prompts and its agreement with hand grading:
 | style: real | 0 | 0 | 137 | 0 | 0 | 0 | 83 | 0 |
 | style: situation | 89 | 19 | 0 | 0 | 15 | 7 | 0 | 0 |
 | with also-spans | 78 | 20 | 57 | 0 | 28 | 6 | 36 | 0 |
-| gold annotated by hand | 0 | 0 | 4 | 0 | 0 | 0 | 3 | 0 |
+| gold annotated outside the judge | 0 | 0 | 4 | 0 | 0 | 0 | 3 | 0 |
 
 A real question's language is its source's: easylaw questions are Korean, dol.gov questions English, so the real set has no cross-lingual items.

@@ -18,7 +18,7 @@ re-scoring needs no new calls and every transcription can be inspected.
 Transcription goes through sdrag.ingest.ocr, so what is measured is what ingestion
 runs (prompt, 200 dpi rendering, repetition guard).
 
-    cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/ocr_bench.py [--engines a,b]
+    cd backend && AWS_PROFILE=<profile> uv run python ../eval/ocr_bench.py [--engines a,b]
 """
 
 import argparse

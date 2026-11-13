@@ -37,7 +37,7 @@ def main() -> None:
         + " | ".join(str(sum(1 for i in v if i.also)) for v in sets.values())
         + " |"
     )
-    lines.append("| gold annotated by hand | " + " | ".join(
+    lines.append("| gold annotated outside the judge | " + " | ".join(
         str(sum(1 for i in v if i.meta.get("manual"))) for v in sets.values()) + " |")  # fmt: skip
     note = ("A real question's language is its source's: easylaw questions are Korean, "
             "dol.gov questions English, so the real set has no cross-lingual items.")  # fmt: skip

@@ -14,7 +14,7 @@ nothing else differs, and the labor sets are not touched. Gold for questions the
 missed although the corpus answers them: ``real_re_manual_gold.json``. Questions nothing
 in the corpus answers go to ``real_re_unanswerable.jsonl``.
 
-    cd backend && AWS_PROFILE=sd-assignment SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
+    cd backend && AWS_PROFILE=<profile> SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
         uv run python ../eval/real_re.py
 """
 

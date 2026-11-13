@@ -3,7 +3,7 @@
 Not an evaluation (the held-out set is separate): it shows that each mode returns
 sensible sources (document, heading, page) and how long a query takes.
 
-    cd backend && AWS_PROFILE=sd-assignment SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
+    cd backend && AWS_PROFILE=<profile> SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
         uv run python ../eval/search_smoke.py [--index chunks-structure]
 """
 

@@ -17,7 +17,7 @@ Only models callable in the project Region (ap-southeast-2) without cross-Region
 inference are compared. Titan returns its token counts, used to check
 chunk.est_tokens. Embeddings and translations are cached under data/raw/bench/embed/.
 
-    cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/embed_bench.py
+    cd backend && AWS_PROFILE=<profile> uv run python ../eval/embed_bench.py
 """
 
 import hashlib

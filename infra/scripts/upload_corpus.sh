@@ -2,7 +2,7 @@
 # Upload what the in-VPC bulk index needs (backend/src/sdrag/ingest/from_s3.py):
 # the manifest, the 70 indexed files (data/corpus/) and the OCR / embedding caches,
 # each as one archive (13,000 small cache files took 13 minutes one by one).
-#   AWS_PROFILE=sd-assignment infra/scripts/upload_corpus.sh <bucket>
+#   AWS_PROFILE=<profile> infra/scripts/upload_corpus.sh <bucket>
 set -euo pipefail
 bucket="$1"
 tmp=$(mktemp -d)

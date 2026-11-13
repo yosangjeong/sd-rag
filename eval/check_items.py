@@ -11,11 +11,11 @@ rows (50).
 
 The checker is gpt-oss-120b, a third family (neither the question writer nor the
 DeepSeek judge). It sees the question, the reference and the gold passage with its
-surrounding text. Every item it flags is then read by hand; the confirmed ones, with
-the reason, go to data/eval/item_flags.json, which answers.py and single_file.py
+surrounding text. Every item it flags is then checked against the statutes (by Claude Code, the coding
+assistant); the confirmed ones, with the reason, go to data/eval/item_flags.json, which answers.py and single_file.py
 report with and without.
 
-    cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/check_items.py
+    cd backend && AWS_PROFILE=<profile> uv run python ../eval/check_items.py
 """
 
 import csv

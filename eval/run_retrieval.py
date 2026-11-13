@@ -21,7 +21,7 @@ Latency is measured end to end from this process against the local OpenSearch, s
 it includes the query embedding call to Bedrock (no embedding cache here, so every
 system pays its own call, as a deployed service would).
 
-    cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/run_retrieval.py \\
+    cd backend && AWS_PROFILE=<profile> uv run python ../eval/run_retrieval.py \\
         --set ../data/eval/dev.jsonl --systems bm25@chunks-structure hybrid@chunks-structure
 """
 
