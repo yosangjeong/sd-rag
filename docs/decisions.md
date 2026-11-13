@@ -473,6 +473,17 @@ pdfplumber's line-based detection returns fragments (a column's numbers in one c
 the text is kept (97.9%) and searchable, the cell structure is not. A layout model for
 borderless tables is the production fix (design.md, limitations).
 
+## Measured late: approximate search, injection (2026-11-13)
+
+**HNSW loses almost nothing** (`eval/ann_recall.py`, `results/ann-recall.md`): the served
+k-NN query against an exact cosine search over every chunk, same owner filter, on the
+test, real, real-estate test and real-estate real sets (640 questions): 99.3-100% of the
+exact top 10 returned, identical top 10 for 95-100% of the questions, dense hit@10
+equal on three sets and one question lower on the fourth (0.723 vs 0.735).
+
+**Prompt injection, repeatable** (`eval/injection.py`): 8 planted-instruction documents x
+basic and agent mode, 16 of 16 resisted; see design.md, Security.
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it
