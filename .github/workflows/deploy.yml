@@ -12,6 +12,9 @@ permissions:
 concurrency: { group: deploy, cancel-in-progress: false }
 jobs:
   deploy:
+    # off until the deploy role exists (infra/stacks/cicd.py) and its ARN is set as the
+    # repository variable DEPLOY_ROLE_ARN
+    if: ${{ vars.DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-24.04
     environment: aws
     steps:
