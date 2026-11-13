@@ -42,7 +42,7 @@ from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
 from sdrag.ingest.parse import parse
 
 REGION = "ap-southeast-2"
-OUT = fetch.DATA / "raw" / "bench" / "embed"
+OUT = fetch.layout.bench(fetch.DATA, "embed")
 PER_LANG = 80
 # chunks small enough for Cohere v3's 512-token input (p99 of real / estimated tokens
 # is 1.6), so both models see the same, untruncated chunks
@@ -65,7 +65,7 @@ RE_EN_HEAD = re.compile(r"^\s*§\s?[\d.]+[a-z]?\.?[^\n]*\n")
 
 def load_chunks() -> list[dict]:
     ocr = CachedOcr(
-        BedrockVisionOcr("qwen.qwen3-vl-235b-a22b", REGION), fetch.DATA / "raw" / "cache" / "ocr"
+        BedrockVisionOcr("qwen.qwen3-vl-235b-a22b", REGION), fetch.layout.cache(fetch.DATA, "ocr")
     )
     chunks = []
     for d in load_corpus(fetch.DATA):

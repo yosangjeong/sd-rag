@@ -14,7 +14,7 @@ import json
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
-from evalset import DATA, load_items
+from evalset import DATA, LLM_CACHE, load_items
 from judges import correct_prompt, correct_user
 
 from sdrag.common.config import settings
@@ -36,9 +36,7 @@ def main() -> None:
         i.qid: i for s in ("test", "test_re") for i in load_items(DATA / "eval" / f"{s}.jsonl")
     }
     flags = json.loads((DATA / "eval" / "item_flags.json").read_text("utf-8"))["flags"]
-    judge = CachedChat(
-        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
-    )
+    judge = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), LLM_CACHE)
 
     def grade(field: str, row: dict) -> dict:
         it = items[row["qid"]]

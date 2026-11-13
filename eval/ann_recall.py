@@ -17,9 +17,8 @@ few not cached).
 """
 
 import statistics
-from pathlib import Path
 
-from evalset import DATA, load_items, score
+from evalset import DATA, EMBED_CACHE, load_items, score
 from opensearchpy import OpenSearch
 
 from sdrag.common.config import settings
@@ -36,7 +35,7 @@ FIELDS = ["doc_id", "start", "end"]
 def main() -> None:
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=120)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    emb = CachedEmbedder(emb, Path(settings.embed_cache_dir or DATA / "raw" / "cache" / "embed"))
+    emb = CachedEmbedder(emb, EMBED_CACHE)
     owner = {"terms": {"owner": [PUBLIC]}}
 
     def hnsw(vec):

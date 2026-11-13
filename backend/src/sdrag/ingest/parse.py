@@ -41,6 +41,7 @@ from docx.text.paragraph import Paragraph
 from lxml import etree
 from pypdf import PdfReader
 
+from sdrag.common import versions
 from sdrag.ingest.ocr import OcrEngine, ocr_pages, split_markdown
 
 # pypdf logs a fontTools warning for every CFF font it meets (1,500 lines for our
@@ -869,10 +870,10 @@ def mark_versions(doc: ParsedDocument) -> ParsedDocument:
             base = blocks[new].heading
             for i in range(new, k + 1):
                 if blocks[i].heading == base:
-                    blocks[i].heading = f"{base} [{date} 시행]"
+                    blocks[i].heading = versions.amended(base, date)
             old = next((i for i in range(new - 1, -1, -1) if starts(i, aid)), None)
             if old is not None and blocks[old].heading == base:
                 for i in range(old, new):
                     if blocks[i].heading == base:
-                        blocks[i].heading = f"{base} [개정 전, {date} 전까지]"
+                        blocks[i].heading = versions.before(base, date)
     return doc

@@ -17,6 +17,8 @@ from pathlib import Path
 import boto3
 from botocore.config import Config
 
+from sdrag.common.text import strip_think
+
 
 @dataclass
 class Completion:
@@ -75,7 +77,7 @@ class CachedChat:
 def parse_json(text: str) -> dict | list | None:
     """The JSON value in a model answer: models wrap it in ```json fences or add a
     sentence before it, and reasoning models may prefix a <think> block."""
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = strip_think(text)
     m = re.search(r"```(?:json)?\s*(.*?)```", text, flags=re.DOTALL)
     if m:
         text = m.group(1)

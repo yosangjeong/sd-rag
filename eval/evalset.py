@@ -16,13 +16,14 @@ set does not re-parse 70 files, and scanned pages come from the OCR cache: what 
 index holds is what the gold spans point into.
 """
 
-import hashlib
 import json
 import math
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from sdrag.common.config import settings
+from sdrag.ingest import layout
 from sdrag.ingest.chunk import canonical_text
 from sdrag.ingest.corpus import CorpusDoc, load_corpus
 from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
@@ -30,7 +31,12 @@ from sdrag.ingest.parse import parse
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-CACHE = DATA / "raw" / "cache" / "eval"
+# every cache under data/raw/ (ingest/layout.py); the OCR and embedding ones can be moved
+# with SDRAG_OCR_CACHE_DIR / SDRAG_EMBED_CACHE_DIR, as for ingestion
+CACHE = layout.cache(DATA, "eval")
+LLM_CACHE = CACHE / "llm"  # model replies of the evaluation scripts (CachedChat)
+OCR_CACHE = Path(settings.ocr_cache_dir or layout.cache(DATA, "ocr"))
+EMBED_CACHE = Path(settings.embed_cache_dir or layout.cache(DATA, "embed"))
 
 
 @dataclass
@@ -51,10 +57,6 @@ class DocText:
     text: str
     blocks: list[BlockInfo]
 
-    @property
-    def sha(self) -> str:
-        return hashlib.sha256(self.text.encode()).hexdigest()[:16]
-
     def block_at(self, offset: int) -> BlockInfo:
         for b in self.blocks:
             if b.start <= offset < b.end + 2:  # +2: the separator belongs to the block before
@@ -74,8 +76,6 @@ def _parse_doc(doc: CorpusDoc, ocr) -> DocText:
 
 def doc_texts(data: Path = DATA, refresh: bool = False) -> dict[str, DocText]:
     """Canonical text of every corpus document, parsed once and cached as JSON."""
-    from sdrag.common.config import settings
-
     out_dir = CACHE / "canonical"
     out_dir.mkdir(parents=True, exist_ok=True)
     ocr = None
@@ -90,7 +90,7 @@ def doc_texts(data: Path = DATA, refresh: bool = False) -> dict[str, DocText]:
         if ocr is None:  # only built when a document has to be parsed
             ocr = CachedOcr(
                 BedrockVisionOcr(settings.ocr_model, settings.aws_region),
-                Path(settings.ocr_cache_dir or DATA / "raw" / "cache" / "ocr"),
+                OCR_CACHE,
             )
         dt = _parse_doc(doc, ocr)
         path.write_text(json.dumps(asdict(dt), ensure_ascii=False), encoding="utf-8")

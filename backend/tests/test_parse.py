@@ -359,3 +359,27 @@ def test_unruled_cfr_cells_lose_leader_dots_and_get_their_minus_back():
     assert _unruled_cell("Jun.............................................") == "Jun"
     assert _unruled_cell("¥370") == "−370"
     assert _unruled_cell(None) == ""
+
+
+def test_version_labels_round_trip_and_status_follows_the_date():
+    import datetime as dt
+
+    from sdrag.agent.answer import version_status
+    from sdrag.common import versions
+
+    h = "제18조의3(난임치료휴가)"
+    assert versions.parse(versions.amended(h, "2026. 11. 27.")) == (
+        h,
+        "amended",
+        dt.date(2026, 11, 27),
+    )
+    assert versions.parse(versions.before(h, "2026. 11. 27."))[1:] == (
+        "before",
+        dt.date(2026, 11, 27),
+    )
+    assert versions.parse(h) == (h, None, None)
+    new, old = versions.amended(h, "2026. 11. 27."), versions.before(h, "2026. 11. 27.")
+    assert version_status(new, dt.date(2026, 11, 13))[1].startswith("not in force today")
+    assert version_status(old, dt.date(2026, 11, 13))[1].startswith("in force today")
+    assert version_status(new, dt.date(2026, 12, 1))[1].startswith("in force today")
+    assert version_status(old, dt.date(2026, 12, 1))[1].startswith("not in force today")

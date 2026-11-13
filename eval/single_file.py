@@ -25,7 +25,7 @@ import random
 import sys
 from collections import Counter
 
-from evalset import DATA, doc_texts, load_items, overlaps
+from evalset import DATA, LLM_CACHE, doc_texts, load_items, overlaps
 from judges import correct_prompt, correct_user
 
 from sdrag.agent.answer import answer
@@ -153,9 +153,7 @@ def grade() -> None:
     """Grade every filled answer with both judge versions (v1 for comparison with
     earlier reports, v2 the one reported), and with and without the flagged items."""
     rows = list(csv.DictReader(CSV.open(encoding="utf-8")))
-    judge = CachedChat(
-        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
-    )
+    judge = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), LLM_CACHE)
     flags = json.loads((DATA / "eval" / "item_flags.json").read_text("utf-8"))["flags"]
     systems = ("ours", "claude", "chatgpt")
     grades = []

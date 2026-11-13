@@ -26,7 +26,7 @@ import statistics
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
-from evalset import DATA, doc_texts, load_items, overlaps
+from evalset import DATA, LLM_CACHE, doc_texts, load_items, overlaps
 from judges import correct_prompt, correct_user
 
 from sdrag.common.config import settings
@@ -102,9 +102,7 @@ def main() -> None:
     service = RagService(
         client, settings.index, emb, BedrockChat(settings.llm_model, settings.aws_region)
     )
-    jllm = CachedChat(
-        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
-    )
+    jllm = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), LLM_CACHE)
 
     def run(it, answerable: bool) -> dict:
         reply = service.ask("eval", it.question)

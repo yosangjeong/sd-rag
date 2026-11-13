@@ -37,10 +37,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "data" / "scripts"))
 import scanify
 
+from sdrag.ingest import layout
 from sdrag.ingest.ocr import BedrockVisionOcr, OcrError, render_page
 
 DATA = ROOT / "data"
-BENCH = DATA / "raw" / "bench" / "ocr"
+BENCH = layout.bench(DATA, "ocr")
 PROFILES = ["office", "poor"]
 
 # (manifest id, 1-based page, page type)

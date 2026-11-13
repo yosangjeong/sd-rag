@@ -11,6 +11,8 @@ import sys
 import time
 from pathlib import Path
 
+from evalset import OCR_CACHE
+
 from sdrag.common.config import settings
 from sdrag.ingest.chunk import chunk_structure, est_tokens
 from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
@@ -19,7 +21,7 @@ from sdrag.ingest.parse import parse
 
 def main() -> None:
     ocr = CachedOcr(BedrockVisionOcr(settings.ocr_model, settings.aws_region),
-                    Path(settings.ocr_cache_dir or "../data/raw/cache/ocr"))  # fmt: skip
+                    OCR_CACHE)  # fmt: skip
     for path in map(Path, sys.argv[1:]):
         t = time.perf_counter()
         try:

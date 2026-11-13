@@ -17,6 +17,7 @@ import statistics
 from collections import Counter
 from pathlib import Path
 
+from evalset import OCR_CACHE
 from ocr_bench import norm
 from rapidfuzz.distance import Levenshtein
 
@@ -44,7 +45,7 @@ class NoCall(OcrEngine):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", type=Path, default=DATA / "raw" / "cache" / "ocr")
+    ap.add_argument("--cache", type=Path, default=OCR_CACHE)
     a = ap.parse_args()
     ocr = CachedOcr(NoCall(settings.ocr_model), a.cache)  # the key holds the model id
     rows, missing = [], []

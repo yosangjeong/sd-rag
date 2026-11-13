@@ -25,7 +25,8 @@ import datetime as dt
 import re
 from dataclasses import dataclass, field
 
-from sdrag.retrieval.rerank import is_korean
+from sdrag.common import versions
+from sdrag.common.text import is_korean, strip_think
 from sdrag.retrieval.search import Hit
 
 SYSTEM = """You answer questions using only the numbered sources the user provides. They come from a collection of Korean and US statutes (labor, real estate) and documents users upload (reports, manuals, papers, forms, any topic), in Korean or English.
@@ -64,34 +65,21 @@ class Answer:
     output_tokens: int = 0
 
 
-RE_AMENDED = re.compile(r"\s*\[(\d{4})\. (\d{1,2})\. (\d{1,2})\. 시행\]$")
-RE_BEFORE = re.compile(r"\s*\[개정 전, (\d{4})\. (\d{1,2})\. (\d{1,2})\. 전까지\]$")
-
-
 def version_status(heading: str, today: dt.date) -> tuple[str, str]:
     """(heading without the version label, status attribute or ""): whether this version of
-    an amended article (ingest/parse.py mark_versions) is in force on `today`. Decided
-    here, not by the model: asked to compare the dates itself, it called a version taking
-    effect in two weeks the current law."""
-    for rx, amended in ((RE_AMENDED, True), (RE_BEFORE, False)):
-        m = rx.search(heading)
-        if m:
-            day = dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-            base = heading[: m.start()]
-            if amended:
-                st = (
-                    f"in force today (since {day})"
-                    if today >= day
-                    else f"not in force today (amended version, takes effect {day})"
-                )
-            else:
-                st = (
-                    f"in force today (until {day - dt.timedelta(days=1)}; an amended version takes effect {day})"
-                    if today < day
-                    else f"not in force today (replaced on {day})"
-                )
-            return base, st
-    return heading, ""
+    an amended article (common/versions.py) is in force on `today`. Decided here, not by
+    the model: asked to compare the dates itself, it called a version taking effect in
+    two weeks the current law."""
+    base, kind, day = versions.parse(heading)
+    if kind == "amended":
+        st = (f"in force today (since {day})" if today >= day
+              else f"not in force today (amended version, takes effect {day})")  # fmt: skip
+    elif kind == "before":
+        st = (f"in force today (until {day - dt.timedelta(days=1)}; an amended version takes effect {day})"
+              if today < day else f"not in force today (replaced on {day})")  # fmt: skip
+    else:
+        st = ""
+    return base, st
 
 
 def source_block(hits: list[Hit], today: dt.date | None = None) -> str:
@@ -131,7 +119,7 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
     user = (f"Today is {today.isoformat()}.\n\nSources:\n\n{source_block(hits, today)}\n\n"
             f"Question: {question}\n\nAnswer in {lang}.")  # fmt: skip
     c = chat.complete(SYSTEM, user, max_tokens=max_tokens)
-    text = re.sub(r"<think>.*?</think>", "", c.text, flags=re.DOTALL).strip()
+    text = strip_think(c.text)
     sources = [_citation(n, h) for n, h in enumerate(hits, 1)]
     cited = sorted({int(m) for m in RE_CITE.findall(text)})
     # a number that is not a source is removed from the text rather than shown as a link

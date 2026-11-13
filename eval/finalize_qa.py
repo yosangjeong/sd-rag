@@ -33,7 +33,7 @@ from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from evalset import CACHE, DATA, Gold, Item, doc_texts, locate, overlaps, save_items
+from evalset import CACHE, DATA, EMBED_CACHE, Gold, Item, doc_texts, locate, overlaps, save_items
 from generate_qa import CHECK_MODEL, paths
 from opensearchpy import OpenSearch
 from sample_passages import SEED, TARGET, TARGET_RE
@@ -271,7 +271,7 @@ def main() -> None:
 
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    emb = CachedEmbedder(emb, Path(settings.embed_cache_dir or DATA / "raw" / "cache" / "embed"))
+    emb = CachedEmbedder(emb, EMBED_CACHE)
     searchers = [(Searcher(client, idx, emb), mode) for mode, idx in POOL_SYSTEMS]
     judge = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), CACHE / "llm")
     log = []

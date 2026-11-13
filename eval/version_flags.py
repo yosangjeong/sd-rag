@@ -14,14 +14,13 @@ unaffected (the gold span is where it was).
 import argparse
 import datetime as dt
 import json
-import re
 
 from evalset import DATA, load_items
 from opensearchpy import OpenSearch
 
+from sdrag.common import versions
 from sdrag.common.config import settings
 
-RE_AMENDED = re.compile(r"\[(\d{4})\. (\d{1,2})\. (\d{1,2})\. 시행\]$")
 SETS = ("test", "dev", "real", "test_re", "dev_re", "real_re")
 
 
@@ -46,9 +45,8 @@ def main() -> None:
             spans = [*it.gold, *it.also]
             future = []
             for g in spans:
-                m = RE_AMENDED.search(heading(g.doc_id, g.start))
-                day = dt.date(*map(int, m.groups())) if m else None
-                future.append(day if day and day > on else None)
+                _, kind, day = versions.parse(heading(g.doc_id, g.start))
+                future.append(day if kind == "amended" and day > on else None)
             # every gold span is in a version not yet in force on the grading date
             if spans and all(future) and it.qid not in flags["flags"]:
                 flags["flags"][it.qid] = {"part": "date", "reason": (

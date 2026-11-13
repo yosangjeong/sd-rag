@@ -1,7 +1,8 @@
 from sdrag.agent.answer import answer
 from sdrag.agent.search import SearchAgent
 from sdrag.common.llm import Completion
-from sdrag.retrieval.rerank import LlmReranker, condense, is_korean
+from sdrag.common.text import is_korean
+from sdrag.retrieval.rerank import LlmReranker, condense
 from sdrag.retrieval.search import Hit
 
 

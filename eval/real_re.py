@@ -22,9 +22,8 @@ import csv
 import json
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
-from evalset import CACHE, DATA, Gold, Item, doc_texts, save_items
+from evalset import CACHE, EMBED_CACHE, Gold, Item, doc_texts, save_items
 from finalize_qa import (
     CONFIRM_MODEL,
     CONFIRM_SYSTEM,
@@ -55,7 +54,7 @@ def main() -> None:
     texts = doc_texts()
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    emb = CachedEmbedder(emb, Path(settings.embed_cache_dir or DATA / "raw" / "cache" / "embed"))
+    emb = CachedEmbedder(emb, EMBED_CACHE)
     searchers = [(Searcher(client, idx, emb), mode) for mode, idx in POOL_SYSTEMS]
     judge = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), CACHE / "llm")
     confirmer = CachedChat(BedrockChat(CONFIRM_MODEL, settings.aws_region), CACHE / "llm")

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 
-def own(question: str) -> str:
+def own(question: str) -> str:  # sdrag.common.text.is_korean; this script runs without the backend
     hangul = len(re.findall(r"[가-힣]", question))
     return "kr" if hangul > len(re.findall(r"[A-Za-z]", question)) / 3 else "us"
 

@@ -68,9 +68,3 @@ def bench(data: Path, name: str) -> Path:  # ocr | embed | robustness
     return raw(data) / "bench" / name
 
 
-def deploy(data: Path) -> Path:
-    return raw(data) / "deploy"
-
-
-def logs(data: Path) -> Path:
-    return raw(data) / "logs"

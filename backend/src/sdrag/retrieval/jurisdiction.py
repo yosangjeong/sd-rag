@@ -19,7 +19,7 @@ whatever their language or country.
 
 import re
 
-from sdrag.retrieval.rerank import is_korean
+from sdrag.common.text import is_korean, strip_think
 
 JURISDICTION_SYSTEM = """You route questions for a search engine whose shared collection holds Korean law and US federal law (labor, employment, workplace safety, real estate, leases, housing). Users also search documents they uploaded, on any topic.
 Decide which country's law the question is about:
@@ -40,6 +40,6 @@ def jurisdiction(chat, question: str) -> str | None:
         else "US (the question is in English)"
     )
     c = chat.complete(JURISDICTION_SYSTEM.format(own=own), question, max_tokens=300)
-    text = re.sub(r"<think>.*?</think>", "", c.text, flags=re.DOTALL)
+    text = strip_think(c.text)
     words = re.findall(r"\b(KR|US|BOTH|NONE)\b", text)  # upper case: not "let us"
     return LABELS.get(words[-1]) if words else None  # a reply we cannot read: no filter

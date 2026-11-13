@@ -13,9 +13,8 @@ favor the query's language (docs/decisions.md), so a question is also searched i
 the other language. The LLM translates it literally, keeping legal terms.
 """
 
-import re
-
 from sdrag.common.llm import parse_json
+from sdrag.common.text import is_korean, strip_think
 from sdrag.retrieval.search import Hit
 
 RERANK_SYSTEM = """You rank search results for a document search engine. The collection holds Korean and US statutes (labor, real estate) and documents users upload (reports, manuals, papers, forms, any topic), in Korean or English.
@@ -25,12 +24,6 @@ Return only JSON: {"ranking": [<passage numbers, best first>]}"""
 TRANSLATE_SYSTEM = """Translate the user's search query into {target}. Translate literally and keep it a search query of the same kind (a question stays a question, keywords stay keywords). Use the standard {target} term of the field where one exists (for a legal question, the term {target_law} uses). Keep names, numbers and codes as they are. Return only the translation."""
 
 MAX_PASSAGE_CHARS = 1200  # a long chunk is cut for the reranker only; ~20 x 1,200 chars fits easily
-
-
-def is_korean(text: str) -> bool:
-    hangul = len(re.findall(r"[가-힣]", text))
-    latin = len(re.findall(r"[A-Za-z]", text))
-    return hangul > latin / 3
 
 
 class LlmReranker:
@@ -68,7 +61,7 @@ class LlmTranslator:
             target, law, lang = "Korean", "Korean law (법령 용어)", "ko"
         system = TRANSLATE_SYSTEM.format(target=target, target_law=law)
         c = self.chat.complete(system, query, max_tokens=400)
-        text = re.sub(r"<think>.*?</think>", "", c.text, flags=re.DOTALL).strip()
+        text = strip_think(c.text)
         return text.strip('"'), lang
 
 
@@ -92,5 +85,5 @@ def condense(chat, history: list[dict], question: str) -> str:
     turns = "\n".join(f"{m['role']}: {m['text'][:HISTORY_CHARS]}" for m in history[-HISTORY_TURNS:])
     c = chat.complete(CONDENSE_SYSTEM, f"Conversation:\n{turns}\n\nLast message: {question}",
                       max_tokens=300)  # fmt: skip
-    text = re.sub(r"<think>.*?</think>", "", c.text, flags=re.DOTALL).strip().strip('"')
+    text = strip_think(c.text).strip('"')
     return text or question

@@ -10,12 +10,12 @@ Queues: in AWS the API sends one SQS message per file and the worker service
 in a thread pool. Either way the job is ``process``.
 """
 
-import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from sdrag.common.logs import log, user_hash
+from sdrag.common.text import is_korean
 from sdrag.ingest.chunk import chunk_structure, embed_input
 from sdrag.ingest.corpus import CorpusDoc
 from sdrag.ingest.parse import UnreadableFile, parse, sniff_format
@@ -44,12 +44,8 @@ def _transient(e: Exception) -> bool:
 
 
 def detect_lang(text: str) -> str:
-    sample = text[:20000]
-    return (
-        "ko"
-        if len(re.findall(r"[가-힣]", sample)) > len(re.findall(r"[A-Za-z]", sample)) / 3
-        else "en"
-    )
+    """An upload's language from its first 20,000 characters (common/text.is_korean)."""
+    return "ko" if is_korean(text[:20000]) else "en"
 
 
 def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:

@@ -15,7 +15,9 @@ from pathlib import Path
 import pypdf
 from docx import Document
 
-DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "bench" / "robustness"
+DIR = (
+    Path(__file__).resolve().parents[1] / "data" / "raw" / "bench" / "robustness"
+)  # layout.bench (stdlib only here)
 
 
 def main() -> None:
