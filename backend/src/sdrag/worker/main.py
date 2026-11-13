@@ -64,7 +64,12 @@ def main() -> None:
             try:
                 with tempfile.TemporaryDirectory() as tmp:
                     path = Path(tmp) / Path(job["filename"]).name
-                    s3.download_file(settings.upload_bucket, job["key"], str(path))
+                    try:
+                        s3.download_file(settings.upload_bucket, job["key"], str(path))
+                    except Exception as e:  # noqa: BLE001 - leave the message for a retry
+                        log("error", path="worker-download", doc_id=job.get("doc_id"),
+                            error=f"{type(e).__name__}: {e}"[:500])  # fmt: skip
+                        continue  # visible again after the timeout; DLQ after 3 tries
                     result = process(job["user"], job["doc_id"], path, job["filename"], deps)
                 url, handle = settings.upload_queue_url, m["ReceiptHandle"]
                 if result["status"] == "retrying":  # visible again in a minute; DLQ after 3
