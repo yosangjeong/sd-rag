@@ -458,8 +458,60 @@ def _pdf_tables(page) -> list:
         kept = sum(len(re.sub(r"\s", "", cell or "")) for r in rows for cell in r)
         if inside and kept < MIN_CELL_COVERAGE * inside:
             continue
-        tables.append(t)
+        tables.append(_widen_unruled(page, t))
     return sorted(tables, key=lambda t: t.bbox[1])
+
+
+class _Table:
+    """A table read again from text positions: what _pdf_page_parts needs of one."""
+
+    def __init__(self, bbox, rows) -> None:
+        self.bbox, self.rows = bbox, rows
+
+    def extract(self):
+        return self.rows
+
+
+def _latin_page(page) -> bool:
+    chars = [c["text"] for c in page.chars if not c["text"].isspace()]
+    latin = sum(c.isascii() for c in chars)
+    return bool(chars) and latin / len(chars) > 0.9
+
+
+def _widen_unruled(page, t):
+    """An English table without row rules (CFR: rules only around a few heads) comes out
+    of pdfplumber's line strategy as the ruled middle only, every column's values
+    stacked in one cell ("0\n130\n130 ..."), the columns beside it read as text. When
+    every filled cell of a row holds the same number (3+) of lines, the table's band of
+    its page column is read again by text alignment and kept if it has more columns.
+    Korean pages are left as they are (law.go.kr tables are ruled)."""
+    rows = t.extract()
+    stacked = any(
+        len({(c or "").count("\n") for c in r if c}) == 1
+        and max((c or "").count("\n") for c in r) >= 2
+        for r in rows
+    )
+    if not stacked or not _latin_page(page):
+        return t
+    x0, _, x1, _ = page.bbox
+    cx = (t.bbox[0] + t.bbox[2]) / 2
+    col = next(((a, b) for a, b in _pdf_columns(page, x0, x1) if a <= cx < b), (x0, x1))
+    band = page.crop((col[0], t.bbox[1], min(col[1], x1), t.bbox[3]))
+    text_rows = band.extract_table({"vertical_strategy": "text", "horizontal_strategy": "text"})
+    width = max((len(r) for r in rows), default=0)
+    if not text_rows or max(len(r) for r in text_rows) <= width or len(text_rows) <= len(rows):
+        return t
+    text_rows = [
+        [_unruled_cell(c) for c in r] for r in text_rows if any((c or "").strip() for c in r)
+    ]
+    return _Table((col[0], t.bbox[1], min(col[1], x1), t.bbox[3]), text_rows)
+
+
+def _unruled_cell(cell: str | None) -> str:
+    """A cell of a re-read CFR table: leader dots dropped ("Jun ......" -> "Jun") and the
+    minus sign, which GPO's font maps to the code of "¥" ("¥370"), restored."""
+    cell = re.sub(r"\s*[.…]{3,}\s*", " ", cell or "").strip()
+    return re.sub(r"¥(?=\d)", "−", cell)
 
 
 def _center(obj) -> tuple[float, float]:

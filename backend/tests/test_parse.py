@@ -351,3 +351,11 @@ def test_amended_article_versions_get_their_own_headings():
     assert heads[:2] == ["제18조의3(난임치료휴가) [개정 전, 2026. 11. 27. 전까지]"] * 2
     assert heads[2:4] == ["제18조의3(난임치료휴가) [2026. 11. 27. 시행]"] * 2
     assert heads[4] == "제19조(육아휴직)"
+
+
+def test_unruled_cfr_cells_lose_leader_dots_and_get_their_minus_back():
+    from sdrag.ingest.parse import _unruled_cell
+
+    assert _unruled_cell("Jun.............................................") == "Jun"
+    assert _unruled_cell("¥370") == "−370"
+    assert _unruled_cell(None) == ""

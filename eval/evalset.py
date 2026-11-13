@@ -130,13 +130,32 @@ class Item:
         return {texts[g.doc_id].file_type for g in self.gold}
 
 
-def load_items(path: Path) -> list[Item]:
+_TEXTS: dict[str, "DocText"] | None = None
+
+
+def load_items(path: Path, anchored: bool = True) -> list[Item]:
+    """The items of a set file, their spans re-anchored in the current canonical texts
+    (``anchor``): a parser change that moves text (a table read differently) moves the
+    stored offsets with it instead of scoring against the wrong place. A quote no longer
+    in its document stops here rather than being scored silently wrong."""
+    global _TEXTS
+    if anchored and _TEXTS is None:
+        _TEXTS = doc_texts()
     items = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
             d = json.loads(line)
-            d["gold"] = [Gold(**g) for g in d["gold"]]
-            d["also"] = [Gold(**g) for g in d.get("also", [])]
+            spans = {k: [Gold(**g) for g in d.get(k, [])] for k in ("gold", "also")}
+            if anchored:
+                for k, gs in spans.items():
+                    moved = [anchor(_TEXTS[g.doc_id].text, g) for g in gs]
+                    if None in moved:
+                        bad = gs[moved.index(None)]
+                        raise ValueError(
+                            f"{d['qid']}: quote not found in {bad.doc_id}: {bad.quote[:60]!r}"
+                        )
+                    spans[k] = moved
+            d["gold"], d["also"] = spans["gold"], spans["also"]
             items.append(Item(**d))
     return items
 

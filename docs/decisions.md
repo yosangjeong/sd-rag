@@ -466,12 +466,22 @@ English notice (CER 9.5%, a three-column table).
 | 산업안전보건법 시행규칙 (labor) | 44 / 33 | 65.6% | 95.7% | 58.1% | 100% |
 | 산업재해보상보험법 시행령 (labor) | 9 / 10 | 61.8% | 67.1% | 52.1% | 100% |
 | 주택임대차보호법 시행령 (real estate) | 2 / 2 | 94.6% | 94.6% | 89.3% | 100% |
-| 12 CFR 1024, Regulation X (English, vs govinfo XML) | 8 / 7 | 5.0% | 64.9% | 0.0% | 97.9% |
+| 12 CFR 1024, Regulation X (English, vs govinfo XML), before | 8 / 7 | 5.0% | 64.9% | 0.0% | 97.9% |
+| same, with unruled tables read again (served) | 8 / 7 | 68.4% | 90.0% | 37.1% | 100% |
 
-The English figure measures the known limit: CFR tables have no ruling lines, so
-pdfplumber's line-based detection returns fragments (a column's numbers in one cell);
-the text is kept (97.9%) and searchable, the cell structure is not. A layout model for
-borderless tables is the production fix (design.md, limitations).
+CFR tables have rules only around a few heads, so pdfplumber's line strategy found the
+ruled middle of each table, every column's values stacked in one cell, and read the
+columns beside it as text. Now (`ingest/parse.py` `_widen_unruled`), on an English page,
+a table whose filled cells all hold the same number of lines (3+) is read again by text
+alignment over its band of the page column, kept if that gives more columns; leader dots
+are dropped and the minus sign GPO's font encodes as "¥" restored. Korean tables are
+untouched (their figures above are unchanged). Two documents changed (12 CFR 1024,
+29 CFR 778); the evaluation spans in them moved with the text (19 of 78) and none was
+lost, which `evalset.load_items` now checks on every load: spans are re-anchored in
+the current text, and a quote no longer found stops the run (`anchor` had been written
+for this but was never called). Retrieval without the LLM steps changed by at most one
+question per set; the served system was measured before this change. Rows still split
+differently from the XML in places (37% exact): a layout model remains the production fix.
 
 ## Measured late: approximate search, injection (2026-11-13)
 
