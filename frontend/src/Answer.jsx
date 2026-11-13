@@ -1,3 +1,5 @@
+import { Badge } from "./versions";
+
 // The answer text: the small Markdown subset the model writes (paragraphs, **bold**,
 // "1." and "-"/"*" lists, "#" headings) plus "[n]" citation buttons. Built as React
 // elements, never as HTML strings, so text from documents cannot inject markup.
@@ -59,23 +61,30 @@ export default function Answer({ text, citations, onOpen, label }) {
   );
 }
 
-// Sources list: citations of the same place (several chunks of one article) on one line
+// Sources list: citations of the same place (several chunks of one article) on one card,
+// with the statute version (versions.jsx) when the article has been amended
 export function Sources({ citations, onOpen, label }) {
   const groups = [];
   for (const c of citations) {
     const l = label(c);
     const g = groups.find((x) => x.label === l);
     if (g) g.items.push(c);
-    else groups.push({ label: l, items: [c] });
+    else groups.push({ label: l, heading: c.heading, items: [c] });
   }
   return (
-    <ul className="sources">
-      {groups.map((g) => (
-        <li key={g.label}>
-          <span className="nums">{g.items.map((c) => c.n).join(", ")}.</span>{" "}
-          <button className="link" onClick={() => onOpen(g.items[0])}>{g.label}</button>
-        </li>
-      ))}
-    </ul>
+    <div className="sources">
+      <div className="sources-title">근거 {groups.length}곳</div>
+      <ul>
+        {groups.map((g) => (
+          <li key={g.label}>
+            <button className="source-card" onClick={() => onOpen(g.items[0])}>
+              <span className="nums">{g.items.map((c) => c.n).join(" · ")}</span>
+              <span className="where">{g.label}</span>
+              <Badge heading={g.heading} />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

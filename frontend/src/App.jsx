@@ -5,11 +5,21 @@ import { api } from "./api";
 import { signOut } from "./auth";
 import Answer, { Sources } from "./Answer";
 import Logs from "./Logs";
+import { Badge, version } from "./versions";
 
 function where(c) {
   const page = c.page_start ? ` p.${c.page_start}${c.page_end && c.page_end !== c.page_start ? `-${c.page_end}` : ""}` : "";
-  return `${c.title} › ${c.heading || ""}${page}`;
+  return `${c.title} › ${version(c.heading).base}${page}`;
 }
+
+// starting points on the empty page: both languages, both fields, one cross-lingual
+const EXAMPLES = [
+  "수습 기간에도 해고 예고를 해야 하나요?",
+  "난임치료휴가는 며칠까지 유급인가요?",
+  "전세 계약이 끝났는데 보증금을 못 받으면 어떻게 하나요?",
+  "How much notice must an employer give before a mass layoff?",
+  "미국에서 집주인이 아이가 있다는 이유로 임대를 거절해도 되나요?",
+];
 
 const STATUS = { queued: "대기", processing: "처리 중", retrying: "재시도 대기", done: "완료", failed: "실패" };
 
@@ -62,7 +72,7 @@ function Uploads({ onAsk }) {
                   {d.status === "failed" && d.error ? ` · ${d.error}` : ""}
                 </small>
                 {d.status === "done" && d.doc && (
-                  <button className="link ask" onClick={() => onAsk(d.doc, d.file)}>이 문서에 질문</button>
+                  <button className="link ask-doc" onClick={() => onAsk(d.doc, d.file)}>이 문서에 질문</button>
                 )}
               </li>
             ))}
@@ -101,9 +111,9 @@ export default function App({ user }) {
     const c = await api.conversation(id);
     setMessages(c.messages);
   };
-  const ask = async (e) => {
-    e.preventDefault();
-    const q = text.trim();
+  const ask = async (e, preset) => {
+    e?.preventDefault();
+    const q = (preset ?? text).trim();
     if (!q || pending) return;
     setText("");
     setMessages((m) => [...m, { role: "user", text: q }]);
@@ -126,8 +136,11 @@ export default function App({ user }) {
   return (
     <div className="layout">
       <aside className="side">
-        <header>
-          <b>법령 문서 검색</b>
+        <header className="brand">
+          <div>
+            <b>법령 문서 검색</b>
+            <small>한국·미국 법령 + 내 문서</small>
+          </div>
           {user && <button className="link" onClick={signOut}>로그아웃</button>}
         </header>
         {evaluator && (
@@ -138,9 +151,10 @@ export default function App({ user }) {
         <Uploads onAsk={(id) => { setScope(id); setConvId(null); setMessages([]); setSource(null);
                                   api.library().then(setLibrary).catch(() => {});
                                   setTimeout(() => document.querySelector(".ask input")?.focus(), 0); }} />
-        <button className="button" onClick={() => { setConvId(null); setMessages([]); setSource(null); }}>
-          새 대화
+        <button className="button ghost" onClick={() => { setConvId(null); setMessages([]); setSource(null); }}>
+          + 새 대화
         </button>
+        {convs.length > 0 && <div className="section-label">대화</div>}
         <ul className="convs">
           {convs.map((c) => (
             <li key={c.id} className={c.id === convId ? "active" : ""} onClick={() => open(c.id)}>{c.title}</li>
@@ -152,7 +166,16 @@ export default function App({ user }) {
       <main className="chat">
         <div className="messages">
           {messages.length === 0 && (
-            <p className="hint">한국·미국 법령(노동, 부동산)과 올린 문서를 근거로 답합니다. 한국어나 영어로 물어보세요.</p>
+            <div className="empty">
+              <h1>무엇이든 물어보세요</h1>
+              <p>한국·미국 법령(노동, 부동산)과 올린 문서를 근거로, 출처 위치와 함께 답합니다.
+                한국어로 물어도 영어 문서를, 영어로 물어도 한국어 문서를 찾습니다.</p>
+              <div className="examples">
+                {EXAMPLES.map((q) => (
+                  <button key={q} className="example" onClick={() => ask(null, q)}>{q}</button>
+                ))}
+              </div>
+            </div>
           )}
           {messages.map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
@@ -162,21 +185,33 @@ export default function App({ user }) {
                   {(m.citations || []).length > 0 && (
                     <Sources citations={m.citations} onOpen={openSource} label={where} />
                   )}
-                  {m.searched && <small className="meta">검색한 질문: {m.searched}<br /></small>}
-                  {m.latency_ms && <small className="meta">{m.mode === "agent" ? `에이전트 · 검색 ${m.steps.filter((s) => s.tool === "search").length}회 · ` : ""}{(m.latency_ms / 1000).toFixed(1)}초</small>}
+                  <div className="meta">
+                    {m.mode === "agent" && <span className="chip">에이전트 · 검색 {m.steps.filter((s) => s.tool === "search").length}회</span>}
+                    {m.latency_ms && <span className="chip">{(m.latency_ms / 1000).toFixed(1)}초</span>}
+                    {m.searched && <span className="chip wide" title="앞 대화를 반영해 고친 질문">검색한 질문: {m.searched}</span>}
+                  </div>
                 </>
               ) : (
                 <p>{m.text}</p>
               )}
             </div>
           ))}
-          {pending && <div className="msg assistant"><p className="hint">찾는 중…</p></div>}
+          {pending && (
+            <div className="msg assistant">
+              <p className="thinking">
+                <span className="dots"><i /><i /><i /></span>
+                {mode === "agent" ? "에이전트가 검색 방법을 고르는 중" : "근거를 찾고 답을 쓰는 중"}
+              </p>
+            </div>
+          )}
         </div>
         <form className="ask" onSubmit={ask}>
-          <select value={mode} onChange={(e) => setMode(e.target.value)} title="검색 방식">
-            <option value="basic">기본 검색</option>
-            <option value="agent">에이전트</option>
-          </select>
+          <div className="modes" role="group" aria-label="검색 방식">
+            <button type="button" className={mode === "basic" ? "on" : ""} onClick={() => setMode("basic")}
+                    title="번역 검색 + 재순위: 빠르고 정확">기본</button>
+            <button type="button" className={mode === "agent" ? "on" : ""} onClick={() => setMode("agent")}
+                    title="에이전트가 질의를 바꿔 가며 여러 번 검색: 느리지만 어려운 질문에 유리">에이전트</button>
+          </div>
           <select value={scope} onChange={(e) => setScope(e.target.value)} title="검색 범위" className="scope">
             <option value="">모든 문서</option>
             <optgroup label="내 문서">
@@ -187,7 +222,7 @@ export default function App({ user }) {
             </optgroup>
           </select>
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="질문을 입력하세요" maxLength={2000} />
-          <button className="button" disabled={pending}>보내기</button>
+          <button className="button send" disabled={pending || !text.trim()} aria-label="보내기">보내기</button>
         </form>
       </main>
       )}
@@ -195,10 +230,14 @@ export default function App({ user }) {
       {view === "chat" && source && (
         <aside className="source">
           <header>
-            <b>{where(source)}</b>
-            <button className="link" onClick={() => setSource(null)}>닫기</button>
+            <div>
+              <div className="source-title">{source.title}</div>
+              <div className="source-where">{version(source.heading).base}{source.page_start ? ` · p.${source.page_start}` : ""}</div>
+              <Badge heading={source.heading} />
+            </div>
+            <button className="link" onClick={() => setSource(null)} aria-label="닫기">닫기</button>
           </header>
-          <small>{source.doc_id} · 글자 {source.start}–{source.end}{source.ocr ? " · OCR" : ""}</small>
+          <small className="meta">{source.doc_id} · 글자 {source.start}–{source.end}{source.ocr ? " · OCR로 읽은 쪽" : ""}</small>
           <pre>{source.text}</pre>
         </aside>
       )}
