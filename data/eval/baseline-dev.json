@@ -1,7 +1,7 @@
 {
  "bilingual_union+rerank+jur@chunks-structure~glm-4.7": {
   "span_hit@10": 0.9529,
-  "span_mrr": 0.8891,
-  "measured": "2026-11-13, dev set, 70-document corpus, served system with the jurisdiction filter, local OpenSearch 3.7"
+  "span_mrr": 0.902,
+  "measured": "2026-11-13, dev set, 70-document corpus, served system (jurisdiction filter, statute versions), local OpenSearch 3.7"
  }
 }

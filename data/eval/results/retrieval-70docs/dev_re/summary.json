@@ -8,10 +8,10 @@
    "span_recall@10": 0.881,
    "span_mrr": 0.8429,
    "span_ndcg10": 0.8396,
-   "doc_hit@10": 0.9048,
-   "latency_ms_p50": 3351.3,
-   "latency_ms_p95": 3817.5,
-   "cost_usd_per_query": 0.006073649523809523
+   "doc_hit@10": 0.9524,
+   "latency_ms_p50": 3385.7,
+   "latency_ms_p95": 4741.7,
+   "cost_usd_per_query": 0.006080525714285714
   },
   "file_type=docx": {
    "n": 3,
@@ -22,9 +22,9 @@
    "span_mrr": 1.0,
    "span_ndcg10": 1.0,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3417.0,
-   "latency_ms_p95": 3417.0,
-   "cost_usd_per_query": 0.0062995333333333335
+   "latency_ms_p50": 3649.0,
+   "latency_ms_p95": 3649.0,
+   "cost_usd_per_query": 0.006089453333333333
   },
   "file_type=docx+pdf": {
    "n": 1,
@@ -35,9 +35,9 @@
    "span_mrr": 1.0,
    "span_ndcg10": 0.6131,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3154.4,
-   "latency_ms_p95": 3154.4,
-   "cost_usd_per_query": 0.0070767600000000005
+   "latency_ms_p50": 3586.5,
+   "latency_ms_p95": 3586.5,
+   "cost_usd_per_query": 0.0071553599999999995
   },
   "file_type=hwpx": {
    "n": 5,
@@ -48,9 +48,9 @@
    "span_mrr": 1.0,
    "span_ndcg10": 1.0,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3601.9,
-   "latency_ms_p95": 3710.6,
-   "cost_usd_per_query": 0.0067390919999999995
+   "latency_ms_p50": 3443.1,
+   "latency_ms_p95": 4515.2,
+   "cost_usd_per_query": 0.006821776
   },
   "file_type=pdf": {
    "n": 7,
@@ -60,10 +60,10 @@
    "span_recall@10": 0.8571,
    "span_mrr": 0.6714,
    "span_ndcg10": 0.7168,
-   "doc_hit@10": 0.8571,
-   "latency_ms_p50": 3351.3,
-   "latency_ms_p95": 3675.7,
-   "cost_usd_per_query": 0.005802994285714285
+   "doc_hit@10": 1.0,
+   "latency_ms_p50": 3346.2,
+   "latency_ms_p95": 3560.8,
+   "cost_usd_per_query": 0.0058302257142857136
   },
   "file_type=scan": {
    "n": 5,
@@ -74,9 +74,9 @@
    "span_mrr": 0.8,
    "span_ndcg10": 0.8,
    "doc_hit@10": 0.8,
-   "latency_ms_p50": 3302.7,
-   "latency_ms_p95": 3320.4,
-   "cost_usd_per_query": 0.005450971999999999
+   "latency_ms_p50": 3385.7,
+   "latency_ms_p95": 3684.9,
+   "cost_usd_per_query": 0.005469371999999999
   },
   "kind=fact": {
    "n": 18,
@@ -87,9 +87,9 @@
    "span_mrr": 0.8722,
    "span_ndcg10": 0.8899,
    "doc_hit@10": 0.9444,
-   "latency_ms_p50": 3417.2,
-   "latency_ms_p95": 3817.5,
-   "cost_usd_per_query": 0.005916834444444444
+   "latency_ms_p50": 3373.2,
+   "latency_ms_p95": 4741.7,
+   "cost_usd_per_query": 0.00591939
   },
   "kind=multi": {
    "n": 1,
@@ -100,9 +100,9 @@
    "span_mrr": 1.0,
    "span_ndcg10": 0.6131,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3154.4,
-   "latency_ms_p95": 3154.4,
-   "cost_usd_per_query": 0.0070767600000000005
+   "latency_ms_p50": 3586.5,
+   "latency_ms_p95": 3586.5,
+   "cost_usd_per_query": 0.0071553599999999995
   },
   "kind=table": {
    "n": 2,
@@ -112,10 +112,10 @@
    "span_recall@10": 0.5,
    "span_mrr": 0.5,
    "span_ndcg10": 0.5,
-   "doc_hit@10": 0.5,
-   "latency_ms_p50": 2935.8,
-   "latency_ms_p95": 2682.2,
-   "cost_usd_per_query": 0.006983429999999999
+   "doc_hit@10": 1.0,
+   "latency_ms_p50": 3185.2,
+   "latency_ms_p95": 2484.3,
+   "cost_usd_per_query": 0.006993329999999999
   },
   "lang=en->en": {
    "n": 5,
@@ -126,9 +126,9 @@
    "span_mrr": 1.0,
    "span_ndcg10": 1.0,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3561.1,
-   "latency_ms_p95": 3675.7,
-   "cost_usd_per_query": 0.0053038799999999995
+   "latency_ms_p50": 3560.8,
+   "latency_ms_p95": 3684.9,
+   "cost_usd_per_query": 0.00531448
   },
   "lang=en->ko": {
    "n": 7,
@@ -138,10 +138,10 @@
    "span_recall@10": 0.6429,
    "span_mrr": 0.6,
    "span_ndcg10": 0.5714,
-   "doc_hit@10": 0.7143,
-   "latency_ms_p50": 3519.7,
-   "latency_ms_p95": 3710.6,
-   "cost_usd_per_query": 0.006781362857142857
+   "doc_hit@10": 0.8571,
+   "latency_ms_p50": 3443.1,
+   "latency_ms_p95": 4515.2,
+   "cost_usd_per_query": 0.006825937142857143
   },
   "lang=ko->en": {
    "n": 2,
@@ -152,9 +152,9 @@
    "span_mrr": 1.0,
    "span_ndcg10": 1.0,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3186.9,
-   "latency_ms_p95": 3022.5,
-   "cost_usd_per_query": 0.00488683
+   "latency_ms_p50": 2756.9,
+   "latency_ms_p95": 2513.1,
+   "cost_usd_per_query": 0.00495274
   },
   "lang=ko->ko": {
    "n": 7,
@@ -165,9 +165,9 @@
    "span_mrr": 0.9286,
    "span_ndcg10": 0.9473,
    "doc_hit@10": 1.0,
-   "latency_ms_p50": 3189.3,
-   "latency_ms_p95": 3417.5,
-   "cost_usd_per_query": 0.006254862857142857
+   "latency_ms_p50": 3346.2,
+   "latency_ms_p95": 3886.2,
+   "cost_usd_per_query": 0.006204514285714285
   }
  },
  "bilingual_union_dense+rerank+jur@chunks-structure~glm-4.7": {

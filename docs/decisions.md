@@ -360,7 +360,8 @@ back to no filter.
 | | test (338) | real (137) | real-estate test (82) |
 |---|---|---|---|
 | served before (domain-neutral prompts) | 0.93 / 0.87 | 0.96 / 0.88 | 0.98 / 0.91 |
-| **+ jurisdiction filter (served)** | **0.94 / 0.88** | **0.94 / 0.90** | **0.98 / 0.91** |
+| + jurisdiction filter | 0.94 / 0.88 | 0.94 / 0.90 | 0.98 / 0.91 |
+| **+ statute versions (served, below)** | **0.95 / 0.88** | **0.95 / 0.89** | **0.98 / 0.91** |
 
 - **Dense instead of hybrid as the first stage** (asked late: on dev, dense + rerank had
   beaten hybrid + rerank, 0.894 vs 0.847 hit@10, but the translation union had only been
@@ -398,6 +399,17 @@ format; many take effect on 2026-12-08, during the interview week.
   comparison to the model: it called the version taking effect in two weeks the current
   law. With the status computed: on 2026-11-13 "2 days now, 4 from 2026-11-27"; with the
   date set to 2026-12-01, "4 days now, 2 until the change".
+- **Measured again** with the versions split (v7): retrieval unchanged within a question
+  or two (test 0.947 / 0.884, real 0.949 / 0.893, real-estate 0.976 / 0.908, dev
+  0.953 / 0.902; the CI baselines were raised to these). Answers: labor 72% correct in
+  one run, 77% in a second run of the same system, real estate 76%; unanswerable
+  declined 67% / 93%; the other country's law cited 0 times.
+- **Run-to-run variation, measured here for the first time**: the same system run twice
+  on the same 100 items changed 13 correctness grades (translation, reranking and the
+  answer are LLM calls). A difference of about 5 points between two single runs is
+  therefore within the noise; the version-to-version differences in the Answers table
+  above (one run each) should be read the same way. Production would repeat runs and
+  report a mean and range.
 - **Evaluation**: 20 test items touch an article with two versions; 7 items across the
   sets have their gold only in a version not yet in force on the grading date, so their
   reference answers are only right later: flagged "date" in `data/eval/item_flags.json`
