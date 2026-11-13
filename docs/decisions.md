@@ -213,9 +213,14 @@ each measured once (`data/eval/results/answers-v1/`, `-v2-labor-prompts/`,
   recovered to 48%; then stopped, as the 27-item set is small and noisy (some of it
   is partly answerable) and further rounds would tune to it.
 - Known limit: an English legal question naming no country can still get Korean law
-  first ("Are pay stubs required?"). Next step: label every source with its
-  jurisdiction ([KR] / [US]) in the answer prompt, or filter the sources by the
-  question's implied country.
+  first ("Are pay stubs required?"). Tried and not kept (v5, measured once): every
+  source labelled jurisdiction="KR" / "US" and the rule told to answer from the
+  question's jurisdiction. The answers citing the other country's law stayed at 8 of
+  27, unsupported statements went 5% -> 8%, declining 48% -> 52%: no gain, so the
+  change was reverted (`data/eval/results/answers-v5-labels-rejected/`). The fix
+  that would hold is in retrieval, not the prompt: for a legal question naming no
+  country, pass only that country's statutes (and the user's documents) to the
+  answer step.
 - The one-file numbers move by one or two items out of 30 between versions.
 
 **One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document
