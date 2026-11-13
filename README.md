@@ -6,13 +6,47 @@ questions in Korean or English and get answers that cite the document and the pl
 regulations (Korean labor and real-estate acts with their decrees and rules; US Code,
 CFR, Federal Register), and each user's uploads are searched only for that user.
 
-The focus is retrieval accuracy, measured on held-out sets (`data/eval/`): 338
-generated labor-law questions, 137 real labor questions, 82 generated and 83 real
-real-estate questions (the last: hit@10 / MRR 0.87 / 0.83 served, 0.95 / 0.86 agent).
-hit@10 / MRR: 0.95 / 0.88, 0.95 / 0.89 and 0.98 / 0.91, against 0.78 / 0.53,
-0.89 / 0.60 and 0.84 / 0.57 for plain hybrid search (`docs/decisions.md`). Answers
-(automatic judge, a lower bound): 72-77% correct over two runs, 91% cite the gold
-passage (real estate: 76%, 93%), 67% of unanswerable questions declined (real estate 93%).
+The focus is retrieval accuracy, measured on held-out sets that were never used for
+tuning (`data/eval/`). hit@10 / MRR of the served system against plain hybrid search:
+
+| Set | Questions | Served | Hybrid (BM25 + vectors) |
+|---|---|---|---|
+| Labor, generated (test) | 338 | **0.95 / 0.88** | 0.78 / 0.53 |
+| Labor, real user questions (government FAQs) | 137 | **0.95 / 0.89** | 0.89 / 0.60 |
+| Real estate, generated (test) | 82 | **0.98 / 0.91** | 0.84 / 0.57 |
+| Real estate, real user questions | 83 | **0.87 / 0.83** (agent mode 0.95 / 0.86) | 0.75 / 0.51 |
+
+Answers (automatic judge, a lower bound): 72-77% correct over two runs of the same system,
+91% cite the gold passage (real estate 76%, 93%); unanswerable questions declined 67%
+(real estate 93%); the other country's law cited 0 times. How far the judge can be
+trusted, and every choice behind these numbers: `docs/decisions.md`.
+
+## For evaluators
+
+- **Service**: <URL, filled in at deployment> - up from submission to 2026-12-07 and on
+  the interview day. **Accounts** are in the submission e-mail: two evaluator accounts
+  (with the log viewer) and one regular account (without it), so isolation between
+  users and the log permission can both be checked.
+- **Five minutes to try**:
+  1. Sign in, click an example question; the answer cites its sources by number, and
+     clicking `[n]` opens the passage (statute > article, page).
+  2. Ask in English about Korean law, or in Korean about US law (cross-lingual search).
+  3. Upload several PDF / DOCX / HWPX files at once (scans are OCR'd; progress is shown),
+     then ask about them or pick "이 문서에 질문" to search one file only.
+  4. Switch to **에이전트** (agent mode): the model rewrites the query and picks keyword,
+     vector or filtered searches itself; the number of searches is shown.
+  5. Sign in with the other account: the first account's uploads and conversations are
+     not there.
+- **Logs** (`docs/operations.md`): evaluator accounts see **로그 보기 (평가자)** in the
+  sidebar: fixed queries over the service logs (requests, questions, retrieval results,
+  tool calls, errors, latency and tokens, uploads, the audit trail of searches and
+  opened sources), or every step of one request by its `x-request-id`. Personal data
+  and secrets are masked before anything is written.
+- **Reading order**: `docs/design.md` (architecture, security incl. prompt injection,
+  logging, limitations), `docs/decisions.md` (every decision with its measurement),
+  `data/eval/README.md` (how the evaluation sets were built and scored, judge models
+  and prompts), `eval/README.md` (what each evaluation script does), results per
+  question in `data/eval/results/`.
 
 ## How it works
 
