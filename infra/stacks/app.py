@@ -6,7 +6,7 @@
 
 - One container image (backend/Dockerfile), built by CDK from the repository at deploy
   time; the API and the worker run it with different commands.
-- API: 1 task (0.5 vCPU, 1 GB), behind a public ALB that answers only requests
+- API: 2 tasks (0.5 vCPU, 1 GB each, one per AZ), behind a public ALB that answers only requests
   carrying a header CloudFront adds (X-Origin-Verify), so the ALB cannot be used
   directly. CloudFront gives HTTPS without a domain of our own.
 - Worker: scales on the upload queue's depth, 0 tasks when the queue is empty, up to
@@ -115,7 +115,9 @@ class AppStack(Stack):
             load_balancer=lb,
             cpu=512,
             memory_limit_mib=1024,
-            desired_count=1,
+            # two tasks, spread over the two AZs by ECS: one can fail or be replaced while the
+            # other serves (the service must stay reachable through the evaluation)
+            desired_count=2,
             assign_public_ip=True,  # public subnets, no NAT gateway (network.py)
             task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             security_groups=[network.app_sg],
@@ -135,7 +137,7 @@ class AppStack(Stack):
                 log_driver=ecs.LogDrivers.aws_logs(stream_prefix="api", log_group=api_logs),
             ),
             circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
-            min_healthy_percent=100,  # one task: start the new one before stopping the old
+            min_healthy_percent=100,  # a deploy starts new tasks before stopping old ones
             open_listener=False,
         )
         api.target_group.configure_health_check(path="/health", healthy_http_codes="200")

@@ -30,7 +30,7 @@ with SigV4. The ALB answers only requests carrying a header that CloudFront adds
 whose value is derived from the stack's UUID (not in the repository).
 
 **Compute (ECS Fargate).** One image (`backend/Dockerfile`), three uses: the API
-(1 task, 0.5 vCPU / 1 GB, always on), the upload worker (1 vCPU / 4 GB, scaled on
+(2 tasks, 0.5 vCPU / 1 GB each, one per AZ, always on), the upload worker (1 vCPU / 4 GB, scaled on
 the queue: 0 when idle, up to 2; the API wakes it on upload) and a one-off task that bulk-indexes the corpus
 from S3 inside the VPC.
 
@@ -125,7 +125,7 @@ document). Queries for evaluators: `docs/operations.md`.
 
 | Area | Here | Production |
 |---|---|---|
-| Availability | one OpenSearch node, one API task, 2 AZs | 3 AZs, replicas, dedicated masters, 2+ API tasks |
+| Availability | API on 2 tasks in 2 AZs; one OpenSearch node (a second would double the largest cost) | 3 AZs, OpenSearch replicas and dedicated masters, API autoscaling |
 | Network | tasks in public subnets (no NAT) | private subnets with NAT or VPC endpoints |
 | Domain | CloudFront default domain | own domain, ACM certificate, WAF |
 | Prompt injection | layered prompts and least capability | add Guardrails / an injection classifier at ingest and query time |

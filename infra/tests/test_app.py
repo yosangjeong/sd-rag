@@ -72,3 +72,11 @@ def test_worker_scales_to_zero():
     app.has_resource_properties(
         "AWS::ApplicationAutoScaling::ScalableTarget", {"MinCapacity": 0, "MaxCapacity": 2}
     )
+
+
+def test_api_runs_two_tasks_and_deploys_without_dropping_below_them():
+    _, app = _templates()
+    app.has_resource_properties(
+        "AWS::ECS::Service",
+        {"DesiredCount": 2, "DeploymentConfiguration": Match.object_like({"MinimumHealthyPercent": 100})},
+    )
