@@ -47,7 +47,7 @@ question -> BM25 + vector search (RRF), top 20; same for its translation, +10 mo
 ```bash
 infra/local/opensearch/up.sh                       # OpenSearch 3.7 with nori on :9200
 cd backend && uv sync
-AWS_PROFILE=<profile> SDRAG_OCR_CACHE_DIR=../data/raw/ocr-cache SDRAG_EMBED_CACHE_DIR=../data/raw/embed-cache \
+AWS_PROFILE=<profile> SDRAG_OCR_CACHE_DIR=../data/raw/cache/ocr SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \
   uv run python -m sdrag.ingest.pipeline --strategy structure --recreate   # index the corpus
 AWS_PROFILE=<profile> uv run uvicorn sdrag.api.main:app --port 8000      # API (auth_mode=dev)
 cd ../frontend && npm ci && npm run dev                                  # http://localhost:5173

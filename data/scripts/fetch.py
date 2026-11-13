@@ -4,12 +4,13 @@
   python data/scripts/fetch.py --record   # also write missing sha256 values back
   python data/scripts/fetch.py --sources  # regenerate data/SOURCES.md from the manifest
 
-Files land in data/raw/<id>.<format> (gitignored). 'manual' documents (e.g. from
-law.go.kr, whose download flow needs a browser) must be saved there by hand;
-this script then verifies them by SHA-256 so everyone gets the same bytes.
+Files land in data/raw/corpus/<country>/<field>/ (gitignored; paths in
+backend/src/sdrag/ingest/layout.py): US documents as <id>.pdf, Korean statutes in
+<family>/<kind>/ (see build_kr.py). 'manual' documents (e.g. from law.go.kr, whose
+download flow needs a browser) must be saved there by hand; this script then
+verifies them by SHA-256 so everyone gets the same bytes.
 
-Korean statutes are the exception: they live in data/raw/kr-inbox/<family>/<kind>/
-(see build_kr.py), and the recorded SHA-256 is that of the file as downloaded
+For Korean statutes and the recorded SHA-256 is that of the file as downloaded
 (the zip, or the single PDF/HWPX), not of the merged HWPX or generated DOCX.
 Those derived files are rebuilt by build_kr.py, which checks their text and
 table count against the source instead; their bytes vary between builds
@@ -17,15 +18,15 @@ table count against the source instead; their bytes vary between builds
 
 Rows with format "scan" are corpus documents served as a synthetic scan: the hashed
 file is the source PDF (downloaded or saved as above), and make_scans.py writes the
-image-only scan of it to data/raw/scans/<id>.pdf. Their text PDF is not indexed.
+image-only scan of it to .../<field>/scans/<id>.pdf. Their text PDF is not indexed.
 
 Rows tagged eval-truth (ids ending in -truth) are not part of the corpus: they are
 the HWPX edition of a statute the corpus holds as PDF, kept in
-data/raw/kr-truth/<family>/<kind>/ as ground truth for eval/pdf_tables.py. Build
+data/raw/truth/<family>/<kind>/ as ground truth for eval/pdf_tables.py. Build
 their HWPX with build_kr.build_hwpx_kind; never index them (the statute would
 appear twice).
 
-Uses only the standard library.
+Uses only the standard library (layout.py included).
 """
 
 import argparse
@@ -37,10 +38,10 @@ import urllib.request
 from pathlib import Path
 
 DATA = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(DATA.parent / "backend" / "src"))
+from sdrag.ingest import layout  # noqa: E402  (standard library only)
+
 MANIFEST = DATA / "manifest.csv"
-RAW = DATA / "raw"
-KR_INBOX = RAW / "kr-inbox"
-KR_TRUTH = RAW / "kr-truth"
 TRUTH_SUFFIX = "-truth"
 USER_AGENT = "sd-rag-dataset-fetch/0.1"
 
@@ -71,20 +72,21 @@ def download(url: str, dest: Path) -> None:
 
 
 def local_path(row: dict) -> Path:
-    """Where a document's hashed file lives (see the module docstring)."""
-    doc_id, root = row["id"], KR_INBOX
+    """Where a document's hashed file lives (see the module docstring, layout.py)."""
+    doc_id = row["id"]
     if doc_id.endswith(TRUTH_SUFFIX):
-        doc_id, root = doc_id.removesuffix(TRUTH_SUFFIX), KR_TRUTH
-    family, _, kind = doc_id.rpartition("-")
-    folder = root / family / kind
+        folder = layout.truth_dir(DATA, doc_id.removesuffix(TRUTH_SUFFIX))
+    elif doc_id.startswith("kr-"):
+        folder = layout.kr_dir(DATA, doc_id, row["tags"])
+    else:
+        return layout.corpus_dir(DATA, doc_id, row["tags"]) / f"{doc_id}.pdf"  # scans: a PDF
     if folder.is_dir():
         files = {f.suffix.lower(): f for f in folder.iterdir() if f.is_file()}
         # the download is the zip if there is one, else the single PDF/HWPX
         for ext in (".zip", ".pdf", ".hwpx"):
             if ext in files:
                 return files[ext]
-    ext = "pdf" if row["format"] == "scan" else row["format"]  # scans: source is a PDF
-    return RAW / f"{row['id']}.{ext}"
+    return folder / f"{doc_id}.{row['format']}"
 
 
 def load() -> tuple[list[str], list[dict]]:
@@ -95,10 +97,10 @@ def load() -> tuple[list[str], list[dict]]:
 
 def fetch(record: bool) -> int:
     fields, rows = load()
-    RAW.mkdir(exist_ok=True)
     problems = 0
     for row in rows:
         dest = local_path(row)
+        dest.parent.mkdir(parents=True, exist_ok=True)
         if not dest.exists():
             if row["acquisition"] == "auto":
                 print(f"download {row['id']}")
@@ -111,14 +113,9 @@ def fetch(record: bool) -> int:
         digest = sha256(dest)
         if not row["sha256"]:
             row["sha256"] = digest if record else ""
-            print(
-                f"new      {row['id']} {digest[:12]}"
-                + (" (recorded)" if record else "")
-            )
+            print(f"new      {row['id']} {digest[:12]}" + (" (recorded)" if record else ""))
         elif row["sha256"] != digest:
-            print(
-                f"CHANGED  {row['id']}: expected {row['sha256'][:12]}, got {digest[:12]}"
-            )
+            print(f"CHANGED  {row['id']}: expected {row['sha256'][:12]}, got {digest[:12]}")
             problems += 1
         else:
             print(f"ok       {row['id']}")
@@ -178,9 +175,7 @@ def main() -> None:
         action="store_true",
         help="write missing sha256 values to the manifest",
     )
-    p.add_argument(
-        "--sources", action="store_true", help="regenerate SOURCES.md and exit"
-    )
+    p.add_argument("--sources", action="store_true", help="regenerate SOURCES.md and exit")
     args = p.parse_args()
     if args.sources:
         write_sources()

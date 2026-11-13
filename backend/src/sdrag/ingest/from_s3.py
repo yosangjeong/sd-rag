@@ -47,9 +47,9 @@ def main() -> None:
     s3 = boto3.client("s3", region_name=settings.aws_region)
     WORK.mkdir(parents=True, exist_ok=True)
     fetch(s3, a.bucket, "corpus", WORK)  # -> WORK/data/manifest.csv, WORK/data/corpus/
-    fetch(s3, a.bucket, "ocr", WORK)  # -> WORK/ocr-cache/
-    fetch(s3, a.bucket, "embed", WORK)  # -> WORK/embed-cache/
-    caches = {"ocr": WORK / "ocr-cache", "embed": WORK / "embed-cache"}
+    fetch(s3, a.bucket, "ocr", WORK)  # -> WORK/ocr/
+    fetch(s3, a.bucket, "embed", WORK)  # -> WORK/embed/
+    caches = {"ocr": WORK / "ocr", "embed": WORK / "embed"}
     before = {k: sum(1 for _ in p.rglob("*.json")) for k, p in caches.items()}
     env = os.environ | {"SDRAG_OCR_CACHE_DIR": str(caches["ocr"]),
                         "SDRAG_EMBED_CACHE_DIR": str(caches["embed"])}  # fmt: skip
@@ -60,7 +60,7 @@ def main() -> None:
         added = sum(1 for _ in p.rglob("*.json")) - before[k]
         print(f"{k} cache: {added} new entries", flush=True)
         if added:
-            store(s3, a.bucket, k, p, f"{k}-cache")
+            store(s3, a.bucket, k, p, k)
     if (WORK / "stats.json").exists():
         s3.upload_file(str(WORK / "stats.json"), a.bucket, f"corpus/ingest-{a.strategy}.json")
     sys.exit(code)

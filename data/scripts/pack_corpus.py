@@ -26,7 +26,7 @@ def main() -> None:
     OUT.mkdir(exist_ok=True)
     lines = []
     for d in load_corpus(DATA):
-        src = corpus_path(DATA, d.id, d.file_type, packed=False)
+        src = corpus_path(DATA, d.id, d.file_type, d.tags, packed=False)
         dst = OUT / f"{d.id}{src.suffix}"
         shutil.copyfile(src, dst)
         lines.append(f"{hashlib.sha256(dst.read_bytes()).hexdigest()}  {dst.name}")

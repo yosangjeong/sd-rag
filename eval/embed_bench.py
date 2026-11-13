@@ -15,7 +15,7 @@ brief requires that one to be untouched by tuning). It is built from the corpus:
 
 Only models callable in the project Region (ap-southeast-2) without cross-Region
 inference are compared. Titan returns its token counts, used to check
-chunk.est_tokens. Embeddings and translations are cached under data/raw/embed-bench/.
+chunk.est_tokens. Embeddings and translations are cached under data/raw/bench/embed/.
 
     cd backend && AWS_PROFILE=sd-assignment uv run python ../eval/embed_bench.py
 """
@@ -42,7 +42,7 @@ from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
 from sdrag.ingest.parse import parse
 
 REGION = "ap-southeast-2"
-OUT = fetch.RAW / "embed-bench"
+OUT = fetch.DATA / "raw" / "bench" / "embed"
 PER_LANG = 80
 # chunks small enough for Cohere v3's 512-token input (p99 of real / estimated tokens
 # is 1.6), so both models see the same, untruncated chunks
@@ -64,7 +64,9 @@ RE_EN_HEAD = re.compile(r"^\s*§\s?[\d.]+[a-z]?\.?[^\n]*\n")
 
 
 def load_chunks() -> list[dict]:
-    ocr = CachedOcr(BedrockVisionOcr("qwen.qwen3-vl-235b-a22b", REGION), fetch.RAW / "ocr-cache")
+    ocr = CachedOcr(
+        BedrockVisionOcr("qwen.qwen3-vl-235b-a22b", REGION), fetch.DATA / "raw" / "cache" / "ocr"
+    )
     chunks = []
     for d in load_corpus(fetch.DATA):
         for c in chunk_structure(parse(d.path, ocr=ocr), d.id, max_tokens=CHUNK_TOKENS):

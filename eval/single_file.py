@@ -115,7 +115,7 @@ def ours() -> None:
 def grade() -> None:
     rows = list(csv.DictReader(CSV.open(encoding="utf-8")))
     judge = CachedChat(
-        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "eval-cache" / "llm"
+        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
     )
     grades, tally = [], {s: Counter() for s in ("ours", "claude", "chatgpt")}
     for r in rows:

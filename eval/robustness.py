@@ -1,6 +1,6 @@
 """Parse and chunk documents unlike the corpus, to find what breaks before a live test.
 
-    cd backend && AWS_PROFILE=... uv run python ../eval/robustness.py ../data/raw/robustness/*
+    cd backend && AWS_PROFILE=... uv run python ../eval/robustness.py ../data/raw/bench/robustness/*
 
 Per file: format, pages OCR'd, blocks, tables, headings, chunks, largest chunk in
 estimated tokens, characters kept, time, and the first chunk's opening, so empty or
@@ -19,7 +19,7 @@ from sdrag.ingest.parse import parse
 
 def main() -> None:
     ocr = CachedOcr(BedrockVisionOcr(settings.ocr_model, settings.aws_region),
-                    Path(settings.ocr_cache_dir or "../data/raw/ocr-cache"))  # fmt: skip
+                    Path(settings.ocr_cache_dir or "../data/raw/cache/ocr"))  # fmt: skip
     for path in map(Path, sys.argv[1:]):
         t = time.perf_counter()
         try:

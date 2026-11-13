@@ -97,7 +97,7 @@ def main() -> None:
         client, settings.index, emb, BedrockChat(settings.llm_model, settings.aws_region)
     )
     jllm = CachedChat(
-        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "eval-cache" / "llm"
+        BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
     )
 
     def run(it, answerable: bool) -> dict:

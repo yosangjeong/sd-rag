@@ -1,4 +1,4 @@
-"""Make awkward test inputs from the public test documents in data/raw/robustness/.
+"""Make awkward test inputs from the public test documents in data/raw/bench/robustness/.
 
     cd backend && uv run python ../eval/robustness_files.py
 
@@ -15,7 +15,7 @@ from pathlib import Path
 import pypdf
 from docx import Document
 
-DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "robustness"
+DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "bench" / "robustness"
 
 
 def main() -> None:

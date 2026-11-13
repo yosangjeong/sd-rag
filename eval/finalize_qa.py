@@ -18,7 +18,7 @@ by hand (``real_manual_gold.json``, marked ``meta.manual``). Questions nothing i
 Split: 20% of each (answer language, file type) cell of the generated items goes to
 the dev set (tuning), 80% to the test set (reported once). The real set is test only.
 
-    cd backend && AWS_PROFILE=sd-assignment SDRAG_EMBED_CACHE_DIR=../data/raw/embed-cache \\
+    cd backend && AWS_PROFILE=sd-assignment SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
         uv run python ../eval/finalize_qa.py
 """
 
@@ -260,7 +260,7 @@ def main() -> None:
 
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    emb = CachedEmbedder(emb, Path(settings.embed_cache_dir or DATA / "raw" / "embed-cache"))
+    emb = CachedEmbedder(emb, Path(settings.embed_cache_dir or DATA / "raw" / "cache" / "embed"))
     searchers = [(Searcher(client, idx, emb), mode) for mode, idx in POOL_SYSTEMS]
     judge = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), CACHE / "llm")
     log = []

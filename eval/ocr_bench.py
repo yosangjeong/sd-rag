@@ -12,7 +12,7 @@ loop on long dot runs otherwise).
 - recall:  share of the truth's characters (as a multiset) found in the output
 - extra:   share of the output's characters not in the truth: invented text
 
-Raw outputs, token usage and latency are kept under data/raw/ocr-bench/out/ so
+Raw outputs, token usage and latency are kept under data/raw/bench/ocr/out/ so
 re-scoring needs no new calls and every transcription can be inspected.
 
 Transcription goes through sdrag.ingest.ocr, so what is measured is what ingestion
@@ -40,7 +40,7 @@ import scanify
 from sdrag.ingest.ocr import BedrockVisionOcr, OcrError, render_page
 
 DATA = ROOT / "data"
-BENCH = DATA / "raw" / "ocr-bench"
+BENCH = DATA / "raw" / "bench" / "ocr"
 PROFILES = ["office", "poor"]
 
 # (manifest id, 1-based page, page type)
@@ -71,10 +71,11 @@ BEDROCK = {
 def source_pdf(doc_id: str) -> Path:
     with (DATA / "manifest.csv").open(encoding="utf-8") as f:
         row = next(r for r in csv.DictReader(f) if r["id"] == doc_id)
+    from sdrag.ingest import layout
+
     if doc_id.startswith("kr-"):
-        family, _, kind = doc_id.rpartition("-")
-        return next((DATA / "raw" / "kr-inbox" / family / kind).glob("*.pdf"))
-    return DATA / "raw" / f"{doc_id}.{row['format']}"
+        return next(layout.kr_dir(DATA, doc_id, row["tags"]).glob("*.pdf"))
+    return layout.corpus_dir(DATA, doc_id, row["tags"]) / f"{doc_id}.pdf"
 
 
 def scan_path(profile: str, doc_id: str, page: int) -> Path:

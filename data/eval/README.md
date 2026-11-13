@@ -64,7 +64,7 @@ Counts and breakdowns: see "Composition" below (filled by `eval/finalize_qa.py`)
 6. **Split**: 20% of each cell to `dev`, 80% to `test` (seeded).
 
 All prompts are in the scripts named above; all model calls are cached under
-`data/raw/eval-cache/llm/` (not committed), so the set is reproducible from the cache.
+`data/raw/cache/eval/llm/` (not committed), so the set is reproducible from the cache.
 
 ## The real-estate set
 

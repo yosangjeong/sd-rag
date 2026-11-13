@@ -3,8 +3,8 @@
 Run locally against infra/local/opensearch (caches keep OCR and embeddings from being
 paid twice):
 
-    cd backend && AWS_PROFILE=sd-assignment SDRAG_OCR_CACHE_DIR=../data/raw/ocr-cache \\
-        SDRAG_EMBED_CACHE_DIR=../data/raw/embed-cache \\
+    cd backend && AWS_PROFILE=sd-assignment SDRAG_OCR_CACHE_DIR=../data/raw/cache/ocr \\
+        SDRAG_EMBED_CACHE_DIR=../data/raw/cache/embed \\
         uv run python -m sdrag.ingest.pipeline --strategy structure --recreate
 
 Per-document and per-stage timings are recorded: the brief asks for ingestion

@@ -30,7 +30,7 @@ from sdrag.ingest.parse import parse
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-CACHE = DATA / "raw" / "eval-cache"
+CACHE = DATA / "raw" / "cache" / "eval"
 
 
 @dataclass
@@ -90,7 +90,7 @@ def doc_texts(data: Path = DATA, refresh: bool = False) -> dict[str, DocText]:
         if ocr is None:  # only built when a document has to be parsed
             ocr = CachedOcr(
                 BedrockVisionOcr(settings.ocr_model, settings.aws_region),
-                Path(settings.ocr_cache_dir or DATA / "raw" / "ocr-cache"),
+                Path(settings.ocr_cache_dir or DATA / "raw" / "cache" / "ocr"),
             )
         dt = _parse_doc(doc, ocr)
         path.write_text(json.dumps(asdict(dt), ensure_ascii=False), encoding="utf-8")

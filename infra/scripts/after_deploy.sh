@@ -2,10 +2,10 @@
 # After `cdk deploy`: index the corpus inside the VPC and create accounts.
 #   AWS_PROFILE=<profile> infra/scripts/after_deploy.sh corpus      # upload caches + run the ingest task
 #   AWS_PROFILE=<profile> infra/scripts/after_deploy.sh user <email> [evaluator]
-# Reads the stack outputs from data/raw/cdk-outputs.json (cdk deploy --outputs-file).
+# Reads the stack outputs from data/raw/deploy/cdk-outputs.json (cdk deploy --outputs-file).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-out() { python3 -c "import json;print(json.load(open('data/raw/cdk-outputs.json'))['SdRag-App']['$1'])"; }
+out() { python3 -c "import json;print(json.load(open('data/raw/deploy/cdk-outputs.json'))['SdRag-App']['$1'])"; }
 REGION=ap-southeast-2
 
 case "$1" in

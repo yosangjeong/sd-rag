@@ -22,9 +22,18 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from sdrag.ingest import layout
 from sdrag.ingest.parse import parse
 
-RAW = Path(__file__).resolve().parent.parent / "data" / "raw"
+DATA = Path(__file__).resolve().parent.parent / "data"
+RAW = DATA / "raw"
+
+
+def corpus_pair(pair: str) -> Path:
+    """<family>/<kind> folder of a Korean statute, in whichever field holds it."""
+    return next(r / pair for r in layout.kr_family_roots(DATA) if (r / pair).is_dir())
+
+
 PAIRS = ["kr-occupational-safety/rul", "kr-industrial-accident/dec"]
 
 
@@ -64,8 +73,8 @@ def score(truth_path: Path, pdf_path: Path) -> dict:
 
 def main() -> None:
     for pair in PAIRS:
-        truth = next((RAW / "kr-truth" / pair).glob("*.hwpx"))
-        pdf = next((RAW / "kr-inbox" / pair).glob("*.pdf"))
+        truth = next((RAW / "truth" / pair).glob("*.hwpx"))
+        pdf = next(corpus_pair(pair).glob("*.pdf"))
         s = score(truth, pdf)
         print(
             f"{pair:28} tables {s['pdf tables']:3}/{s['truth tables']:<3} "

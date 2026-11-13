@@ -8,7 +8,7 @@ bucket="$1"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 tar -czf "$tmp/corpus.tgz" data/manifest.csv data/corpus
-tar -czf "$tmp/ocr.tgz" -C data/raw ocr-cache
-tar -czf "$tmp/embed.tgz" -C data/raw embed-cache
+tar -czf "$tmp/ocr.tgz" -C data/raw/cache ocr
+tar -czf "$tmp/embed.tgz" -C data/raw/cache embed
 for f in corpus ocr embed; do aws s3 cp --only-show-errors "$tmp/$f.tgz" "s3://$bucket/corpus/$f.tgz"; done
 ls -la "$tmp"

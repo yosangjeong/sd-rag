@@ -22,9 +22,18 @@ from contextlib import contextmanager
 from itertools import pairwise
 from pathlib import Path
 
+from sdrag.ingest import layout
 from sdrag.ingest import parse as P
 
-RAW = Path(__file__).resolve().parent.parent / "data" / "raw"
+DATA = Path(__file__).resolve().parent.parent / "data"
+RAW = DATA / "raw"
+
+
+def corpus_pair(pair: str) -> Path:
+    """<family>/<kind> folder of a Korean statute, in whichever field holds it."""
+    return next(r / pair for r in layout.kr_family_roots(DATA) if (r / pair).is_dir())
+
+
 PAIRS = ["kr-occupational-safety/rul", "kr-industrial-accident/dec"]
 HANGUL = re.compile("[가-힣]")
 
@@ -94,8 +103,8 @@ def eojeol_match(pdf, truth) -> float:
 
 def main() -> None:
     for pair in PAIRS:
-        truth = P.parse(next((RAW / "kr-truth" / pair).glob("*.hwpx")))
-        pdf_path = next((RAW / "kr-inbox" / pair).glob("*.pdf"))
+        truth = P.parse(next((RAW / "truth" / pair).glob("*.hwpx")))
+        pdf_path = next(corpus_pair(pair).glob("*.pdf"))
         with no_reflow():
             raw = P.parse(pdf_path)
         spacing = P.KoreanSpacing([b.text for b in raw.blocks if b.kind == "text"])

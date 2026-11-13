@@ -2,7 +2,7 @@
 
 Input (downloaded from law.go.kr by hand, file names untouched):
 
-    data/raw/kr-inbox/<family>/{law,dec,rul}/
+    data/raw/corpus/kr/<labor|realestate>/<family>/{law,dec,rul}/
         *.pdf   statutes assigned PDF (body + annexes already in one file), or scan
                 (a PDF that data/scripts/make_scans.py turns into a synthetic scan)
         *.zip   statutes assigned HWPX or DOCX: law.go.kr's HWPX download is a
@@ -46,7 +46,17 @@ import hwpx_merge  # noqa: E402
 import hwpx_to_docx  # noqa: E402
 
 DATA = Path(__file__).resolve().parent.parent
-INBOX = DATA / "raw" / "kr-inbox"
+sys.path.insert(0, str(DATA.parent / "backend" / "src"))
+from sdrag.ingest import layout  # noqa: E402  (standard library only)
+
+ROOTS = layout.kr_family_roots(DATA)  # one folder of families per field
+
+
+def family_dir(family: str) -> Path:
+    """The family's folder in whichever field holds it (labor, if not downloaded yet)."""
+    return next((r / family for r in ROOTS if (r / family).is_dir()), ROOTS[0] / family)
+
+
 FAMILIES = DATA / "kr_families.csv"
 CLASSES = Path(
     os.environ.get(
@@ -155,20 +165,14 @@ def build_hwpx_kind(folder: Path, fmt: str, force: bool) -> str:
 
     if not zips:
         # no annexes: law.go.kr gives a single .hwpx, which is already final
-        sources = [
-            f
-            for f in files
-            if f.suffix.lower() == ".hwpx" and not RE_ANNEX.match(f.name)
-        ]
+        sources = [f for f in files if f.suffix.lower() == ".hwpx" and not RE_ANNEX.match(f.name)]
         loose_annexes = [f for f in files if RE_ANNEX.match(f.name)]
         if loose_annexes:
             raise BuildError(
                 "annex files found without a zip; please put the downloaded zip here as is"
             )
         if len(sources) != 1 or magic(sources[0]) != "zip":
-            raise BuildError(
-                f"expected one zip or one .hwpx, found {[f.name for f in files]}"
-            )
+            raise BuildError(f"expected one zip or one .hwpx, found {[f.name for f in files]}")
         merged, n_annex = sources[0], 0
     else:
         if len(zips) != 1:
@@ -199,11 +203,7 @@ def build_hwpx_kind(folder: Path, fmt: str, force: bool) -> str:
             body = bodies[0]
             merged = folder / (body.stem + ".hwpx")
             n_annex = len(annexes)
-            if (
-                not force
-                and merged.exists()
-                and merged.stat().st_mtime >= zpath.stat().st_mtime
-            ):
+            if not force and merged.exists() and merged.stat().st_mtime >= zpath.stat().st_mtime:
                 if fmt != "docx" or merged.with_suffix(".docx").exists():
                     return f"up to date ({n_annex} annexes)"
 
@@ -256,21 +256,15 @@ def check_title(folder: Path, title: str, kind: str) -> None:
         if f.name.startswith(".") or RE_ANNEX.match(f.name):
             continue
         if not f.name.startswith(expected):
-            raise BuildError(
-                f"{f.name}: expected a file named '{expected}...' in {kind}/"
-            )
+            raise BuildError(f"{f.name}: expected a file named '{expected}...' in {kind}/")
 
 
 def build_kind(folder: Path, fmt: str, force: bool, title: str, kind: str) -> str:
-    if not folder.exists() or not any(
-        f for f in folder.iterdir() if not f.name.startswith(".")
-    ):
+    if not folder.exists() or not any(f for f in folder.iterdir() if not f.name.startswith(".")):
         return "not downloaded"
     check_title(folder, title, kind)
     if fmt in ("pdf", "scan"):  # scan: the PDF is scanned by make_scans.py
-        files = [
-            f for f in folder.iterdir() if f.is_file() and not f.name.startswith(".")
-        ]
+        files = [f for f in folder.iterdir() if f.is_file() and not f.name.startswith(".")]
         pdfs = [f for f in files if f.suffix.lower() == ".pdf"]
         if len(pdfs) != 1 or len(files) != 1:
             raise BuildError(
@@ -287,16 +281,14 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("families", nargs="*", help="only these families (default: all)")
-    ap.add_argument(
-        "--force", action="store_true", help="rebuild even if outputs are up to date"
-    )
+    ap.add_argument("--force", action="store_true", help="rebuild even if outputs are up to date")
     args = ap.parse_args()
 
     with FAMILIES.open(encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     known = {r["family"] for r in rows}
-    for d in sorted(p for p in INBOX.iterdir() if p.is_dir()):
-        if d.name not in known:
+    for d in sorted(p for r in ROOTS if r.is_dir() for p in r.iterdir() if p.is_dir()):
+        if d.name not in known and d.name != "scans":
             print(f"!! {d.name}: folder not listed in {FAMILIES.name}")
 
     errors = 0
@@ -307,7 +299,7 @@ def main() -> None:
         for kind in KINDS:
             try:
                 status = build_kind(
-                    INBOX / row["family"] / kind,
+                    family_dir(row["family"]) / kind,
                     row[kind],
                     args.force,
                     row["title"],
