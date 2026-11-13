@@ -1,11 +1,11 @@
-"""Copy the 53 files that are indexed into data/corpus/<id>.<ext>, for the repository.
+"""Copy the files that are indexed (70) into data/corpus/<id>.<ext>, for the repository.
 
 data/raw/ holds the downloads and everything built from them (annex conversions,
 merged HWPX, generated DOCX, synthetic scans, caches) and is not committed. The files
 the pipeline actually indexes are copied here so the corpus ships with the code:
 Korean statutes are not protected works (Copyright Act art. 7) and US federal works
 are in the public domain (data/SOURCES.md). ingest/corpus.py reads data/corpus/ when
-data/raw/ is absent.
+data/raw/corpus/ is absent.
 
     python data/scripts/pack_corpus.py
 """

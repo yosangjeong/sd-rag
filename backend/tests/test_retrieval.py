@@ -114,3 +114,49 @@ def test_scope_limits_every_query_to_the_chosen_documents():
     want = [{"terms": {"owner": ["u", "public"]}}, {"terms": {"doc_id": ["kr-a-law"]}}]
     assert bm25["query"]["bool"]["filter"] == want
     assert dense["query"]["knn"]["embedding"]["filter"] == {"bool": {"filter": want}}
+
+
+def test_country_filter_drops_only_the_other_countrys_public_statutes():
+    client = FakeClient()
+    Searcher(
+        client, "chunks-structure", FakeEmbedder(), owners=["u1", "public"], country="kr"
+    ).hybrid("notice of dismissal", size=5, depth=20)
+    for f in (client.bodies[0]["query"]["bool"]["filter"],
+              client.bodies[1]["query"]["knn"]["embedding"]["filter"]["bool"]["filter"]):  # fmt: skip
+        dropped = f[1]["bool"]["must_not"][0]["bool"]
+        assert dropped["filter"] == [{"term": {"owner": "public"}}]  # uploads are kept
+        assert dropped["should"] == [{"prefix": {"doc_id": "us-"}}]
+
+
+class Reply:
+    def __init__(self, text):
+        self.text, self.input_tokens, self.output_tokens = text, 0, 0
+
+
+class OneWord:
+    def __init__(self, text):
+        self.text, self.systems = text, []
+
+    def complete(self, system, user, max_tokens=1024, temperature=0.0):
+        self.systems.append(system)
+        return Reply(self.text)
+
+
+def test_jurisdiction_reads_the_label_and_defaults_to_no_filter():
+    from sdrag.retrieval.jurisdiction import jurisdiction
+
+    assert jurisdiction(OneWord("<think>maybe KR?</think>US"), "Is overtime paid?") == "us"
+    assert jurisdiction(OneWord("KR"), "Severance pay in Korea?") == "kr"
+    for text in ("BOTH", "NONE", "I cannot tell"):
+        assert jurisdiction(OneWord(text), "question") is None
+    chat = OneWord("KR")
+    jurisdiction(chat, "해고 예고는 언제 해야 하나요?")
+    assert "KR (the question is in Korean)" in chat.systems[0]
+
+
+def test_agent_document_list_follows_the_country():
+    from sdrag.service import is_other_country
+
+    docs = [{"id": "kr-a-law", "owner": "public"}, {"id": "us-b", "owner": "public"},
+            {"id": "u-x", "owner": "u1"}]  # fmt: skip
+    assert [d["id"] for d in docs if not is_other_country(d, "kr")] == ["kr-a-law", "u-x"]

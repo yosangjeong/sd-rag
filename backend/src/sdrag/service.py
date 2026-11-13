@@ -10,23 +10,34 @@ Two modes, compared in the evaluation (eval/run_retrieval.py):
 - ``agent``: the tool-use agent (agent/search.py) decides the searches, then the same
   reranker orders what it found.
 
-Both answer from the top ANSWER_SOURCES chunks (agent/answer.py). Every search is
-limited to the user's own documents and the public corpus.
+Before either, a legal question is labelled with its country (retrieval/jurisdiction.py)
+and the other country's public statutes are left out of every search. Both answer
+from the top ANSWER_SOURCES chunks (agent/answer.py). Every search is limited to the
+user's own documents and the public corpus.
 """
 
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from sdrag.agent.answer import Answer, answer
 from sdrag.agent.search import SearchAgent
 from sdrag.common.logs import log
 from sdrag.retrieval.index import PUBLIC, list_documents
+from sdrag.retrieval.jurisdiction import jurisdiction
 from sdrag.retrieval.rerank import LlmReranker, LlmTranslator, condense
-from sdrag.retrieval.search import Searcher
+from sdrag.retrieval.search import COUNTRIES, Searcher
 
 ANSWER_SOURCES = 6
 RERANK_DEPTH = 20
 TRANSLATION_EXTRA = 10
+
+
+def is_other_country(doc: dict, country: str) -> bool:
+    """A public statute of another country than `country` (what Searcher leaves out)."""
+    prefix = doc["id"].split("-", 1)[0]
+    return doc["owner"] == PUBLIC and prefix in COUNTRIES and prefix != country
 
 
 class RequestChat:
@@ -37,11 +48,13 @@ class RequestChat:
         self.inner, self.name = chat, chat.name
         self.model_id, self.client = chat.model_id, chat.client
         self.input_tokens = self.output_tokens = 0
+        self.lock = threading.Lock()  # two calls of one request may run at once
 
     def complete(self, system, user, max_tokens=1024, temperature=0.0):
         c = self.inner.complete(system, user, max_tokens, temperature)
-        self.input_tokens += c.input_tokens
-        self.output_tokens += c.output_tokens
+        with self.lock:
+            self.input_tokens += c.input_tokens
+            self.output_tokens += c.output_tokens
         return c
 
 
@@ -71,13 +84,26 @@ class RagService:
         if standalone != question:
             log("rewrite", request_id=request_id, question=question, standalone=standalone)
         question = standalone
-        s = Searcher(self.client, self.index, self.embedder, LlmTranslator(chat),
-                     owners=[user_id, PUBLIC], scope=scope or None)  # fmt: skip
+        # a legal question naming no country means its language's (jurisdiction.py);
+        # a search limited to chosen documents needs no guess. The translation does
+        # not depend on it, so both LLM calls run at once.
+        translator = LlmTranslator(chat)
+        with ThreadPoolExecutor(2) as pool:
+            country_f = pool.submit(jurisdiction, chat, question) if not scope else None
+            translation_f = (
+                pool.submit(translator.to_other_language, question) if mode != "agent" else None
+            )
+            country = country_f.result() if country_f else None
+            translation = translation_f.result()[0] if translation_f else None
+        s = Searcher(self.client, self.index, self.embedder, translator,
+                     owners=[user_id, PUBLIC], scope=scope or None, country=country)  # fmt: skip
         steps: list[dict] = []
         if mode == "agent":
             docs = list_documents(self.client, self.index, [user_id, PUBLIC])
             if scope:
                 docs = [d for d in docs if d["id"] in scope]
+            if country:  # the agent's document list matches what it can search
+                docs = [d for d in docs if not is_other_country(d, country)]
             res = SearchAgent(chat.client, chat.model_id, s, docs).run(question)
             chat.input_tokens += res.input_tokens  # the agent calls Converse directly
             chat.output_tokens += res.output_tokens
@@ -85,9 +111,10 @@ class RagService:
             for st in steps:
                 log("tool_call", request_id=request_id, tool=st["tool"], input=st["input"])
         else:
-            hits = s.bilingual_union(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA)
+            hits = s.bilingual_union(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA,
+                                     translation=translation)  # fmt: skip
         hits = LlmReranker(chat).rerank(question, hits)
-        log("retrieval", request_id=request_id, mode=mode,
+        log("retrieval", request_id=request_id, mode=mode, country=country,
             results=[{"chunk_id": h.chunk_id, "doc_id": h.source.get("doc_id")} for h in hits[:10]])  # fmt: skip
         ans = answer(chat, question, hits[:ANSWER_SOURCES])
         ms = 1000 * (time.perf_counter() - t0)

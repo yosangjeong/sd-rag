@@ -6,10 +6,12 @@ the latency, and the scores of evalset.score. Raw per-question output goes to
 summary.json, broken down by question -> answer language, answer file type and
 question kind.
 
-Systems are named <mode>[+rerank]@<index>, e.g. hybrid@chunks-structure or
-bilingual+rerank@chunks-structure; modes are the Searcher methods (bm25, dense,
-hybrid, per_language, bilingual) and agent (sdrag.agent). "+rerank" reorders the first stage's top 20 with
-the LLM reranker. --llm picks the model for reranking and translation.
+Systems are named <mode>[+rerank][+jur]@<index>, e.g. hybrid@chunks-structure or
+bilingual_union+rerank+jur@chunks-structure; modes are the Searcher methods (bm25,
+dense, hybrid, per_language, bilingual, bilingual_union) and agent (sdrag.agent).
+"+rerank" reorders the first stage's top 20 with the LLM reranker; "+jur" first asks
+which country's law the question is about and searches only that country's statutes
+(retrieval/jurisdiction.py, as served). --llm picks the model for these LLM steps.
 
 Cost per query: tokens actually sent, at list prices (PRICES; US on-demand list
 prices from third-party trackers, 2026-11-12: Sydney may be somewhat higher).
@@ -38,6 +40,7 @@ from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.retrieval.index import PUBLIC, list_documents
+from sdrag.retrieval.jurisdiction import jurisdiction
 from sdrag.retrieval.rerank import LlmReranker, LlmTranslator
 from sdrag.retrieval.search import Searcher
 
@@ -68,10 +71,11 @@ class Meter:
 
 def run_system(system: str, items, client, embedder, chat) -> list[dict]:
     spec, index = system.split("@")
-    mode, _, stage2 = spec.partition("+")
+    mode, *stages = spec.split("+")
     # the public corpus only: user uploads in the same index must not change the scores
     s = Searcher(client, index, embedder, LlmTranslator(chat), owners=[PUBLIC])
-    reranker = LlmReranker(chat) if stage2 == "rerank" else None
+    reranker = LlmReranker(chat) if "rerank" in stages else None
+    by_country = "jur" in stages  # the served filter: the question's country only
     agent = None
     if mode == "agent":
         docs = list_documents(client, index, [PUBLIC])
@@ -82,6 +86,7 @@ def run_system(system: str, items, client, embedder, chat) -> list[dict]:
         before = meter.read()
         t = time.perf_counter()
         steps = None
+        country = s.country = jurisdiction(chat, it.question) if by_country else None
         if agent:
             res = agent.run(it.question)
             hits, steps = res.hits[:DEPTH], res.steps
@@ -105,6 +110,7 @@ def run_system(system: str, items, client, embedder, chat) -> list[dict]:
             "qid": it.qid, "question": it.question, "latency_ms": round(ms, 1),
             "embed_tokens": used[0], "llm_tokens": [used[1], used[2]],
             "cost_usd": meter.cost(used),
+            **({"country": country} if by_country else {}),
             "scores": asdict(sc), "retrieved": retrieved,
         } | ({"agent_steps": steps} if steps is not None else {}))  # fmt: skip
     return rows
@@ -171,12 +177,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", type=Path, required=True)
     ap.add_argument("--systems", nargs="*", default=[], help="none: only rebuild the summary")
-    ap.add_argument("--out", type=Path, help="default: ../data/eval/results/<set name>")
+    ap.add_argument(
+        "--out", type=Path, help="default: ../data/eval/results/retrieval-70docs/<set name>"
+    )
     ap.add_argument("--llm", default="zai.glm-4.7", help="reranker and translator model")
     a = ap.parse_args()
     items = load_items(a.set)
     texts = doc_texts()
-    out = a.out or a.set.parent / "results" / a.set.stem
+    out = a.out or a.set.parent / "results" / "retrieval-70docs" / a.set.stem
     out.mkdir(parents=True, exist_ok=True)
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     embedder = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)

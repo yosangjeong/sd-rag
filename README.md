@@ -8,14 +8,16 @@ CFR, Federal Register), and each user's uploads are searched only for that user.
 
 The focus is retrieval accuracy, measured on held-out sets (`data/eval/`): 338
 generated labor-law questions, 137 real user questions and 82 real-estate questions.
-hit@10 / MRR: 0.93 / 0.87, 0.96 / 0.88 and 0.98 / 0.91, against 0.78 / 0.53,
-0.89 / 0.60 and 0.84 / 0.57 for plain hybrid search (`docs/decisions.md`).
+hit@10 / MRR: 0.94 / 0.88, 0.94 / 0.90 and 0.98 / 0.91, against 0.78 / 0.53,
+0.89 / 0.60 and 0.84 / 0.57 for plain hybrid search (`docs/decisions.md`). Answers:
+77% correct, 92% cite the gold passage, 63% of unanswerable questions declined.
 
 ## How it works
 
 ```
 upload -> S3 -> SQS -> worker: parse (OCR for scans) -> chunk -> embed -> OpenSearch
-question -> BM25 + vector search (RRF), top 20; same for its translation, +10 more
+question -> which country's law (KR / US / none): the other country's statutes are left out
+         -> BM25 + vector search (RRF), top 20; same for its translation, +10 more
          -> LLM rerank -> answer with [n] citations
          (or: an agent chooses keyword / vector / filtered searches itself)
 ```
@@ -38,8 +40,8 @@ question -> BM25 + vector search (RRF), top 20; same for its translation, +10 mo
 | `backend/src/sdrag/` | API (FastAPI), worker, ingestion, retrieval, agent |
 | `frontend/` | React (Vite) single page |
 | `infra/` | AWS CDK (Python): network, data, app, CI/CD stacks |
-| `eval/` | evaluation set builder, retrieval runner, benchmarks |
-| `data/` | manifest, sources and licenses, evaluation set and results |
+| `eval/` | evaluation set builder, retrieval and answer runners, benchmarks (`eval/README.md`) |
+| `data/` | manifest, sources and licenses, the corpus (`data/corpus/`), evaluation set and results; downloads and caches in `data/raw/` (not committed, layout in `backend/src/sdrag/ingest/layout.py`) |
 | `docs/` | decisions, design, operations (logs) |
 
 ## Run locally
@@ -61,8 +63,9 @@ The corpus files are downloaded by `data/scripts/fetch.py` (sources and licenses
 ```bash
 cd backend
 AWS_PROFILE=<profile> uv run python ../eval/run_retrieval.py --set ../data/eval/test.jsonl \
-  --systems hybrid@chunks-structure bilingual_union+rerank@chunks-structure agent+rerank@chunks-structure
+  --systems hybrid@chunks-structure bilingual_union+rerank+jur@chunks-structure agent+rerank@chunks-structure
 ```
 
-Results per question and summaries by language and file type: `data/eval/results/`.
+Results per question and summaries by language and file type: `data/eval/results/`
+(layout in `data/eval/results/README.md`).
 How the set was built and scored: `data/eval/README.md`.

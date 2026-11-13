@@ -36,8 +36,12 @@ from S3 inside the VPC.
 
 **Request path (chat).** `api/main.py` -> `service.py`:
 
-1. basic mode: translate the question (GLM-4.7) -> hybrid search (BM25 + Titan
-   vectors, RRF) for the question and the translation -> RRF -> top 20
+0. which country's law the question is about (GLM-4.7, `retrieval/jurisdiction.py`):
+   for KR or US the other country's public statutes are left out of every search
+   below; uploads are always searched
+1. basic mode: translate the question (GLM-4.7, at the same time as step 0) ->
+   hybrid search (BM25 + Titan vectors, RRF): the question's top 20, plus up to 10
+   new ones from the translation
    agent mode: a tool-use loop (`agent/search.py`) chooses keyword / semantic /
    hybrid searches, language and document filters, and picks the chunks
 2. rerank the 20 with GLM-4.7 (listwise)
@@ -125,4 +129,4 @@ document). Queries for evaluators: `docs/operations.md`.
 | Uploads | deleted after 30 days in S3; chunks stay until removed | per-document delete, retention policy |
 | Cost tracking | tokens in logs, list prices | Bedrock invocation logs and cost allocation tags |
 | English tables | CFR tables without ruling lines are read as text | a layout model for borderless tables |
-| Jurisdiction | the answer prompt infers the country from the question's language; a country-less English legal question can still get Korean law first | label sources [KR] / [US] for the answer step, or filter sources by the implied country |
+| Jurisdiction | an LLM label (KR / US / none) filters the public statutes by country; a country-less English question about Korean law is taken as US | ask the user's country once (profile), or show "answering under US law" with a switch |

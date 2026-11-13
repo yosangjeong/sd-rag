@@ -7,7 +7,7 @@ or processing, and reports wall time, files and chunks per minute, and the stage
 times recorded by the worker (worker/job.py).
 
     cd backend && uv run python ../eval/upload_bench.py --api http://127.0.0.1:8001 \
-        --out ../data/eval/results/upload-local.json
+        --out ../data/eval/results/upload/upload-local.json
 """
 
 import argparse

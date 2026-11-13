@@ -88,4 +88,4 @@ filter event = "audit" | sort ts desc | display ts, user, action, document, docu
 
 LLM prices are US list prices on demand (Sydney may be somewhat higher); see
 `eval/run_retrieval.py` `PRICES`. The evaluation reports the measured cost per query
-for every system (`data/eval/results/*/summary.md`).
+for every system (`data/eval/results/retrieval-*/*/summary.md`).

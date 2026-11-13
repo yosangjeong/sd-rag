@@ -3,6 +3,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 137 | 0.869 | 0.942 | 0.942 | 0.942 | 0.900 | 0.909 | 0.985 | 3602 | 4801 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 137 | 0.796 | 0.934 | 0.942 | 0.942 | 0.855 | 0.876 | 0.985 | 3178 | 3832 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 137 | 0.832 | 0.956 | 0.964 | 0.964 | 0.881 | 0.901 | 0.985 | 2932 | 5393 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 137 | 0.825 | 0.942 | 0.956 | 0.956 | 0.878 | 0.897 | 0.985 | 3048 | 3742 |
@@ -18,6 +19,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 22 | 0.864 | 0.909 | 0.909 | 0.909 | 0.886 | 0.892 | 0.955 | 3527 | 4622 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 22 | 0.682 | 0.864 | 0.864 | 0.864 | 0.754 | 0.781 | 1.000 | 3348 | 3598 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 22 | 0.864 | 0.955 | 0.955 | 0.955 | 0.898 | 0.912 | 0.955 | 2957 | 3421 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 22 | 0.818 | 0.955 | 0.955 | 0.955 | 0.875 | 0.895 | 0.955 | 3059 | 3370 |
@@ -33,6 +35,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 17 | 0.941 | 0.941 | 0.941 | 0.941 | 0.941 | 0.941 | 1.000 | 3442 | 4053 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 17 | 0.824 | 1.000 | 1.000 | 1.000 | 0.912 | 0.935 | 1.000 | 3038 | 3787 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 17 | 0.941 | 0.941 | 0.941 | 0.941 | 0.941 | 0.941 | 1.000 | 2882 | 3471 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 17 | 0.882 | 0.941 | 0.941 | 0.941 | 0.912 | 0.919 | 1.000 | 2798 | 3341 |
@@ -48,6 +51,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 98 | 0.857 | 0.949 | 0.949 | 0.949 | 0.895 | 0.908 | 0.990 | 3641 | 4801 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 98 | 0.816 | 0.939 | 0.949 | 0.949 | 0.867 | 0.887 | 0.980 | 3164 | 3836 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 98 | 0.806 | 0.959 | 0.969 | 0.969 | 0.867 | 0.892 | 0.990 | 2929 | 5630 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 98 | 0.816 | 0.939 | 0.959 | 0.959 | 0.873 | 0.894 | 0.990 | 3083 | 3819 |
@@ -63,6 +67,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 137 | 0.869 | 0.942 | 0.942 | 0.942 | 0.900 | 0.909 | 0.985 | 3602 | 4801 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 137 | 0.796 | 0.934 | 0.942 | 0.942 | 0.855 | 0.876 | 0.985 | 3178 | 3832 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 137 | 0.832 | 0.956 | 0.964 | 0.964 | 0.881 | 0.901 | 0.985 | 2932 | 5393 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 137 | 0.825 | 0.942 | 0.956 | 0.956 | 0.878 | 0.897 | 0.985 | 3048 | 3742 |
@@ -78,6 +83,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 60 | 0.883 | 0.983 | 0.983 | 0.983 | 0.930 | 0.943 | 1.000 | 3645 | 4866 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 60 | 0.833 | 0.983 | 0.983 | 0.983 | 0.892 | 0.914 | 0.983 | 3206 | 3924 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 60 | 0.817 | 0.983 | 1.000 | 1.000 | 0.886 | 0.914 | 1.000 | 2993 | 6080 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 60 | 0.817 | 0.967 | 0.983 | 0.983 | 0.888 | 0.911 | 1.000 | 3252 | 3822 |
@@ -93,6 +99,7 @@
 
 | system | n | span_hit@1 | span_hit@5 | span_hit@10 | span_recall@10 | span_mrr | span_ndcg10 | doc_hit@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|---|---|---|---|
+| bilingual_union+rerank+jur@chunks-structure~glm-4.7 | 77 | 0.857 | 0.909 | 0.909 | 0.909 | 0.876 | 0.883 | 0.974 | 3544 | 4622 |
 | bilingual_union+rerank@chunks-fixed~glm-4.7 | 77 | 0.766 | 0.896 | 0.909 | 0.909 | 0.825 | 0.846 | 0.987 | 3098 | 3724 |
 | bilingual_union+rerank@chunks-structure~glm-4.7 | 77 | 0.844 | 0.935 | 0.935 | 0.935 | 0.877 | 0.891 | 0.974 | 2874 | 3655 |
 | bilingual_union+rerank@chunks-structure~glm-4.7~labor-prompts | 77 | 0.831 | 0.922 | 0.935 | 0.935 | 0.871 | 0.886 | 0.974 | 2865 | 3504 |

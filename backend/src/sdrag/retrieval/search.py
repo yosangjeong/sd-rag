@@ -36,8 +36,16 @@ class Hit:
     source: dict = field(repr=False)
 
 
-def _filters(langs, doc_ids, owners=None, scope=None) -> list[dict]:
+COUNTRIES = ("kr", "us")  # public document ids start with the country: kr-..., us-...
+
+
+def _filters(langs, doc_ids, owners=None, scope=None, country=None) -> list[dict]:
     f = [{"terms": {"owner": owners}}] if owners else []
+    if country:  # leave out the other countries' public statutes; uploads stay
+        others = [{"prefix": {"doc_id": f"{c}-"}} for c in COUNTRIES if c != country]
+        public = {"term": {"owner": "public"}}
+        f.append({"bool": {"must_not": [{"bool": {"filter": [public], "should": others,
+                                                    "minimum_should_match": 1}}]}})  # fmt: skip
     if scope:
         f.append({"terms": {"doc_id": scope}})
     if langs:
@@ -65,12 +73,16 @@ def rrf(*lists: list[Hit], k: int = RRF_K, size: int = 10, weights=None) -> list
 
 class Searcher:
     def __init__(self, client: OpenSearch, index: str, embedder: Embedder, translator=None,
-                 owners: list[str] | None = None, scope: list[str] | None = None) -> None:  # fmt: skip
+                 owners: list[str] | None = None, scope: list[str] | None = None,
+                 country: str | None = None) -> None:  # fmt: skip
         """owners: when set, every query is limited to chunks of these owners (the
         service passes [user id, "public"]); None searches everything (evaluation).
-        scope: when set, every query is limited to these documents ("search this file")."""
+        scope: when set, every query is limited to these documents ("search this file").
+        country: "kr" | "us": public statutes of the other country are left out
+        (retrieval/jurisdiction.py); uploads are not affected."""
         self.client, self.index, self.embedder = client, index, embedder
         self.translator, self.owners, self.scope = translator, owners, scope
+        self.country = country
 
     def bm25(self, query: str, size: int = 10, langs=None, doc_ids=None) -> list[Hit]:
         body = {
@@ -85,7 +97,7 @@ class Searcher:
                             "type": "most_fields",
                         }
                     },
-                    "filter": _filters(langs, doc_ids, self.owners, self.scope),
+                    "filter": _filters(langs, doc_ids, self.owners, self.scope, self.country),
                 }
             },
         }
@@ -94,7 +106,7 @@ class Searcher:
     def dense(self, query: str, size: int = 10, langs=None, doc_ids=None, vector=None) -> list[Hit]:
         vector = vector or self.embedder.embed([query])[0]
         knn = {"vector": vector, "k": size}
-        if f := _filters(langs, doc_ids, self.owners, self.scope):
+        if f := _filters(langs, doc_ids, self.owners, self.scope, self.country):
             knn["filter"] = {"bool": {"filter": f}}  # Lucene filters while searching
         body = {"size": size, "_source": SOURCE, "query": {"knn": {"embedding": knn}}}
         return _hits(self.client.search(index=self.index, body=body))

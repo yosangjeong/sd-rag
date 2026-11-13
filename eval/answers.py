@@ -12,9 +12,9 @@ the test set and on every real question the corpus cannot answer, then:
 
 The judge is DeepSeek V3.2, of neither the answer model's (GLM) nor the question
 writer's (Qwen) family; its prompts are below. Outputs per item and a summary go to
-data/eval/results/answers/.
+data/eval/results/answers/<version>/ (one folder per measured version).
 
-    cd backend && AWS_PROFILE=... uv run python ../eval/answers.py [--n 100]
+    cd backend && AWS_PROFILE=... uv run python ../eval/answers.py --version v6-country-filter [--n 100]
 """
 
 import argparse
@@ -32,7 +32,7 @@ from sdrag.common.search_client import make_client
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.service import RagService
 
-OUT = DATA / "eval" / "results" / "answers"
+RESULTS = DATA / "eval" / "results" / "answers"
 JUDGE_MODEL = "deepseek.v3.2"
 SEED = 20261112
 
@@ -86,6 +86,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--version", required=True, help="folder name under results/answers/")
     a = ap.parse_args()
     texts = doc_texts()
     test = sample(load_items(DATA / "eval" / "test.jsonl"), texts, a.n)
@@ -129,6 +130,7 @@ def main() -> None:
     with ThreadPoolExecutor(a.workers) as ex:
         rows = list(ex.map(lambda it: run(it, True), test))
         un = list(ex.map(lambda it: run(it, False), unanswerable))
+    OUT = RESULTS / a.version
     OUT.mkdir(parents=True, exist_ok=True)
     for name, rs in (("test_sample", rows), ("unanswerable", un)):
         (OUT / f"{name}.jsonl").write_text(

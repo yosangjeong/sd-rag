@@ -142,17 +142,18 @@ def bulk_index(client: OpenSearch, name: str, sources: list[dict], attempts: int
 
 
 def list_documents(client: OpenSearch, name: str, owners: list[str]) -> list[dict]:
-    """The documents of these owners in the index: id, language, title, file type."""
+    """The documents of these owners in the index: id, owner, language, title, file type."""
     body = {
         "size": 0,
         "query": {"terms": {"owner": owners}},
         "aggs": {"docs": {"terms": {"field": "doc_id", "size": 1000}, "aggs": {
-            "one": {"top_hits": {"size": 1, "_source": ["title", "lang", "file_type"]}}}}},
+            "one": {"top_hits": {"size": 1, "_source": ["title", "lang", "file_type", "owner"]}}}}},
     }  # fmt: skip
     out = []
     for b in client.search(index=name, body=body)["aggregations"]["docs"]["buckets"]:
         s = b["one"]["hits"]["hits"][0]["_source"]
         out.append(
-            {"id": b["key"], "lang": s["lang"], "title": s["title"], "file_type": s["file_type"]}
-        )
+            {"id": b["key"], "owner": s.get("owner", PUBLIC), "lang": s["lang"],
+             "title": s["title"], "file_type": s["file_type"]}
+        )  # fmt: skip
     return sorted(out, key=lambda d: d["id"])

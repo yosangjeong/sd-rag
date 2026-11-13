@@ -133,7 +133,7 @@ most of the time; HWPX/DOCX parse in under 0.1 s, the 210-page PDF in 8 s.
 **Retrieval as served: the question's hybrid top 20, plus up to 10 more from its
 translation, reranked by GLM-4.7** (`Searcher.bilingual_union`, `service.py`).
 Every choice was made on the dev set; the test and real sets were each scored once
-per system (`data/eval/results/`). hit@10 / MRR, span level:
+per system (`data/eval/results/retrieval-53docs/`). hit@10 / MRR, span level:
 
 | System | dev | test (338) | real (137) | test ko->en | test en->ko | p50 | $/query |
 |---|---|---|---|---|---|---|---|
@@ -188,17 +188,18 @@ tokens sent at US list prices (`eval/run_retrieval.py` `PRICES`).
 Answers are judged on 100 test items (spread over language and file type) and the 27
 real questions the corpus cannot answer, by DeepSeek V3.2 (another family than the
 GLM answers and the Qwen questions; prompts in the script). Four prompt versions,
-each measured once (`data/eval/results/answers-v1/`, `-v2-labor-prompts/`,
-`-v3-neutral/`, and `answers/` for the one served):
+each measured once (`data/eval/results/answers/v1/`, `v2-labor-prompts/`,
+`v3-neutral/`, `v4-prompt-rule/`):
 
-| | v1 | v2 language + jurisdiction fixed | v3 domain-neutral | **v4 served** |
-|---|---|---|---|---|
-| corpus | 53 docs | 53 docs | 70 docs | 70 docs |
-| correct / partial / wrong | 71 / 23 / 6% | 71 / 23 / 5% | 74 / 18 / 6% | 73 / 17 / 7% |
-| unsupported by the cited sources | 10% | 5% | 4% | 5% |
-| a citation overlaps the gold | 93% | 93% | 89% | 89% |
-| unanswerable questions declined | 63% | 59% | 41% | 48% |
-| one file (30 items) correct | | 80% | 83% | 77% |
+| | v1 | v2 language + jurisdiction fixed | v3 domain-neutral | v4 prompt rule | **v6 country filter (served)** |
+|---|---|---|---|---|---|
+| corpus | 53 docs | 53 docs | 70 docs | 70 docs | 70 docs |
+| correct / partial / wrong | 71 / 23 / 6% | 71 / 23 / 5% | 74 / 18 / 6% | 73 / 17 / 7% | 77 / 15 / 5% |
+| unsupported by the cited sources | 10% | 5% | 4% | 5% | 10% |
+| a citation overlaps the gold | 93% | 93% | 89% | 89% | 92% |
+| unanswerable questions declined | 63% | 59% | 41% | 48% | 63% |
+| unanswerable answers citing the other country's law | | | 9 / 27 | 8 / 27 | 0 / 27 |
+| one file (30 items) correct | | 80% | 83% | 77% | (scoped: no filter) |
 
 - v1 -> v2: English questions were answered in Korean when the sources were Korean
   (the language is now fixed by code, `is_korean`), and country-less questions got
@@ -212,15 +213,22 @@ each measured once (`data/eval/results/answers-v1/`, `-v2-labor-prompts/`,
   law as the answer, and that other documents have no jurisdiction rule. Declining
   recovered to 48%; then stopped, as the 27-item set is small and noisy (some of it
   is partly answerable) and further rounds would tune to it.
-- Known limit: an English legal question naming no country can still get Korean law
+- v4 left a limit: an English legal question naming no country could still get Korean law
   first ("Are pay stubs required?"). Tried and not kept (v5, measured once): every
   source labelled jurisdiction="KR" / "US" and the rule told to answer from the
   question's jurisdiction. The answers citing the other country's law stayed at 8 of
   27, unsupported statements went 5% -> 8%, declining 48% -> 52%: no gain, so the
-  change was reverted (`data/eval/results/answers-v5-labels-rejected/`). The fix
+  change was reverted (`data/eval/results/answers/v5-labels-rejected/`). The fix
   that would hold is in retrieval, not the prompt: for a legal question naming no
   country, pass only that country's statutes (and the user's documents) to the
   answer step.
+- v6 does that (`retrieval/jurisdiction.py`, below under "Jurisdiction filter"):
+  answers citing the other country's law 8 -> 0 of 27, declining 48% -> 63%, correct
+  73% -> 77%. Unsupported statements 5% -> 10%: of the 10, the judge's reasons are
+  mostly fine points (a source "for a specific category", "a different regulatory
+  context"), three of the flipped items became correct and one is a decline without
+  citations; 5 items of 100 is within the noise of one judging run, so kept and noted
+  (`eval/jurisdiction_check.py` counts the other-country citations).
 - The one-file numbers move by one or two items out of 30 between versions.
 
 **One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document
@@ -276,19 +284,47 @@ jurisdiction rule applies to legal questions only. Checked on dev (0.953 / 0.887
 against 0.953 / 0.881) and on the unseen-document questions (8 of 8 as before).
 
 Served system on the 70-document corpus (hit@10 / MRR), results in
-`data/eval/results-70/`:
+`data/eval/results/retrieval-70docs/`:
 
 | | test (338) | real (137) | real-estate test (82) |
 |---|---|---|---|
 | hybrid | 0.78 / 0.53 | 0.89 / 0.60 | 0.84 / 0.57 |
 | hybrid + rerank | 0.84 / 0.80 | 0.96 / 0.89 | 0.90 / 0.84 |
 | served, labor-specific prompts | 0.94 / 0.87 | 0.96 / 0.88 | 0.98 / 0.90 |
-| **served, domain-neutral prompts** | **0.93 / 0.87** | **0.96 / 0.88** | **0.98 / 0.91** |
+| served, domain-neutral prompts (before the jurisdiction filter, below) | 0.93 / 0.87 | 0.96 / 0.88 | 0.98 / 0.91 |
 | same, fixed-size chunks (labor prompts) | 0.92 / 0.86 | 0.94 / 0.85 | 0.96 / 0.90 |
 | agent + rerank (labor prompts) | | | 0.99 / 0.89 |
 
 The extra documents changed nothing measurable on the labor sets; the 1.2-point
 hit@10 difference on test between the two prompt versions is 4 questions.
+
+## Jurisdiction filter (`retrieval/jurisdiction.py`, 2026-11-13)
+
+**A legal question searches only its country's statutes; uploads are always searched.**
+One short GLM-4.7 call answers KR / US / BOTH / NONE: a named country, agency or
+statute decides; a legal question naming none takes its language's country (Korean
+-> KR, English -> US, the corpus's two jurisdictions); comparisons (BOTH), non-legal
+questions (NONE) and unreadable replies get no filter. `Searcher(country=...)` then
+drops chunks that are public *and* from the other country's id prefix, in BM25 and
+inside the k-NN search; a search scoped to chosen documents is not classified. It
+runs alongside the translation (both only need the question), about 0.3 s added.
+
+Why in retrieval: two answer-prompt versions (v4 rule, v5 source labels) left 8 of 27
+answers citing the other country's law; what is not among the sources cannot be
+cited. The risk is a wrong label removing the gold document, so unclear cases fall
+back to no filter.
+
+| | test (338) | real (137) | real-estate test (82) |
+|---|---|---|---|
+| served before (domain-neutral prompts) | 0.93 / 0.87 | 0.96 / 0.88 | 0.98 / 0.91 |
+| **+ jurisdiction filter (served)** | **0.94 / 0.88** | **0.94 / 0.90** | **0.98 / 0.91** |
+
+- Labels on 557 questions: wrong country 0, no filter 8 (`country` in each result line,
+  `data/eval/results/retrieval-70docs/*/bilingual_union+rerank+jur@...`).
+- real hit@10 lost 3 questions, all reranker reorderings within the right country's
+  documents (the gold was not filtered out); hit@1 rose 0.83 -> 0.87.
+- Limit: an English question about Korean law that names neither Korea nor a Korean
+  statute is taken to be about US law.
 
 ## Deployment rehearsal (2026-11-12)
 
