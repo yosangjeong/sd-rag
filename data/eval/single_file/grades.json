@@ -1,302 +1,702 @@
 [
  {
   "qid": "g0027",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that a hazardous risk prevention plan must be submitted for construction when the total floor area of the cold storage warehouse is 5,000 square meters or more, matching the reference answer."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that a hazardous risk prevention plan must be submitted for construction when the total floor area of the cold storage warehouse is 5,000 square meters or more, matching the reference answer."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states the key condition (area ≥ 5,000 m²) and the requirement to submit the plan."
+  }
  },
  {
   "qid": "g0029",
+  "field": "labor",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer correctly states the annual update frequency but omits the specific start date of January 1, 2016, which is part of the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer correctly states the annual update frequency but omits the specific start date of January 1, 2016, which is part of the key fact in the reference."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "The candidate correctly states the annual update but omits the required start date of January 1, 2016, which is part of the key fact."
+  }
  },
  {
   "qid": "g0034",
+  "field": "labor",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer includes the required information but incorrectly states that hours and earnings for tipped occupations must be recorded, which is not specified in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer includes the required information but incorrectly states that hours and earnings for tipped occupations must be recorded, which is not specified in the reference."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "The candidate incorrectly states that hours and earnings for tipped occupations must be recorded, which is not required by the passage, and misstates the requirement for non-tipped work by omitting that it specifically requires hours worked each workday in non-tipped occupations and the total daily or weekly straight-time payment for those hours."
+  }
  },
  {
   "qid": "g0054",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate correctly states that the job counts as an instructional employee under the FMLA, citing the specific inclusion of special education assistants like signers for the hearing impaired, which matches the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate correctly states that the job counts as an instructional employee under the FMLA, citing the specific inclusion of special education assistants like signers for the hearing impaired, which matches the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that the job counts as an instructional employee, matching the passage's inclusion of special education assistants like signers."
+  }
  },
  {
   "qid": "g0143",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that the law allows various forms of remuneration, including salary plus bonuses, provided the regular rate meets minimum wage and overtime is paid at one and one-half times the regular rate, matching the key facts in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that the law allows various forms of remuneration, including salary plus bonuses, provided the regular rate meets minimum wage and overtime is paid at one and one-half times the regular rate, matching the key facts in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states the key fact that the law allows various pay structures, including salary plus bonuses, as long as the regular rate is at least the minimum wage and overtime is paid at one and one-half times the regular rate, matching the passage."
+  }
  },
  {
   "qid": "g0163",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states both conditions for determining pay rules when a dispatched worker is directly hired, matching the key facts and structure of the reference answer."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states both conditions for determining pay rules when a dispatched worker is directly hired, matching the key facts and structure of the reference answer."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate states the full key fact from the passage, matching both conditions for pay rules when a dispatched worker is directly hired."
+  }
  },
  {
   "qid": "g0201",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the required 5-year experience as a faculty or researcher at a school or recognized research institution, matching the key fact from the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the required 5-year experience as a faculty or researcher at a school or recognized research institution, matching the key fact from the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the required period of 5 years or more of service as a faculty member or researcher, which is the key fact asked for."
+  }
  },
  {
   "qid": "g0207",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key conditions of having no officers, no operation for over a year, and the administrative authority obtaining a resolution from the Labor Relations Commission, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key conditions of having no officers, no operation for over a year, and the administrative authority obtaining a resolution from the Labor Relations Commission, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key condition from the passage, which is that the administrative authority must obtain a resolution from the Labor Relations Commission."
+  }
  },
  {
   "qid": "g0233",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that a female worker diagnosed with a disease under Appendix 3 during pregnancy is considered at risk of miscarriage or premature birth, matching the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that a female worker diagnosed with a disease under Appendix 3 during pregnancy is considered at risk of miscarriage or premature birth, matching the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact from the passage that a pregnant worker diagnosed with a disease listed in Appendix 3 is considered at risk of miscarriage or premature birth."
+  }
  },
  {
   "qid": "g0241",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the maximum number of members as 10, matching the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the maximum number of members as 10, matching the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states the maximum number of members (10명 이내) as specified in the passage."
+  }
  },
  {
   "qid": "g0248",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the upper limit of the daily wage for calculating job-seeking benefits is 11,3500 won, matching the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the upper limit of the daily wage for calculating job-seeking benefits is 11,3500 won, matching the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the upper limit of the daily wage for calculating job-seeking benefits as 11만3500원, matching the passage."
+  }
  },
  {
   "qid": "g0266",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer lists all four types of organizations exactly as specified in the reference, including the condition for the fourth type."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer lists all four types of organizations exactly as specified in the reference, including the condition for the fourth type."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer lists all four categories of organizations that can represent employers in objecting to the minimum wage proposal, exactly as stated in the passage."
+  }
  },
  {
   "qid": "g0274",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the requirement for a written contract with the specified details and accurately references the relevant article of the law, matching the key facts in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the requirement for a written contract with the specified details and accurately references the relevant article of the law, matching the key facts in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that the employer must provide a written contract with the specified details, matching the passage."
+  }
  },
  {
   "qid": "g0276",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that a false submission of the male/female worker status incurs a penalty of 3 million won, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that a false submission of the male/female worker status incurs a penalty of 3 million won, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states the key fact of a 3 million won penalty for falsely submitting the workforce status report."
+  }
  },
  {
   "qid": "g0277",
+  "field": "labor",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer correctly mentions the employee's physician upon request but omits the key recipients, the Secretary of Labor and the Secretary of Health and Human Services."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer correctly mentions the employee's physician upon request but omits the key recipients, the Secretary of Labor and the Secretary of Health and Human Services."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "The candidate correctly states that the record is provided to the employee's physician upon request, but omits the key fact that it must also be furnished to the Secretary of Labor or the Secretary of Health and Human Services."
+  }
  },
  {
   "qid": "g0281",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly lists the required notification methods (mail, written delivery, electronic transmission, or other agreed-upon methods) and includes the key details about the information to be provided, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists the required notification methods (mail, written delivery, electronic transmission, or other agreed-upon methods) and includes the key details about the information to be provided, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists all the methods by which the company must inform the participant, as stated in the passage."
+  }
  },
  {
   "qid": "g0287",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the 3-year waiting period after the confirmation notice for the most recent support, matching the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the 3-year waiting period after the confirmation notice for the most recent support, matching the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact from the passage: reapplication is allowed 3 years after the date of the confirmation notice for the most recent special wage support."
+  }
  },
  {
   "qid": "g0294",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly lists all the specific types of financial institutions allowed to hold or manage the fund as stated in the reference, including the detailed breakdown of banks."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists all the specific types of financial institutions allowed to hold or manage the fund as stated in the reference, including the detailed breakdown of banks."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists all the types of financial institutions specified in the passage as allowed to hold or manage the fund."
+  }
  },
  {
   "qid": "g0327",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that both written and instrument (apparatus) tests are used and that the instrument test can be omitted with the approval of the head of the employment security agency, matching the key facts in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that both written and instrument (apparatus) tests are used and that the instrument test can be omitted with the approval of the head of the employment security agency, matching the key facts in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states both the methods (written and instrument/apparatus tests) and the condition under which the apparatus test can be skipped (if the head of the employment security agency recognizes/approves)."
+  }
  },
  {
   "qid": "g0350",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly lists all three specific categories of false job ads from the reference, including the pretext for selling goods, non-disclosure of employer identity, and significant differences in job conditions."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists all three specific categories of false job ads from the reference, including the pretext for selling goods, non-disclosure of employer identity, and significant differences in job conditions."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states all three key facts from the passage, including the additional detail about 'other ads' which is also supported by the source."
+  }
  },
  {
   "qid": "g0396",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key requirement that employers must provide additional safety and health education when assigning workers to hazardous or dangerous work, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key requirement that employers must provide additional safety and health education when assigning workers to hazardous or dangerous work, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that additional education is required when assigning workers to hazardous or dangerous work, which is the key fact from the passage."
+  }
  },
  {
   "qid": "g0399",
+  "field": "labor",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer correctly identifies the alternative effective date when the status change date is known, but incorrectly states the primary effective date as the date of submission rather than the date the doctor's diagnosis certificate is issued."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer correctly identifies the alternative effective date when the status change date is known, but incorrectly states the primary effective date as the date of submission rather than the date the doctor's diagnosis certificate is issued."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "The candidate incorrectly states the effective date as the date of submission rather than the date the doctor's diagnosis certificate is issued, though the condition for a known occurrence/change date is correctly included."
+  }
  },
  {
   "qid": "g0412",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that the refresher training time for a safety manager is 24 hours or more, which matches the reference answer."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that the refresher training time for a safety manager is 24 hours or more, which matches the reference answer."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact from the passage that the refresher training time for a safety manager is 24 hours or more."
+  }
  },
  {
   "qid": "g0450",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly lists the two required documents: a copy of the written bargaining request and materials proving the employer's announcement differed from the union's application."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists the two required documents: a copy of the written bargaining request and materials proving the employer's announcement differed from the union's application."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the two required documents as specified in the passage."
+  }
  },
  {
   "qid": "g0496",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that one person each is elected from the worker and employer sides, matching the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that one person each is elected from the worker and employer sides, matching the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that the worker-side and the employer-side each elect one person, which matches the key fact from the passage."
+  }
  },
  {
   "qid": "g0558",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that the member continues duties until a successor is elected, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that the member continues duties until a successor is elected, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact from the passage that a member continues their duties until a successor is elected."
+  }
  },
  {
   "qid": "g0597",
+  "field": "labor",
   "system": "ours",
-  "grade": "wrong",
-  "why": "The candidate answer incorrectly states that a certification stating the family member had a serious health condition on the leave expiration date is insufficient, contradicting the reference which explicitly states it is sufficient."
+  "flagged": false,
+  "v1": {
+   "grade": "wrong",
+   "why": "The candidate answer incorrectly states that a certification stating the family member had a serious health condition on the leave expiration date is insufficient, contradicting the reference which explicitly states it is sufficient."
+  },
+  "v2": {
+   "grade": "wrong",
+   "why": "The candidate incorrectly states that additional details are required, while the passage explicitly says a certification stating the condition existed on the leave expiration date is sufficient."
+  }
  },
  {
   "qid": "g0609",
+  "field": "labor",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer accurately states the same key facts as the reference regarding the recommending bodies for both worker and employer members."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer accurately states the same key facts as the reference regarding the recommending bodies for both worker and employer members."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that worker members are recommended from a nationwide labor union and employer members are recommended from an employer organization designated by the Minister of Employment and Labor, matching the passage exactly."
+  }
  },
  {
   "qid": "g0634",
+  "field": "labor",
   "system": "ours",
-  "grade": "wrong",
-  "why": "The candidate answer incorrectly states that the listed components are excluded from minimum wage calculation, while the reference answer explicitly states they are included."
+  "flagged": true,
+  "v1": {
+   "grade": "wrong",
+   "why": "The candidate answer incorrectly states that the listed components are excluded from minimum wage calculation, while the reference answer explicitly states they are included."
+  },
+  "v2": {
+   "grade": "wrong",
+   "why": "The candidate incorrectly states that these components are excluded from the minimum wage calculation, while the passage explicitly states they are included as part of the minimum wage."
+  }
  },
  {
   "qid": "g0635",
+  "field": "labor",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer correctly identifies the general administrative body (Ministry of Employment and Labor and its local offices) involved in handling such applications, which is part of the procedural context, but it fails to state the key fact that the application is defined as an administrative task under a specific article of the enforcement decree as stated in the reference."
+  "flagged": true,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer correctly identifies the general administrative body (Ministry of Employment and Labor and its local offices) involved in handling such applications, which is part of the procedural context, but it fails to state the key fact that the application is defined as an administrative task under a specific article of the enforcement decree as stated in the reference."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "후보 답변은 신청 사무의 존재와 관련된 일반적인 정보를 제공하지만, 구체적인 접수 기관이나 장소를 명시하지 않아 질문에 완전히 답하지 못했습니다."
+  }
  },
  {
   "qid": "r0015",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that the fine is 300,000 won, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that the fine is 300,000 won, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the fine amount of 300,000 won as specified in the passage."
+  }
  },
  {
   "qid": "r0020",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact from the reference that self-reporting can lead to a reduction or exemption of the penalty."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact from the reference that self-reporting can lead to a reduction or exemption of the penalty."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that self-reporting can lead to a reduction or exemption of the penalty, matching the key fact from the passage."
+  }
  },
  {
   "qid": "r0023",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that reporting an unregistered real estate agent to the specified authorities makes one eligible for a reward, matching the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that reporting an unregistered real estate agent to the specified authorities makes one eligible for a reward, matching the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states the key fact of eligibility for a reward when reporting an individual operating without proper registration to the specified authorities."
+  }
  },
  {
   "qid": "r0031",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that retaliation for assisting in a Fair Housing Act complaint is unlawful, matching the key legal prohibition from the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that retaliation for assisting in a Fair Housing Act complaint is unlawful, matching the key legal prohibition from the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that retaliatory eviction threats for assisting with a discrimination complaint are unlawful under the Fair Housing Act, matching the passage's key fact."
+  }
  },
  {
   "qid": "r0037",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer includes the correct condition about excessive security deposit but adds extra conditions not mentioned in the reference, making it incomplete relative to the specific reference."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer includes the correct condition about excessive security deposit but adds extra conditions not mentioned in the reference, making it incomplete relative to the specific reference."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "The candidate correctly identifies the excessive security deposit condition but incorrectly adds other cases (temporary use, key money exclusions) not mentioned in the passage as reasons the entire law does not apply."
+  }
  },
  {
   "qid": "r0040",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the one-year filing period after the discriminatory practice occurred or terminated, matching the key fact in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the one-year filing period after the discriminatory practice occurred or terminated, matching the key fact in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the one-year filing period from the occurrence or termination of the practice, matching the passage exactly."
+  }
  },
  {
   "qid": "r0047",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer lists all the required documents from the reference, including the specific form numbers and additional details, which matches the key facts."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer lists all the required documents from the reference, including the specific form numbers and additional details, which matches the key facts."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly lists all the required documents as specified in the passage, including the specific form numbers and additional details, which does not detract from the correctness."
+  }
  },
  {
   "qid": "r0049",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the key fact that the lease relationship continues until the deposit is returned, matching the reference, and the additional detail provided does not contradict it."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact that the lease relationship continues until the deposit is returned, matching the reference, and the additional detail provided does not contradict it."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states the key fact from the passage, and the additional procedural information does not contradict it or change the answer."
+  }
  },
  {
   "qid": "r0051",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states both the qualification (expertise in law, economics, or real estate, appointed by the Minister of Justice) and the term (2 years) as in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states both the qualification (expertise in law, economics, or real estate, appointed by the Minister of Justice) and the term (2 years) as in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states both the appointing authority and the term length as specified in the passage."
+  }
  },
  {
   "qid": "r0074",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that the priority repayment (half the building's value) is divided among tenants in proportion to their specific security deposit amounts, matching the key facts of the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that the priority repayment (half the building's value) is divided among tenants in proportion to their specific security deposit amounts, matching the key facts of the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that the amount equal to half the building's value is divided proportionally based on each tenant's specific deposit amount, matching the passage."
+  }
  },
  {
   "qid": "r0083",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that the local government must decide and notify the applicant within the processing period specified by the Administrative Procedures Act, matching the key fact of the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that the local government must decide and notify the applicant within the processing period specified by the Administrative Procedures Act, matching the key fact of the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that the local government must decide and notify within the processing period set by the Civil Petitions Treatment Act, matching the passage."
+  }
  },
  {
   "qid": "r0088",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states both the 30-day deadline to file an objection from the announcement date and the 30-day period for the Minister to notify the result after the objection period ends, matching the key facts in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states both the 30-day deadline to file an objection from the announcement date and the 30-day period for the Minister to notify the result after the objection period ends, matching the key facts in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states both the deadline for filing an objection (within 30 days from the announcement date) and the deadline for notifying the result (within 30 days from the expiration of the objection filing period), matching the passage exactly."
+  }
  },
  {
   "qid": "r0103",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly identifies the certificate as '외국인 부동산등 취득·계속보유 신고확인증', which matches the key fact from the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly identifies the certificate as '외국인 부동산등 취득·계속보유 신고확인증', which matches the key fact from the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact from the passage, which is the specific certificate issued after a foreigner's real estate acquisition report."
+  }
  },
  {
   "qid": "r0127",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the requirement for at least one accessible entrance, including the condition about impracticality due to terrain or site characteristics, matching the key facts in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the requirement for at least one accessible entrance, including the condition about impracticality due to terrain or site characteristics, matching the key facts in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact, including the condition for exception, exactly as specified in the passage."
+  }
  },
  {
   "qid": "r0146",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer includes the correct fine of 30 million won for false reporting under the specific legal clause, but it also provides additional details and conditions not required by the reference answer."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer includes the correct fine of 30 million won for false reporting under the specific legal clause, but it also provides additional details and conditions not required by the reference answer."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the 3,000만원 fine for falsely reporting under the specific law cited in the passage."
+  }
  },
  {
   "qid": "r0164",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states that the servicer must use the date the complete application is received after resubmission, which matches the key fact in the reference answer."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states that the servicer must use the date the complete application is received after resubmission, which matches the key fact in the reference answer."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that the servicer must list the date the complete application was received after resubmission, which matches the passage's requirement."
+  }
  },
  {
   "qid": "r0166",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states the fine amount of 5 million won, matching the key fact from the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the fine amount of 5 million won, matching the key fact from the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states the key fact of a 5 million won fine as specified in the passage."
+  }
  },
  {
   "qid": "r0172",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "correct",
-  "why": "The candidate answer correctly states both required conditions: fulfilling the requirements for opposing power under Article 3(1) and obtaining a confirmed date from the tax office, matching the key facts in the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states both required conditions: fulfilling the requirements for opposing power under Article 3(1) and obtaining a confirmed date from the tax office, matching the key facts in the reference."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate answer correctly states both required conditions as specified in the passage."
+  }
  },
  {
   "qid": "r0176",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer correctly identifies the need for a public official certificate and the 별지 제27호서식 for the Korean Association of Public Real Estate Agents inspection, but incorrectly states 별지 제26호서식 for the brokerage office inspection instead of the required 별지 제27호서식 as per the reference."
+  "flagged": false,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer correctly identifies the need for a public official certificate and the 별지 제27호서식 for the Korean Association of Public Real Estate Agents inspection, but incorrectly states 별지 제26호서식 for the brokerage office inspection instead of the required 별지 제27호서식 as per the reference."
+  },
+  "v2": {
+   "grade": "partial",
+   "why": "The candidate correctly states the required documents for inspecting the Korean Association of Publicly Licensed Real Estate Agents, but incorrectly adds a requirement for inspecting a real estate brokerage office using a different form, which is not asked for and contradicts the passage's specific focus on the association."
+  }
  },
  {
   "qid": "r0178",
+  "field": "real-estate",
   "system": "ours",
-  "grade": "partial",
-  "why": "The candidate answer correctly states the exception for notice at settlement but incorrectly claims that prior notice is generally required even if written notice is provided, which contradicts the reference that states prior notice is not required in that specific case."
+  "flagged": true,
+  "v1": {
+   "grade": "partial",
+   "why": "The candidate answer correctly states the exception for notice at settlement but incorrectly claims that prior notice is generally required even if written notice is provided, which contradicts the reference that states prior notice is not required in that specific case."
+  },
+  "v2": {
+   "grade": "correct",
+   "why": "The candidate correctly states that prior notice is not required when written notice is provided at settlement, matching the passage's exemption."
+  }
  }
 ]

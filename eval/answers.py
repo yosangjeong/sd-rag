@@ -5,7 +5,8 @@ Runs the served pipeline (service.RagService, basic mode) on a stratified sample
 the test set and on every real question the corpus cannot answer (``--set labor``),
 or on the real-estate test set and its unanswerable real questions (``--set re``), then:
 
-- correctness (judge vs the reference answer): correct | partial | wrong | no_answer
+- correctness (judge vs the reference answer and its passage, eval/judges.py):
+  correct | partial | wrong | no_answer
 - groundedness (judge vs the cited sources' text): supported | partly | unsupported,
   i.e. does the answer say anything its citations do not
 - citation hit (computed): does a cited chunk overlap a gold or also span
@@ -26,6 +27,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 from evalset import DATA, doc_texts, load_items, overlaps
+from judges import correct_prompt, correct_user
 
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat, CachedChat, parse_json
@@ -37,14 +39,7 @@ RESULTS = DATA / "eval" / "results" / "answers"
 JUDGE_MODEL = "deepseek.v3.2"
 SEED = 20261112
 
-CORRECT_SYSTEM = """You grade answers to questions about Korean and US labor law documents.
-Given the question, the reference answer, the passage it comes from, and a candidate answer, decide:
-- "correct": the candidate states the same key fact as the reference (number, period, condition, procedure); extra correct detail is fine.
-- "partial": it states part of it, or the right fact with a wrong condition.
-- "wrong": it states something else, or contradicts the reference.
-- "no_answer": it says it cannot find the answer, or answers nothing.
-Judge the content, not the language or style.
-Return only JSON: {"grade": "correct" | "partial" | "wrong" | "no_answer", "why": "<one sentence>"}"""
+# the correctness judge: eval/judges.py (v2; v1 graded the versions before 2026-11-13)
 
 GROUNDED_SYSTEM = """You check whether an answer is supported by the sources it cites.
 Given an answer with [n] citations and the text of those sources, decide:
@@ -96,11 +91,11 @@ def main() -> None:
     if a.set == "labor":
         test = sample(load_items(DATA / "eval" / "test.jsonl"), texts, a.n)
         unanswerable = load_items(DATA / "eval" / "real_unanswerable.jsonl")
-        correct_system = CORRECT_SYSTEM
+        correct_system = correct_prompt("labor")
     else:
         test = sample(load_items(DATA / "eval" / "test_re.jsonl"), texts, a.n)
         unanswerable = load_items(DATA / "eval" / "real_re_unanswerable.jsonl")
-        correct_system = CORRECT_SYSTEM.replace("labor law", "real-estate law")
+        correct_system = correct_prompt("real-estate")
 
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
@@ -127,8 +122,9 @@ def main() -> None:
             overlaps(vars(c), s) for c in ans.citations for s in [*it.gold, *it.also]
         )
         ref = it.meta.get("check_answer") or it.meta.get("answer", "")
-        row["correct"] = judge(jllm, correct_system, f"Question: {it.question}\nReference answer: {ref}\n"
-                               f"Passage: {g.quote}\n\nCandidate answer: {ans.text}")  # fmt: skip
+        row["correct"] = judge(
+            jllm, correct_system, correct_user(it.question, ref, g.quote, ans.text)
+        )
         cited = "\n\n".join(
             f"[{c.n}] {texts[c.doc_id].text[c.start : c.end][:2000]}" for c in ans.citations
         )

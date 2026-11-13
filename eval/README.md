@@ -21,6 +21,9 @@ The decisions they support are in `docs/decisions.md`.
 | `run_retrieval.py` | retrieval systems on a set: `<mode>[+rerank][+jur]@<index>` |
 | `answers.py` | answer quality of the served pipeline: correct, grounded, citing the gold, declining |
 | `jurisdiction_check.py` | answers citing the other country's law, per answer version |
+| `judges.py` | the correctness judge's prompts (v1, v2), shared by the answer scripts |
+| `rejudge.py` | re-grades every stored answer version with the current judge |
+| `check_items.py` | checks every graded item's reference answer and question (third model family) |
 | `real_re.py` | the real-estate real questions: gold by the same pooling as the labor ones |
 | `ocr_corpus.py` | OCR accuracy on every scanned corpus page (cached results, no calls) |
 | `single_file.py` | the brief's one-file comparison with Claude and ChatGPT |

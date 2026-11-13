@@ -120,6 +120,16 @@ judge missed were annotated by hand (`real_re_manual_gold.json`): RESPA section 
 and 8(b) are 12 U.S.C. 2607(a) and (b), and moving out before the deposit is returned
 is answered by the 임차권등기명령 article.
 
+## Faulty items and the answer judge
+
+Answer grading compares an answer with the item's reference answer (written by the
+question model). Every item used for answer grading was checked (`eval/check_items.py`,
+gpt-oss, then read by hand); the 8 found faulty, with reasons, are in
+`item_flags.json`. A random hand-graded sample found 2 of them, so about 5-10% of
+references may be faulty; retrieval scores are unaffected (the gold spans are right).
+The correctness judge's prompts and its agreement with hand grading:
+`eval/judges.py`, `results/answers/judge-agreement.md`.
+
 ## Known limits
 
 - **Pooling**: an answer that no system retrieved stays unknown, so absolute recall

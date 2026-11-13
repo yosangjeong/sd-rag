@@ -13,7 +13,7 @@ Three steps:
 3. (by hand) upload the file to Claude and to ChatGPT, ask the question, paste the
    answers into the ``claude`` and ``chatgpt`` columns (docs: data/eval/single_file/README.md).
 4. ``grade``: a judge model from a third family grades every answer against the
-   reference answer and the gold text (JUDGE_SYSTEM, disclosed), the same way for all
+   reference answer and the gold text (eval/judges.py, disclosed), the same way for all
    three; writes grades.json and prints accuracy per system.
 
     cd backend && AWS_PROFILE=... uv run python ../eval/single_file.py select|ours|grade
@@ -26,6 +26,7 @@ import sys
 from collections import Counter
 
 from evalset import DATA, doc_texts, load_items, overlaps
+from judges import correct_prompt, correct_user
 
 from sdrag.agent.answer import answer
 from sdrag.common.config import settings
@@ -44,14 +45,7 @@ FIELDS = ["qid", "file", "pages", "q_lang", "file_type", "question", "reference"
           "ours", "ours_gold_in_sources", "claude", "chatgpt"]  # fmt: skip
 JUDGE_MODEL = "deepseek.v3.2"  # not the answer model (GLM) nor the question writer (Qwen)
 
-JUDGE_SYSTEM = """You grade answers to questions about Korean and US labor law documents.
-Given the question, the reference answer, the passage it comes from, and a candidate answer, decide:
-- "correct": the candidate states the same key fact as the reference (number, period, condition, procedure); extra correct detail is fine.
-- "partial": it states part of it, or the right fact with a wrong condition.
-- "wrong": it states something else, or contradicts the reference.
-- "no_answer": it says it cannot find the answer, or answers nothing.
-Judge the content, not the language or style.
-Return only JSON: {"grade": "correct" | "partial" | "wrong" | "no_answer", "why": "<one sentence>"}"""
+# the correctness judge: eval/judges.py, the same text answers.py uses
 
 
 def upload_file(doc_id: str) -> str:
@@ -105,9 +99,6 @@ def write(rows: list[dict]) -> None:
         w.writerows(rows)
 
 
-JUDGE_RE_SYSTEM = JUDGE_SYSTEM.replace("labor law", "real-estate law")
-
-
 def select() -> None:
     write(pick("test.jsonl", N))
 
@@ -159,33 +150,42 @@ def ours() -> None:
 
 
 def grade() -> None:
+    """Grade every filled answer with both judge versions (v1 for comparison with
+    earlier reports, v2 the one reported), and with and without the flagged items."""
     rows = list(csv.DictReader(CSV.open(encoding="utf-8")))
     judge = CachedChat(
         BedrockChat(JUDGE_MODEL, settings.aws_region), DATA / "raw" / "cache" / "eval" / "llm"
     )
+    flags = json.loads((DATA / "eval" / "item_flags.json").read_text("utf-8"))["flags"]
     systems = ("ours", "claude", "chatgpt")
-    grades, tally = [], {(s, f): Counter() for f in ("labor", "real estate") for s in systems}
+    grades = []
     for r in rows:
-        field = "real estate" if r["qid"].startswith("r") else "labor"
+        field = "real-estate" if r["qid"].startswith("r") else "labor"
         for system in systems:
-            counts = tally[(system, field)]
             if not r.get(system, "").strip():
                 continue
-            user = (f"Question: {r['question']}\nReference answer: {r['reference']}\n"
-                    f"Passage: {r['gold_quote']}\n\nCandidate answer: {r[system]}")  # fmt: skip
-            system_prompt = JUDGE_SYSTEM if not r["qid"].startswith("r") else JUDGE_RE_SYSTEM
-            out = parse_json(judge.complete(system_prompt, user, max_tokens=300).text) or {}
-            g = out.get("grade", "unparsed")
-            counts[g] += 1
-            grades.append(
-                {"qid": r["qid"], "system": system, "grade": g, "why": out.get("why", "")}
-            )
+            user = correct_user(r["question"], r["reference"], r["gold_quote"], r[system])
+            row = {"qid": r["qid"], "field": field, "system": system, "flagged": r["qid"] in flags}
+            for v in (1, 2):
+                tokens = 300 if v == 1 else 400  # v1 as it ran (its cache key holds this)
+                reply = judge.complete(correct_prompt(field, v), user, max_tokens=tokens)
+                out = parse_json(reply.text) or {}
+                row[f"v{v}"] = {"grade": out.get("grade", "unparsed"), "why": out.get("why", "")}
+            grades.append(row)
     (OUT / "grades.json").write_text(json.dumps(grades, ensure_ascii=False, indent=1), "utf-8")
-    for (system, field), c in tally.items():
-        n = sum(c.values())
-        if n:
-            print(f"{system:8} {field:12} n={n:3}  correct {c['correct'] / n:.0%}  partial {c['partial'] / n:.0%}  "
-                  f"wrong {c['wrong'] / n:.0%}  no answer {c['no_answer'] / n:.0%}")  # fmt: skip
+    for field in ("labor", "real-estate"):
+        for system in systems:
+            for v, skip in (("v1", False), ("v2", False), ("v2", True)):
+                sel = [g for g in grades if g["field"] == field and g["system"] == system
+                       and not (skip and g["flagged"])]  # fmt: skip
+                if not sel:
+                    continue
+                c = Counter(g[v]["grade"] for g in sel)
+                n = len(sel)
+                label = f"{v}{' without flagged' if skip else ''}"
+                print(f"{system:8} {field:12} {label:20} n={n:3}  correct {c['correct'] / n:.0%}  "
+                      f"partial {c['partial'] / n:.0%}  wrong {c['wrong'] / n:.0%}  "
+                      f"no answer {c['no_answer'] / n:.0%}")  # fmt: skip
 
 
 if __name__ == "__main__":

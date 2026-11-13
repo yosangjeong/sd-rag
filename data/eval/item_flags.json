@@ -1,0 +1,37 @@
+{
+ "note": "Evaluation items whose reference answer (meta.check_answer, else meta.answer) or question is faulty, confirmed by reading the gold passage and the passages the question was written from (Claude Code, 2026-11-13). Found by eval/check_items.py (gpt-oss-120b over every item used for answer grading: 198) and read by hand: of its 31 flags, 4 were confirmed (g0154, g0224, g0478, g0635); g0634 and r0178 it missed were found in the single-file review, r0111 and g0308 in the random 20-item hand-grading sample (data/eval/results/answers/judge-agreement.md), and added. That the random sample turned up two more suggests faulty references are more common than the checker's confirmed flags (about 3% of 198) show: roughly 5-10%. The items stay in the sets (their gold spans are right, so retrieval scores are unaffected); answer-quality results are reported with and without them.",
+ "flags": {
+  "g0154": {
+   "part": "reference",
+   "reason": "lists item (6) of 29 U.S.C. 2613(b), the medical-necessity statement for the employee's own condition (2612(a)(1)(D)), as required for leave to care for a parent; it is not"
+  },
+  "g0224": {
+   "part": "reference",
+   "reason": "says 150 million won; the table says 150만원 (1.5 million won)"
+  },
+  "g0478": {
+   "part": "reference",
+   "reason": "says the person is not eligible although the question states both conditions (25 employees, pay below the notified amount) that the rule requires"
+  },
+  "g0634": {
+   "part": "reference",
+   "reason": "says the listed pay counts toward the minimum wage; 시행규칙 제2조 defines the pay that 법 제6조제4항 excludes from it"
+  },
+  "g0635": {
+   "part": "reference",
+   "reason": "the question asks where to apply; the reference only restates that the application is a delegated task and names no body"
+  },
+  "r0178": {
+   "part": "question",
+   "reason": "garbled: 'the lender gives the lender written notice' (대출자가 대출자에게)"
+  },
+  "r0111": {
+   "part": "reference",
+   "reason": "says the monthly rent may not exceed 1/100 of the deposit; the decree's 100 is the multiplier that converts rent into a deposit equivalent (법 제2조제2항), not a cap"
+  },
+  "g0308": {
+   "part": "question",
+   "reason": "premise reversed: 근로기준법 has the Minister request the data from 근로복지공단, not 근로복지공단 request it from employers; the reference repeats the premise"
+  }
+ }
+}

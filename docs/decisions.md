@@ -243,6 +243,33 @@ each measured once (`data/eval/results/answers/v1/`, `v2-labor-prompts/`,
   dispute) often give part of a list.
 - The one-file numbers move by one or two items out of 30 between versions.
 
+**How far the correctness judge can be trusted** (2026-11-13, `eval/judges.py`,
+`data/eval/results/answers/rejudge.md`, `judge-agreement.md`):
+
+- Reading the non-correct grades showed answers marked down for correct extra detail
+  and items whose reference answer is itself wrong. Two fixes, both applied to every
+  version and every system alike:
+  - **Faulty items**: every item used for answer grading (198) was checked by a third
+    family (gpt-oss, `eval/check_items.py`) and the flags read by hand; 8 are faulty
+    (`data/eval/item_flags.json`: a reference saying "150 million" for 150만원, one
+    reversing "excluded" from the minimum wage, a garbled question ...). They stay in
+    the sets (their gold spans are right); answer results are given with and without.
+  - **Judge v2**: says what the key fact is, that correct extra detail never lowers the
+    grade, and that the passage outranks the reference. Fixed before the Claude and
+    ChatGPT answers exist; every stored answer re-graded with it.
+- Re-graded (correct / partial / wrong): v6 labor 77/15/5 (v1) -> 82/10/7 (v2) ->
+  85/9/4 without the flagged items; real estate 74/22/4 -> 72/23/5 -> 74/22/4. The order
+  of the versions is the same under both judges.
+- **Agreement with hand grading** on a seeded 20 (10 judge-correct, 10 not): 11 of 20.
+  Judge-correct was right 10 of 10; of the 10 judge-non-correct, 8 are correct by hand.
+  Every disagreement is the judge being stricter: it sees only the gold passage, so a
+  correct rule from another article (a decree's exemption, a later item of the list)
+  looks invented; the groundedness judge, which sees the cited sources, rated all 8
+  supported. The correctness figures are therefore a lower bound (scaled by the sample,
+  about 95% for v6, with a wide interval); comparisons stand, as every system meets the
+  same judge. Stopped there rather than tuning the judge further to our answers; the
+  final Claude / ChatGPT comparison reads the non-correct grades of all three by hand.
+
 **One file, against Claude and ChatGPT** (`eval/single_file.py`): 30 single-document
 questions over 28 files, search scoped to the file: the gold passage is among the
 answer's 6 sources for 30 of 30; answers 77% correct, 17% partial, 7% wrong with the
