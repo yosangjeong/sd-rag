@@ -8,7 +8,8 @@ question kind.
 
 Systems are named <mode>[+rerank][+jur]@<index>, e.g. hybrid@chunks-structure or
 bilingual_union+rerank+jur@chunks-structure; modes are the Searcher methods (bm25,
-dense, hybrid, per_language, bilingual, bilingual_union) and agent (sdrag.agent).
+dense, hybrid, per_language, bilingual, bilingual_union, bilingual_union_dense) and
+agent (sdrag.agent).
 "+rerank" reorders the first stage's top 20 with the LLM reranker; "+jur" first asks
 which country's law the question is about and searches only that country's statutes
 (retrieval/jurisdiction.py, as served). --llm picks the model for these LLM steps.

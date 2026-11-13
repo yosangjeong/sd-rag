@@ -358,6 +358,12 @@ back to no filter.
 | served before (domain-neutral prompts) | 0.93 / 0.87 | 0.96 / 0.88 | 0.98 / 0.91 |
 | **+ jurisdiction filter (served)** | **0.94 / 0.88** | **0.94 / 0.90** | **0.98 / 0.91** |
 
+- **Dense instead of hybrid as the first stage** (asked late: on dev, dense + rerank had
+  beaten hybrid + rerank, 0.894 vs 0.847 hit@10, but the translation union had only been
+  built on hybrid). Measured on dev with the rest as served (`bilingual_union_dense+rerank+jur`,
+  `results/retrieval-70docs/dev*`): labor dev hit@10 0.953 both, MRR 0.869 vs 0.889 served,
+  hit@1 0.824 vs 0.859 (3 questions); real-estate dev identical (0.905 / 0.843). Hybrid stays;
+  the test sets were not run for it, as choices are made on dev.
 - Labels on 557 questions: wrong country 0, no filter 8 (`country` in each result line,
   `data/eval/results/retrieval-70docs/*/bilingual_union+rerank+jur@...`).
 - real hit@10 lost 3 questions, all reranker reorderings within the right country's

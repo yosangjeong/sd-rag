@@ -142,19 +142,29 @@ class Searcher:
         )
 
     def bilingual_union(self, query: str, size: int = 20, extra: int = 10, doc_ids=None,
-                        translation: str | None = None) -> list[Hit]:  # fmt: skip
+                        translation: str | None = None, base: str = "hybrid") -> list[Hit]:  # fmt: skip
         """The question's own top `size`, then up to `extra` more from its translation.
 
         For a reranker: the question's candidates are all kept (fusing the two lists
         let the translation's results push them out, which cost same-language
-        questions), and the translation still adds the other language's best."""
+        questions), and the translation still adds the other language's best.
+        base: the first-stage search for both, "hybrid" (served) or "dense" (ablation)."""
         if translation is None:
             translation, _ = self.translator.to_other_language(query)
-        own = self.hybrid(query, size, 50, None, doc_ids)
+
+        def first(q: str) -> list[Hit]:
+            if base == "dense":
+                return self.dense(q, size, None, doc_ids)
+            return self.hybrid(q, size, 50, None, doc_ids)
+
+        own = first(query)
         if not translation.strip():
             return own
         seen = {h.chunk_id for h in own}
-        more = [
-            h for h in self.hybrid(translation, size, 50, None, doc_ids) if h.chunk_id not in seen
-        ]
+        more = [h for h in first(translation) if h.chunk_id not in seen]
         return own + more[:extra]
+
+    def bilingual_union_dense(self, query: str, size: int = 20, extra: int = 10,
+                              doc_ids=None) -> list[Hit]:  # fmt: skip
+        """bilingual_union on dense search alone, for the ablation (eval/run_retrieval.py)."""
+        return self.bilingual_union(query, size, extra, doc_ids, base="dense")
