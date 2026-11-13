@@ -372,9 +372,9 @@ DOJ), 30 unanswerable. hit@10 / MRR (`results/retrieval-70docs/real_re/`):
 (28 of 30; labor 63%): most ask about laws outside the corpus (Civil Act, taxes), which
 the answer step recognizes; none cites the other country's law.
 
-**Single file** (`data/eval/single_file/`): 10 real-estate rows added to the 30 labor
-ones (8 cells); ours: 80% correct, 20% partial, the gold passage in the sources for
-10 of 10. The Claude / ChatGPT columns are filled by hand for all 40.
+**Single file** (`data/eval/single_file/`): 20 real-estate rows added to the 30 labor
+ones (8 cells, 16 files); ours: 80% correct, 20% partial, the gold passage in the
+sources for 20 of 20. The Claude / ChatGPT columns are filled by hand for all 50.
 
 **OCR on every scanned page** (`eval/ocr_corpus.py`, `results/ocr-corpus.md`; cached
 transcriptions the index holds, no new calls): real estate 44 pages, CER 2.4%, recall

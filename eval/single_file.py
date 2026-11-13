@@ -3,7 +3,7 @@
 Three steps:
 
 1. ``select``: 30 labor test items whose gold is in one document, spread over file
-   type and question language (seeded); ``select-re`` appends 10 real-estate test items
+   type and question language (seeded); ``select-re`` appends 20 real-estate test items
    chosen the same way (the 30 stay as they were). Writes data/eval/single_file/compare.csv
    with the file to upload (the committed copy in data/corpus/), the question and the
    reference answer.
@@ -39,7 +39,7 @@ from sdrag.retrieval.search import Searcher
 
 OUT = DATA / "eval" / "single_file"
 CSV = OUT / "compare.csv"
-N, N_RE, SEED = 30, 10, 20261112
+N, N_RE, SEED = 30, 20, 20261112
 FIELDS = ["qid", "file", "pages", "q_lang", "file_type", "question", "reference", "gold_quote",
           "ours", "ours_gold_in_sources", "claude", "chatgpt"]  # fmt: skip
 JUDGE_MODEL = "deepseek.v3.2"  # not the answer model (GLM) nor the question writer (Qwen)
@@ -113,11 +113,16 @@ def select() -> None:
 
 
 def select_re() -> None:
-    """Append the real-estate items, keep the labor rows (and any answers pasted in);
-    file paths are refreshed to the committed copies."""
+    """Append the real-estate items, keep the labor rows; answers already filled in
+    (ours, claude, chatgpt) are kept for every item chosen again. File paths are
+    refreshed to the committed copies."""
     rows = list(csv.DictReader(CSV.open(encoding="utf-8")))
+    filled = {r["qid"]: r for r in rows}
     rows = [r | {"file": upload_file(load_doc_id(r))} for r in rows if not r["qid"].startswith("r")]
-    write(rows + pick("test_re.jsonl", N_RE))
+    keep = ("ours", "ours_gold_in_sources", "claude", "chatgpt")
+    new = [r | {k: filled[r["qid"]][k] for k in keep if k in filled.get(r["qid"], {})}
+           for r in pick("test_re.jsonl", N_RE)]  # fmt: skip
+    write(rows + new)
 
 
 def load_doc_id(row: dict) -> str:

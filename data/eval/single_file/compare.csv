@@ -154,11 +154,25 @@ g0634,data/corpus/kr-minimum-wage-rul.pdf,1,en,scan,what pay components count to
 
 The sources do not explicitly list the components that are included in the minimum wage.",yes,,
 g0635,data/corpus/kr-dispatched-dec.pdf,2,ko,pdf,파견근로자 차별 처우 신청은 어디에 하나,파견근로자 차별 처우 신청은 '파견근로자 보호 등에 관한 법률 시행령' 제6조의2 제6호에 따라 법 제21조에 따른 파견근로자에 대한 차별적 처우의 시정 신청에 관한 사무로 규정되어 있습니다.,6. 법 제21조에 따른 파견근로자에 대한 차별적 처우의 시정 신청에 관한 사무,"제공된 문서에는 파견근로자 차별 처우 신청의 구체적인 접수 기관이나 장소에 대한 명시가 없습니다. 다만, 고용노동부장관은 제6조에 따라 권한을 지방고용노동관서의 장에게 위임하며 [1][2], 차별적 처우 시정 신청과 관련된 사무를 수행하기 위해 개인정보를 처리할 수 있다고 규정하고 있습니다 [3].",yes,,
-r0037,data/corpus/kr-commercial-lease-law.docx,,en,docx,"in Korea, when does commercial lease protection law not apply?","The Commercial Lease Protection Act does not apply to leases where the deposit exceeds an amount specified by Presidential Decree, following deliberation by the Commercial Building Lease Committee.","다만, 제14조의2에 따른 상가건물임대차위원회의 심의를 거쳐 대통령령으로 정하는 보증금액을 초과하는 임대차에 대하여는 그러하지 아니하다.","In Korea, the Commercial Lease Protection Law does not apply in the following circumstances:
+r0015,data/corpus/kr-brokerage-dec.hwpx,,en,hwpx,"In Korea, what is the fine for failing to display the registered office certificate for a real estate broker as required by law?","The fine for failing to display the registered office certificate for a real estate broker as required by law is 300,000 won.",| 파. 법 제17조를 위반하여 중개사무소등록증 등을 게시하지 않은 경우 | 법 제51조제3항제1호 | 30만원 |,"In Korea, the fine for failing to display the registered office certificate is 300,000 won [1].",yes,,
+r0020,data/corpus/kr-real-estate-transaction-law.hwpx,,ko,hwpx,자진 신고하면 과태료 줄어들까,자진 신고하면 과태료를 감경 또는 면제할 수 있습니다.,신고관청은 제28조제2항제1호부터 제3호까지 및 제3항부터 제5항까지의 어느 하나에 따른 위반사실을 자진 신고한 자에 대하여 대통령령으로 정하는 바에 따라 같은 규정에 따른 과태료를 감경 또는 면제할 수 있다.,"네, 줄어들 수 있습니다. 제28조제2항제1호부터 제3호까지 및 제3항부터 제5항까지의 어느 하나에 따른 위반사실을 자진 신고한 자에 대하여는 대통령령으로 정하는 바에 따라 해당 과태료가 감경 또는 면제될 수 있습니다 [1].",yes,,
+r0023,data/corpus/kr-brokerage-law.pdf,16,en,pdf,"In Korea, if I report someone for operating as a real estate agent without proper registration, am I eligible for a reward?","Yes, according to Article 46 of the Public Official Real Estate Agent Act, a person who reports an individual operating a real estate brokerage business without proper registration to the registration authority, investigative agency, or the Real Estate Transaction Order Disturbance Reporting Center is eligible for a reward.","등록관청은 다음 각 호의 어느 하나에 해당하는 자를 등록관청, 수사기관이나 제47조의2에 따른 부동산거래질서교란행위 신고센터에 신고 또는 고발한 자에 대하여 대통령령으로 정하는 바에 따라 포상금을 지급할수 있다. <개정 2020. 6. 9., 2020. 12. 8.>
+1. 제9조에 따른 중개사무소의 개설등록을 하지 아니하고 중개업을 한 자","Yes, you are eligible for a reward if you report a person who conducts real estate brokerage business without establishing a brokerage office registration to the registration authority, an investigative agency, or the Real Estate Transaction Order Disruption Act Reporting Center [1].",yes,,
+r0031,data/corpus/us-cfr24-100.pdf,23,en,scan,I helped a neighbor file a complaint about housing discrimination—now my landlord is threatening to evict me. Is that legal?,"No, it is not legal for your landlord to threaten eviction because you helped a neighbor file a housing discrimination complaint, as such conduct constitutes prohibited interference, coercion, or intimidation under the Fair Housing Act.","It shall be unlawful to coerce, intimidate, threaten, or interfere with
+any person in the exercise or enjoyment of, or on account of that person
+having exercised or enjoyed, or on account of that person having aided or
+encouraged any other person in the exercise or enjoyment of, any right
+granted or protected by this part.","No, that is not legal. It is unlawful to retaliate against any person because that person has made a complaint, testified, assisted, or participated in any manner in a proceeding under the Fair Housing Act [2]. Additionally, a landlord is directly liable for failing to take prompt action to correct a discriminatory housing practice, and such corrective action cannot include evicting the aggrieved person [3].",yes,,
+r0037,data/corpus/kr-commercial-lease-law.docx,,en,docx,"in Korea, when does commercial lease protection law not apply?","The Commercial Lease Protection Act does not apply to leases where the deposit exceeds an amount specified by Presidential Decree, following deliberation by the Commercial Building Lease Committee.","다만, 제14조의2에 따른 상가건물임대차위원회의 심의를 거쳐 대통령령으로 정하는 보증금액을 초과하는 임대차에 대하여는 그러하지 아니하다.","In Korea, the Commercial Lease Protection Law does not apply in the following cases:
 
-*   **Temporary use:** The law does not apply if the lease is clearly for temporary use [2].
-*   **Excessive security deposit:** The law does not apply to leases where the security deposit exceeds the amount specified by Presidential Decree (determined considering regional economic conditions and property size, including rent converted at a specified rate) [3]. However, certain provisions (Article 3, parts of Article 10, Articles 10-2 through 10-9, Article 11-2, and Article 19) still apply to these high-deposit leases [4].
-*   **Key money protection exclusions:** The provisions protecting the opportunity to recover key money (Article 10-4) do not apply if the leased property is part of a large-scale store or quasi-large-scale store under the *Distribution Industry Development Act* (excluding traditional markets under the *Special Act on Promotion of Traditional Markets and Shopping Districts*), or if the property is state property under the *State Property Act* or public property under the *Act on the Management of Public Property and Goods* [1].",yes,,
+*   **Temporary use:** The law does not apply if the lease is clearly for temporary use [1].
+*   **Excessive security deposit:** The law does not apply to leases that exceed a certain security deposit amount set by Presidential Decree, considering regional economic conditions and property size (including rent converted at a specified rate) [3]. However, specific provisions regarding registration, contract renewal, and key money protection still apply even in these cases [4].
+*   **Key money protection exclusions:** The provisions protecting key money (Article 10-4) do not apply to leases where the property is part of a large-scale or quasi-large-scale store under the Distribution Industry Development Act (excluding traditional markets), or where the property is state or public property [2].",yes,,
+r0040,data/corpus/us-usc42-ch45.pdf,13,en,pdf,How long does a person have to file a complaint after a suspected housing discrimination occurs?,A person has one year after the alleged discriminatory housing practice occurred or terminated to file a complaint with the Secretary.,"An aggrieved person may, not later 
+than one year after an alleged discriminatory 
+housing practice has occurred or terminated, 
+file a complaint with the Secretary alleging 
+such discriminatory housing practice.",An aggrieved person may file a complaint with the Secretary not later than one year after the alleged discriminatory housing practice has occurred or terminated [1].,yes,,
 r0047,data/corpus/kr-real-estate-price-rul.hwpx,,ko,hwpx,표준주택가격 조사 보고서에 첨부할 서류,"표준주택가격 조사ㆍ산정보고서에 첨부할 서류는 지역분석조서, 표준주택 조사사항 및 가격산정의견서, 의견청취결과서, 표준주택의 위치를 표시한 도면, 그리고 사실 확인에 필요한 기타 서류입니다.",② 법 제16조제4항에 따라 표준주택가격 조사ㆍ산정을 의뢰받은 부동산원은 영 제30조제1항에 따라 별지 제11호서식의 조사ㆍ산정보고서에 다음 각 호의 서류를 첨부하여 국토교통부장관에게 제출해야 한다.<개정 2020. 12. 11.>,"표준주택가격 조사ㆍ산정보고서에 첨부하여 제출해야 하는 서류는 다음과 같습니다 [1].
 
 1. 지역분석조서
@@ -166,36 +180,52 @@ r0047,data/corpus/kr-real-estate-price-rul.hwpx,,ko,hwpx,표준주택가격 조�
 3. 별지 제13호서식에 따라 작성한 의견청취결과서(시장ㆍ군수 또는 구청장의 의견을 들은 결과를 기재한 것)
 4. 표준주택의 위치를 표시한 도면
 5. 그 밖에 사실 확인에 필요한 서류",yes,,
-r0049,data/corpus/kr-housing-lease-law.hwpx,,en,hwpx,"In Korea, what happens to a rental agreement if the tenant hasn't received their deposit back after the lease term has ended?",The rental agreement is deemed to continue until the tenant receives their deposit back.,임대차기간이 끝난 경우에도 임차인이 보증금을 반환받을 때까지는 임대차관계가 존속되는 것으로 본다.,"The lease relationship is deemed to continue until the tenant receives the deposit back [1]. If the deposit is not returned after the lease ends, the tenant may apply for a leasehold registration order to the court [2].",yes,,
+r0049,data/corpus/kr-housing-lease-law.hwpx,,en,hwpx,"In Korea, what happens to a rental agreement if the tenant hasn't received their deposit back after the lease term has ended?",The rental agreement is deemed to continue until the tenant receives their deposit back.,임대차기간이 끝난 경우에도 임차인이 보증금을 반환받을 때까지는 임대차관계가 존속되는 것으로 본다.,"The lease relationship is deemed to continue until the tenant receives the deposit back [1]. Additionally, the tenant may apply for a leasehold registration order to the court if the deposit is not returned after the lease ends [2].",yes,,
 r0051,data/corpus/kr-housing-lease-dec.pdf,5,ko,pdf,"주택임대차보호법에서 위원회의 전문위원은 어떤 자격을 가진 사람으로 위촉되며, 임기는 얼마나 되나요?","전문위원은 법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 법무부장관이 위촉하며, 임기는 2년이다.","전문위원은 법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 법무부장관이 위촉하고, 임기는
 2년으로 한다.","전문위원은 법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 법무부장관이 위촉하며, 임기는 2년입니다 [1].",yes,,
-r0074,data/corpus/kr-commercial-lease-dec.pdf,3,en,scan,"In Korea, if two tenants rent the same commercial building and their combined security deposits exceed half the building's value, how is the priority repayment amount divided between them?","The priority repayment amount is divided between the two tenants in proportion to the ratio of each tenant's deposit amount to the total combined deposits, with the total priority repayment limited to half the building's value.","하나의 상가건물에 임차인이 2인 이상이고, 그 각 보증금중 일정액의 합산액이 상가건물의 가액의 2분의 1을 초과하는 경우에는 그 각 보증금중 일정액의 합산액에 대한 각 임차인의 보증금중 일정액의 비율로 그 상가건물의 가액의 2분의 1에 해당하는 금액을 분할한 금액을 각 임차인의 보증금중 일정액으로 본다.<개정 2013. 12. 30.>","If the combined sum of the specific amounts of the security deposits exceeds half of the building's value, the amount corresponding to half of the building's value is divided among the tenants in proportion to each tenant's specific amount of the security deposit [1].",yes,,
+r0074,data/corpus/kr-commercial-lease-dec.pdf,3,en,scan,"In Korea, if two tenants rent the same commercial building and their combined security deposits exceed half the building's value, how is the priority repayment amount divided between them?","The priority repayment amount is divided between the two tenants in proportion to the ratio of each tenant's deposit amount to the total combined deposits, with the total priority repayment limited to half the building's value.","하나의 상가건물에 임차인이 2인 이상이고, 그 각 보증금중 일정액의 합산액이 상가건물의 가액의 2분의 1을 초과하는 경우에는 그 각 보증금중 일정액의 합산액에 대한 각 임차인의 보증금중 일정액의 비율로 그 상가건물의 가액의 2분의 1에 해당하는 금액을 분할한 금액을 각 임차인의 보증금중 일정액으로 본다.<개정 2013. 12. 30.>","If the combined sum of the specific amounts of the security deposits exceeds half of the building's value, the amount corresponding to half of the building's value is divided among the tenants in proportion to their respective specific amounts of security deposits [1].",yes,,
+r0083,data/corpus/kr-real-estate-transaction-law.hwpx,,ko,hwpx,"토지거래 허가 신청을 했을 때, 지자체에서 허가 여부를 결정하고 신청자에게 알려야 하는 기한은 어떻게 되나요?",시장·군수·구청장은 허가신청서를 받으면 「민원 처리에 관한 법률」에 따른 처리기간 내에 허가 여부를 결정하고 신청자에게 허가증을 발급하거나 불허가 사유를 서면으로 알려야 합니다.,"시장ㆍ군수 또는 구청장은 제3항에 따른 허가신청서를 받으면 「민원 처리에 관한 법률」에 따른 처리기간에 허가 또는 불허가의 처분을 하고, 그 신청인에게 허가증을 발급하거나 불허가처분 사유를 서면으로 알려야 한다.","지자체는 「민원 처리에 관한 법률」에 따른 처리기간 내에 허가 또는 불허가 처분을 하고, 그 신청인에게 허가증을 발급하거나 불허가처분 사유를 서면으로 알려야 합니다 [1].
+
+다만, 선매협의 절차가 진행 중인 경우에는 위 기간 내에 그 사실을 신청인에게 알려야 합니다 [1].",yes,,
+r0088,data/corpus/kr-real-estate-price-law.docx,,ko,docx,"공시된 표준지 시세에 불만이 있는데, 언제까지 이의를 제기할 수 있고, 몇 일 이내에 결과를 알려주는지 알고 싶습니다.","표준지공시지가에 이의가 있는 경우 공시일부터 30일 이내에 국토교통부장관에게 서면으로 이의를 신청할 수 있으며, 국토교통부장관은 이의신청 기간이 만료된 날부터 30일 이내에 심사 결과를 신청인에게 서면으로 통지합니다.","제7조(표준지공시지가에 대한 이의신청) ① 표준지공시지가에 이의가 있는 자는 그 공시일부터 30일 이내에 서면(전자문서를 포함한다. 이하 같다)으로 국토교통부장관에게 이의를 신청할 수 있다.
+
+② 국토교통부장관은 제1항에 따른 이의신청 기간이 만료된 날부터 30일 이내에 이의신청을 심사하여 그 결과를 신청인에게 서면으로 통지하여야 한다.","공시일부터 30일 이내에 국토교통부장관에게 서면으로 이의를 신청할 수 있으며, 국토교통부장관은 이의신청 기간이 만료된 날부터 30일 이내에 심사하여 그 결과를 신청인에게 서면으로 통지하여야 합니다 [1].",yes,,
 r0103,data/corpus/kr-real-estate-transaction-rul.pdf,6,ko,scan,외국인이 부동산 산 후 받는 증명서는?,외국인이 부동산 취득 신고를 한 후 신고관청으로부터 발급받는 증명서는 '별지 제7호서식의 외국인 부동산등 취득·계속보유 신고확인증'입니다.,"제1항에 따른 신고를 받은 신고관청은 제출된 첨부서류를 확인한 후 별지 제7호서식의 외국인 부동산등 취득·
 계속보유 신고확인증을 발급하여야 한다.","외국인 부동산등 취득·계속보유 신고확인증입니다 [1].
 
 토지취득 허가를 신청한 경우에는 외국인 토지취득 허가증을 발급받습니다 [2].",yes,,
-r0146,data/corpus/kr-real-estate-transaction-dec.docx,,ko,docx,부동산 거래 신고 시 거짓으로 신고하면 과태료는 얼마나 부과되나요?,"부동산 거래 신고를 거짓으로 한 경우 과태료는 3,000만원입니다.","| 1) 법 제4조제4호를 위반하여 거짓으로 법 제3조에 따라 신고한 경우 |  | 3,000만원 |  |","부동산 거래 신고 시 거짓으로 신고하는 경우, 위반 유형에 따라 다음과 같은 과태료가 부과됩니다.
+r0127,data/corpus/us-cfr24-100.pdf,16,ko,scan,"미국에서 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설을 건설할 때, 접근 가능한 출입구를 최소 한 개 이상 설치해야 하는가?","Yes, covered multifamily dwellings for first occupancy after March 13, 1991, must be designed and constructed to have at least one building entrance on an accessible route, unless it is impractical due to terrain or unusual site characteristics.","Covered multifamily dwellings for
+first occupancy after March 13, 1991
+
+shall be designed and constructed to
+have at least one building entrance on
+an accessible route unless it is impractical to do so because of the terrain or
+unusual characteristics of the site.","네, 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설은 부지의 지형이나 특이한 특성으로 인해 불가능한 경우를 제외하고, 접근 가능한 경로에 최소 한 개 이상의 건물 출입구를 갖도록 설계하고 시공해야 합니다 [1].",yes,,
+r0146,data/corpus/kr-real-estate-transaction-dec.docx,,ko,docx,부동산 거래 신고 시 거짓으로 신고하면 과태료는 얼마나 부과되나요?,"부동산 거래 신고를 거짓으로 한 경우 과태료는 3,000만원입니다.","| 1) 법 제4조제4호를 위반하여 거짓으로 법 제3조에 따라 신고한 경우 |  | 3,000만원 |  |","부동산 거래 신고 시 거짓으로 신고하는 경우, 위반 유형에 따라 다음과 같이 과태료가 부과됩니다.
 
 **1. 법 제3조 또는 제3조의2에 따른 신고를 거짓으로 한 경우**
-*   **3,000만원** [1]
+*   **법 제4조제4호 또는 제5호 위반:** 3,000만원 [1]
+*   **법 제3조제1항부터 제4항까지 또는 제4조제2호 위반:**
+    *   실제 거래가격 외의 사항을 거짓으로 신고한 경우: 취득가액의 100분의 2 [2]
+    *   실제 거래가격을 거짓으로 신고한 경우: 차액 비율에 따라 취득가액의 100분의 2에서 100분의 10까지 부과 [2][3]
 
-**2. 법 제3조(제1항~제4항) 또는 제4조제2호를 위반하여 신고를 거짓으로 한 경우**
-*   **실제 거래가격 외의 사항**을 거짓으로 신고한 경우: 취득가액의 **100분의 2** [2]
-*   **실제 거래가격**을 거짓으로 신고한 경우: 차액 비율에 따라 취득가액의 다음 비율이 적용됩니다 [2][3].
-    *   차액이 10% 미만: 100분의 2
-    *   차액이 10% 이상 20% 미만: 100분의 4
-    *   차액이 20% 이상 30% 미만: 100분의 5
-    *   차액이 30% 이상 40% 미만: 100분의 7
-    *   차액이 40% 이상 50% 미만: 100분의 9
-    *   차액이 50% 이상: 100분의 10
+**2. 법 제8조제1항에 따른 취득 신고를 거짓으로 한 경우**
+*   300만원 [5]
 
-**3. 법 제8조제2항(취득신고) 또는 제3항(계속보유 신고)을 위반하여 거짓으로 신고한 경우**
-*   **100만원** [5][6]
+**3. 법 제8조제2항에 따른 취득신고 또는 동조 제3항에 따른 계속보유 신고를 거짓으로 한 경우**
+*   100만원 [6]
 
-**참고** 신고관청은 위반행위의 동기·결과 및 횟수 등을 고려하여 위 과태료 금액의 2분의 1(법 제28조제1항 및 제3항 위반의 경우 5분의 1) 범위에서 늘리거나 줄일 수 있습니다 [1].",yes,,
+**참고:** 신고관청은 위반행위의 동기·결과 및 횟수 등을 고려하여 위 과태료 금액의 2분의 1(법 제28조제1항 및 제3항 위반의 경우 5분의 1) 범위에서 늘리거나 줄일 수 있습니다 [1].",yes,,
 r0164,data/corpus/us-cfr12-1024.pdf,106,en,pdf,"If a borrower submits a loss mitigation application that is later found to be incomplete and then resubmits it with all required documents, what date should the servicer list as the receipt date of the complete application?","The servicer must list the date the borrower subsequently completes the application (e.g., March 21 in the example) as the receipt date of the complete application.","If the borrower subsequently completes the application on  
 March 21, the servicer must provide another  
 notice in accordance with § 1024.41(c)(3)(i) and 
 disclose March 21 as the date the servicer received the complete application.",The servicer must list the date the servicer received the complete application after the borrower resubmitted the required documents [1][3].,yes,,
-r0172,data/corpus/kr-commercial-lease-law.docx,,en,docx,"In Korea, under what condition can a tenant claim priority in receiving their deposit back from the proceeds of a property auction?",A tenant can claim priority in receiving their deposit back from the proceeds of a property auction if they have secured the right of opposition (대항요건) under Article 3(1) and have obtained a confirmed date (확정일자) for the lease contract from the competent tax office.,제3조제1항의 대항요건을 갖추고 관할 세무서장으로부터 임대차계약서상의 확정일자를 받은 임차인은 「민사집행법」에 따른 경매 또는 「국세징수법」에 따른 공매 시 임차건물(임대인 소유의 대지를 포함한다)의 환가대금에서 후순위권리자나 그 밖의 채권자보다 우선하여 보증금을 변제받을 권리가 있다.,"A tenant can claim priority in receiving their deposit back from the proceeds of a property auction if they have fulfilled the requirements for opposing power under Article 3(1) (taking delivery of the building and applying for business registration) and have obtained a fixed date on the lease contract from the head of the competent tax office [1]. Additionally, to claim priority for a certain amount of the deposit over other secured creditors, the tenant must have fulfilled the requirements of Article 3(1) before the registration of the application for auction on the building [3].",yes,,
+r0166,data/corpus/kr-brokerage-dec.hwpx,,en,hwpx,"In Korea, what is the fine for a real estate agent who fails to properly confirm or explain the property and also does not provide supporting documentation for the explanation?",The fine is 5 million won for failing to properly confirm or explain the property and not providing supporting documentation for the explanation.,"| 3) 성실ㆍ정확하게 중개대상물의 확인ㆍ설명을 하지 않고, 설명의 근거자료를 제시하지 않은 경우 |  | 500만원 |",The fine is 5 million won [1].,yes,,
+r0172,data/corpus/kr-commercial-lease-law.docx,,en,docx,"In Korea, under what condition can a tenant claim priority in receiving their deposit back from the proceeds of a property auction?",A tenant can claim priority in receiving their deposit back from the proceeds of a property auction if they have secured the right of opposition (대항요건) under Article 3(1) and have obtained a confirmed date (확정일자) for the lease contract from the competent tax office.,제3조제1항의 대항요건을 갖추고 관할 세무서장으로부터 임대차계약서상의 확정일자를 받은 임차인은 「민사집행법」에 따른 경매 또는 「국세징수법」에 따른 공매 시 임차건물(임대인 소유의 대지를 포함한다)의 환가대금에서 후순위권리자나 그 밖의 채권자보다 우선하여 보증금을 변제받을 권리가 있다.,A tenant can claim priority in receiving their deposit back if they have fulfilled the requirements for opposing power under Article 3(1) (taking delivery of the building and applying for business registration) and have obtained a fixed date on the lease contract from the head of the competent tax office [1][2].,yes,,
 r0176,data/corpus/kr-brokerage-rul.docx,,ko,docx,중개사 검사할 때 공무원이 제시해야 하는 증명서,공무원이 중개사를 검사할 때 제시해야 하는 증명서는 공무원증 및 별지 제27호서식의 한국공인중개사협회조사ㆍ검사증명서입니다.,법 제44조제2항에서 “국토교통부령으로 정하는 증표”란 공무원증 및 별지 제27호서식의 한국공인중개사협회조사ㆍ검사증명서를 말한다.,중개사무소 조사·검사 시 공무원은 공무원증 및 별지 제26호서식의 중개사무소조사·검사증명서를 제시해야 합니다[1]. 한국공인중개사협회 조사·검사의 경우에는 공무원증 및 별지 제27호서식의 한국공인중개사협회조사·검사증명서를 제시해야 합니다[2].,yes,,
+r0178,data/corpus/us-usc12-ch27.pdf,7,ko,pdf,"미국에서 주택담보대출 서비스가 다른 회사로 이전될 때, 대출자가 대출자에게 서면 통지를 제공한 경우, 이전에 대해 사전 통지가 필요 없나요?","예, 대출자가 대출 계약 체결 시(settlement) 서비스 이전에 대한 서면 통지를 제공한 경우, 해당 이전에 대한 사전 통지는 필요하지 않습니다.","The provisions of subparagraphs (A) and 
+(B) shall not apply to any assignment, sale, 
+or transfer of the servicing of any mortgage 
+loan if the person who makes the loan provides to the borrower, at settlement (with 
+respect to the property for which the mortgage loan is made), written notice under 
+paragraph (3) of such transfer.","아니요, 대출자가 대출자에게 서면 통지를 제공한 경우에도 일반적으로는 이전에 대해 사전 통지가 필요합니다. 다만, 대출을 실행하는 사람이 담보물에 대한 정산 시점에 이전에 대한 서면 통지를 대출자에게 제공한 경우에는 사전 통지 요건이 적용되지 않습니다 [1][2][3].",yes,,
