@@ -66,5 +66,3 @@ def cache(data: Path, name: str) -> Path:  # ocr | embed | eval
 
 def bench(data: Path, name: str) -> Path:  # ocr | embed | robustness
     return raw(data) / "bench" / name
-
-

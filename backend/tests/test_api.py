@@ -138,3 +138,25 @@ def test_log_presets_reject_unknown_names_and_bad_ids():
         logs_api.query("drop table", 60, "")
     with pytest.raises(ValueError):
         logs_api.query("request", 60, "x' or 1=1")
+
+
+def test_dynamo_store_reads_every_page_and_lists_without_messages():
+    from sdrag.api.store import DynamoStore
+
+    class Table:
+        def __init__(self):
+            self.calls = []
+
+        def query(self, **kw):
+            self.calls.append(kw)
+            page = [{"id": "c1", "title": "a", "ts": 1}] if "ExclusiveStartKey" not in kw else [
+                {"id": "c2", "title": "b", "ts": 2}]  # fmt: skip
+            return {"Items": page} | (
+                {} if "ExclusiveStartKey" in kw else {"LastEvaluatedKey": {"k": 1}}
+            )
+
+    store = DynamoStore.__new__(DynamoStore)
+    store.table = Table()
+    assert [c["id"] for c in store.conversations("u")] == ["c1", "c2"]
+    first = store.table.calls[0]
+    assert set(first["ExpressionAttributeNames"].values()) == {"id", "title", "ts"}  # no messages

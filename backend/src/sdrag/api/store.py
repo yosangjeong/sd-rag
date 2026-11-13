@@ -91,17 +91,28 @@ class DynamoStore:
             )
         return conv_id
 
-    def _query(self, user: str, prefix: str) -> list[dict]:
+    def _query(self, user: str, prefix: str, fields: tuple[str, ...] = ()) -> list[dict]:
+        """Every item of the user under `prefix`, page by page (a query returns at most 1 MB);
+        `fields`: only these attributes (the conversation list needs no messages)."""
         from boto3.dynamodb.conditions import Key
 
-        r = self.table.query(
-            KeyConditionExpression=Key("pk").eq(self._pk(user)) & Key("sk").begins_with(prefix)
-        )
-        return r["Items"]
+        args = {
+            "KeyConditionExpression": Key("pk").eq(self._pk(user)) & Key("sk").begins_with(prefix)
+        }
+        if fields:  # attribute names through placeholders: some are DynamoDB reserved words
+            args["ProjectionExpression"] = ", ".join(f"#f{i}" for i in range(len(fields)))
+            args["ExpressionAttributeNames"] = {f"#f{i}": f for i, f in enumerate(fields)}
+        items, start = [], {}
+        while True:
+            r = self.table.query(**args, **start)
+            items += r["Items"]
+            if "LastEvaluatedKey" not in r:
+                return items
+            start = {"ExclusiveStartKey": r["LastEvaluatedKey"]}
 
     def conversations(self, user):
         return [{"id": i["id"], "title": i["title"], "ts": i["ts"]}
-                for i in self._query(user, "CONV#")]  # fmt: skip
+                for i in self._query(user, "CONV#", ("id", "title", "ts"))]  # fmt: skip
 
     def conversation(self, user, conv_id):
         r = self.table.get_item(Key={"pk": self._pk(user), "sk": f"CONV#{conv_id}"})
