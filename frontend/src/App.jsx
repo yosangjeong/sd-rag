@@ -122,6 +122,7 @@ export default function App({ user }) {
       const r = await api.chat(q, convId, mode, scope ? [scope] : []);
       setConvId(r.conversation_id);
       setMessages((m) => [...m, { role: "assistant", text: r.answer, citations: r.citations, mode: r.mode,
+                                  unchecked_figures: r.unchecked_figures,
                                   latency_ms: r.latency_ms, steps: r.steps,
                                   searched: r.searched !== q ? r.searched : null }]);
       loadConvs();
@@ -182,6 +183,11 @@ export default function App({ user }) {
               {m.role === "assistant" ? (
                 <>
                   <Answer text={m.text} citations={m.citations || []} onOpen={openSource} label={where} />
+                  {(m.unchecked_figures || []).length > 0 && (
+                    <p className="figure-warn" role="note">
+                      출처에서 확인되지 않은 숫자가 있습니다: <b>{m.unchecked_figures.join(", ")}</b>. 원문을 확인해 주세요.
+                    </p>
+                  )}
                   {(m.citations || []).length > 0 && (
                     <Sources citations={m.citations} onOpen={openSource} label={where} />
                   )}

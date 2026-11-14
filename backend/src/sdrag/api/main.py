@@ -133,9 +133,11 @@ def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> d
         user, body.conversation_id, {"role": "user", "text": body.message, "ts": now}
     )
     msg = {"role": "assistant", "text": reply.answer.text, "citations": citations,
-           "mode": reply.mode, "ts": time.time()}  # fmt: skip
+           "unchecked_figures": reply.answer.unchecked_figures, "mode": reply.mode,
+           "ts": time.time()}  # fmt: skip
     d.store.add_message(user, conv, msg)
     return {"conversation_id": conv, "answer": reply.answer.text, "citations": citations,
+            "unchecked_figures": reply.answer.unchecked_figures,
             "mode": reply.mode, "latency_ms": round(reply.latency_ms), "steps": reply.steps,
             "searched": reply.question,
             "tokens": {"input": reply.input_tokens, "output": reply.output_tokens}}  # fmt: skip

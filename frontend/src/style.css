@@ -166,3 +166,7 @@ button { font: inherit; }
   .ask .scope { max-width: none; flex: 1; }
   .empty { margin-top: 24px; }
 }
+
+/* a figure in the answer that its cited sources do not contain (agent/answer.py) */
+.figure-warn { margin: 8px 0 0; padding: 8px 12px; border-radius: var(--radius); font-size: 0.9rem;
+  border: 1px solid color-mix(in srgb, #d97706 55%, var(--line)); background: color-mix(in srgb, #d97706 10%, var(--surface)); }

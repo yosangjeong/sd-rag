@@ -18,14 +18,20 @@ Prompt injection: uploaded documents can contain text written as instructions
    source cannot make the answer cite something that was not retrieved.
 4. If no source answers, the model must say so instead of using outside knowledge.
 
+Figures are checked too (common/numbers.py): a period, ratio or amount in the answer
+that its cited sources do not contain sends the answer back once, naming the figures
+(kept in `rewritten_for`);
+if one is still unsupported after that, the answer carries it in `unchecked_figures`
+and the UI shows a warning beside the answer.
+
 These reduce, not remove, the risk (docs/decisions.md, limitations).
 """
 
 import datetime as dt
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
-from sdrag.common import versions
+from sdrag.common import numbers, versions
 from sdrag.common.text import is_korean, strip_think
 from sdrag.retrieval.search import Hit
 
@@ -63,6 +69,9 @@ class Answer:
     sources: list[Citation] = field(default_factory=list)  # every source given
     input_tokens: int = 0
     output_tokens: int = 0
+    unchecked_figures: list[str] = field(default_factory=list)  # not in the cited sources
+    # the first draft's unsupported figures, when it had any and was rewritten
+    rewritten_for: list[str] = field(default_factory=list)
 
 
 def version_status(heading: str, today: dt.date) -> tuple[str, str]:
@@ -119,10 +128,50 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
     user = (f"Today is {today.isoformat()}.\n\nSources:\n\n{source_block(hits, today)}\n\n"
             f"Question: {question}\n\nAnswer in {lang}.")  # fmt: skip
     c = chat.complete(SYSTEM, user, max_tokens=max_tokens)
-    text = strip_think(c.text)
+    text, citations = _cited(strip_think(c.text), hits)
+    tokens = [c.input_tokens, c.output_tokens]
+    bad = _unsupported(question, text, citations, hits)
+    first = bad
+    if bad:
+        # one rewrite, told which figures: the model copied "1분의 100" as "100분의 100"
+        # and "150만원" as "150,000 won" (v7 answer run), each time with the right
+        # figure in front of it
+        again = (f"{user}\n\nYour previous answer:\n{text}\n\nThese figures in it are not in "
+                 f"the sources it cites: {', '.join(bad)}. Check every figure against the sources "
+                 "and write the whole answer again, giving each figure as the sources state it.")  # fmt: skip
+        c = chat.complete(SYSTEM, again, max_tokens=max_tokens)
+        text, citations = _cited(strip_think(c.text), hits)
+        tokens = [tokens[0] + c.input_tokens, tokens[1] + c.output_tokens]
+        bad = _unsupported(question, text, citations, hits)
+    text, citations = renumber(text, citations)
     sources = [_citation(n, h) for n, h in enumerate(hits, 1)]
+    return Answer(text, citations, sources, tokens[0], tokens[1], bad, first)
+
+
+def renumber(text: str, citations: list[Citation]) -> tuple[str, list[Citation]]:
+    """Number the cited sources 1, 2, 3 in the order the text first cites them. The model
+    cites by position among all the sources it was given (up to ANSWER_SOURCES), so an
+    answer citing only the second, third and fifth showed [2][3][5]; the reader sees only
+    the cited ones and expects them numbered from 1."""
+    order = list(dict.fromkeys(int(m) for m in RE_CITE.findall(text)))
+    new = {old: i for i, old in enumerate(order, 1)}
+    text = RE_CITE.sub(lambda m: f"[{new[int(m.group(1))]}]", text)
+    by_old = {c.n: c for c in citations}
+    return text, [replace(by_old[old], n=n) for old, n in new.items()]
+
+
+def _cited(text: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
+    """The text without citation numbers that are not sources, and the cited sources."""
     cited = sorted({int(m) for m in RE_CITE.findall(text)})
     # a number that is not a source is removed from the text rather than shown as a link
     text = RE_CITE.sub(lambda m: m.group(0) if 1 <= int(m.group(1)) <= len(hits) else "", text)
-    citations = [sources[n - 1] for n in cited if 1 <= n <= len(hits)]
-    return Answer(text, citations, sources, c.input_tokens, c.output_tokens)
+    return text, [_citation(n, hits[n - 1]) for n in cited if 1 <= n <= len(hits)]
+
+
+def _unsupported(question: str, text: str, citations: list[Citation], hits: list[Hit]) -> list[str]:
+    """Figures in the answer that the sources it cites (all sources, if it cites none) do
+    not contain, as the model saw them: heading and the first MAX_SOURCE_CHARS."""
+    shown = [hits[c.n - 1] for c in citations] or hits
+    texts = [f"{h.source.get('heading') or ''}\n{h.source.get('text', '')[:MAX_SOURCE_CHARS]}"
+             for h in shown]  # fmt: skip
+    return numbers.unsupported(text, texts, question)
