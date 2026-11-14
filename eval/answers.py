@@ -27,7 +27,7 @@ import statistics
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
-from evalset import DATA, LLM_CACHE, doc_texts, load_items, overlaps
+from evalset import DATA, LLM_CACHE, Item, doc_texts, load_items, overlaps
 from judges import correct_prompt, correct_user, correct_user_v3
 
 from sdrag.agent.answer import KST
@@ -85,7 +85,10 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--version", required=True, help="folder name under results/answers/")
-    ap.add_argument("--set", choices=("labor", "re"), default="labor")
+    ap.add_argument("--set", choices=("labor", "re", "heldout"), default="labor")
+    ap.add_argument(
+        "--n-test", type=int, help="test items to run (default --n; 0: unanswerable only)"
+    )
     ap.add_argument("--reuse", action="store_true",
                     help="keep the version's existing result files, run only what is missing")  # fmt: skip
     a = ap.parse_args()
@@ -95,11 +98,22 @@ def main() -> None:
         unanswerable = load_items(DATA / "eval" / "real_unanswerable.jsonl")
         correct_system = correct_prompt("labor")
         correct_v3 = correct_prompt("labor", 3)
-    else:
+    elif a.set == "re":
         test = sample(load_items(DATA / "eval" / "test_re.jsonl"), texts, a.n)
         unanswerable = load_items(DATA / "eval" / "real_re_unanswerable.jsonl")
         correct_system = correct_prompt("real-estate")
         correct_v3 = correct_prompt("real-estate", 3)
+    else:  # the held-out real questions (2026-11-14): labor and real estate together
+        test = load_items(DATA / "eval" / "real_heldout.jsonl")
+        unanswerable = [
+            Item(x["qid"], x["question"], "en" if x["qid"].startswith("enh") else "ko", [],
+                 "real", "heldout", {"reason": x["reason"]})
+            for x in json.loads((DATA / "eval" / "real_heldout_unanswerable.json").read_text("utf-8"))
+        ]  # fmt: skip
+        correct_system = correct_prompt("labor")
+        correct_v3 = correct_prompt("labor", 3)
+    if a.n_test is not None:
+        test = test[: a.n_test]
 
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
@@ -145,7 +159,11 @@ def main() -> None:
 
     OUT = RESULTS / a.version
     OUT.mkdir(parents=True, exist_ok=True)
-    names = ("test_sample", "unanswerable") if a.set == "labor" else ("test_re", "unanswerable_re")
+    names = {
+        "labor": ("test_sample", "unanswerable"),
+        "re": ("test_re", "unanswerable_re"),
+        "heldout": ("heldout", "unanswerable_heldout"),
+    }[a.set]
 
     def kept(name: str) -> list[dict] | None:
         path = OUT / f"{name}.jsonl"
@@ -180,11 +198,11 @@ def main() -> None:
         "|---|---|",
         f"| correctness (vs reference) | {share(rows, 'correct')} |",
         f"| groundedness (vs cited sources) | {share(rows, 'grounded')} |",
-        f"| a citation overlaps the gold | {sum(r['citation_hit'] for r in rows) / len(rows):.0%} |",
+        f"| a citation overlaps the gold | {sum(r['citation_hit'] for r in rows) / max(len(rows), 1):.0%} |",
         f"| unanswerable: declined | {share(un, 'decline')} |",
         f"| latency p50 | {statistics.median(r['latency_ms'] for r in rows + un) / 1000:.1f} s |",
     ]
-    summary = "summary.md" if a.set == "labor" else "summary-re.md"
+    summary = {"labor": "summary.md", "re": "summary-re.md", "heldout": "summary-heldout.md"}[a.set]
     (OUT / summary).write_text("\n".join(lines) + "\n", "utf-8")
     print("\n".join(lines))
 

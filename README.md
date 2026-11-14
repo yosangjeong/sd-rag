@@ -21,6 +21,10 @@ On documents it was never built or tuned on (press releases incl. HWPX and a sca
 framework, an IRS guide; uploaded as a user, 35 questions): hit@5 1.00, MRR 0.87, against
 hybrid 0.63 / 0.54 (`eval/unseen.py`).
 
+On 97 real questions collected after the last change and measured once (held out:
+easylaw topics no other set uses, the HUD/DOJ accommodations statement): hit@10 0.91,
+MRR 0.82, against hybrid 0.73 / 0.53; the 64 it cannot answer declined 78%.
+
 Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real estate (judge v3,
 which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
 passage; questions the corpus cannot answer declined 67% / 90%; the other country's law cited

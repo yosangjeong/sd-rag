@@ -62,6 +62,7 @@ def main() -> None:
         default=REPORTED,
         help="result-file prefixes to pool (default: the systems the README reports)",
     )
+    ap.add_argument("--sets", nargs="*", default=list(SETS), help="sets to pool (default: all six)")
     ap.add_argument("--dry-run", action="store_true", help="count the candidates only")
     ap.add_argument("--workers", type=int, default=6)
     a = ap.parse_args()
@@ -77,7 +78,7 @@ def main() -> None:
         return hits[0]["_source"] | {"chunk_id": cid} if hits else None  # re-chunked since
 
     log = {}
-    for name in SETS:
+    for name in a.sets:
         path = DATA / "eval" / f"{name}.jsonl"
         items = load_items(path)
         files = sorted((RESULTS / name).glob("*.jsonl"))  # all are re-scored below
@@ -140,10 +141,11 @@ def main() -> None:
     if not a.dry_run:
         sums_path = DATA / "eval" / "SHA256SUMS"  # the sets changed: their checksums too
         sums = {ln.split()[1]: ln for ln in sums_path.read_text().splitlines() if ln}
-        sums |= {f"{n}.jsonl": f"{sha256(DATA / 'eval' / f'{n}.jsonl')}  {n}.jsonl" for n in SETS}
+        sums |= {f"{n}.jsonl": f"{sha256(DATA / 'eval' / f'{n}.jsonl')}  {n}.jsonl" for n in a.sets}
         sums_path.write_text("".join(v + "\n" for v in sums.values()))
-        out = DATA / "eval" / "results" / "repool.json"
-        out.write_text(json.dumps(log, indent=1), "utf-8")
+        out = DATA / "eval" / "results" / "repool.json"  # keeps the other sets' entries
+        earlier = json.loads(out.read_text("utf-8")) if out.exists() else {}
+        out.write_text(json.dumps(earlier | log, indent=1), "utf-8")
         print(
             "then: uv run python ../eval/run_retrieval.py --set ../data/eval/<set>.jsonl  (summaries)"
         )

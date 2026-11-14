@@ -1,0 +1,386 @@
+[
+ {
+  "qid": "elh-002",
+  "question": "입찰에 제가 출석하기 어려운 상황입니다. 친구 등의 대리인을 내세워서 입찰에 참여할 수 있나요?",
+  "reason": "경매 대리인 입찰: 민사집행규칙(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-003",
+  "question": "기일입찰에는 어떻게 참여하나요?",
+  "reason": "기일입찰: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-004",
+  "question": "기간입찰에는 어떻게 참여하나요?",
+  "reason": "기간입찰: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-005",
+  "question": "매수신고를 했는데 경매가 취소될 수 있나요?",
+  "reason": "경매 취하: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-006",
+  "question": "입찰가격을 결정할 때 고려하면 좋은 사항으로 무엇이 있을까요?",
+  "reason": "입찰가격: 실무 조언(법령 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-007",
+  "question": "입찰에 참여할 부동산에 유치권이 설정되어 있는데, 부동산의 매수인으로 결정되면 이 유치권이 저에게 인수되나요?",
+  "reason": "유치권 인수: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-008",
+  "question": "부동산을 매수했으나 기한 내에 매각대금을 못 내면 어떻게 되나요?",
+  "reason": "대금 미납 재매각: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-010",
+  "question": "부동산 경매 절차는 어떻게 되나요?",
+  "reason": "경매 절차: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-011",
+  "question": "관심 부동산에 직접 방문해 보려고 합니다. 현장조사를 할 때 어떤 사항을 중점적으로 확인해야 하나요?",
+  "reason": "현장조사: 실무 조언(법령 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-012",
+  "question": "매각기일에 최고가 매수신고인으로 결정됐는데 경매 물건의 공유자가 우선매수신고를 했어요. 이렇게 되면 경매 물건은 누구에게 매수되는 건가요?",
+  "reason": "공유자 우선매수: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-014",
+  "question": "입찰에 참여할 부동산에 가압류가 설정되어 있는데, 이 가압류가 저에게 인수되나요?",
+  "reason": "가압류 말소: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-015",
+  "question": "최고가매수신고인으로 결정되면 바로 돈을 주고 소유권을 취득할 수 있나요?",
+  "reason": "매각결정기일: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-017",
+  "question": "경매로 집을 샀는데, 전 주인이 집을 비워주지 않고 계속 그 집에 살고 있어요. 나가라고 말해도 듣지 않는데 법적 해결방법이 있을까요?",
+  "reason": "인도명령: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-018",
+  "question": "관심 부동산을 권리분석해 보니 전세권이 1순위, 저당권이 2순위로 설정되어 있어요. 매수인으로 결정되면 이 권리도 인수되나요?",
+  "reason": "전세권 인수: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-019",
+  "question": "권리분석을 해 보니 저당권이 1순위, 임차권이 2순위로 설정되어 있어요. 이 저당권과 임차권이 매수인에게 인수되나요?",
+  "reason": "저당권 말소기준: 민사집행법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-020",
+  "question": "권리분석은 왜 하는 건가요?",
+  "reason": "권리분석: 실무 조언(법령 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=29&pageType=20"
+ },
+ {
+  "qid": "elh-021",
+  "question": "이사를 가야만 하는 상황인데 집주인은 집이 나가야지만 돈을 줄 수 있다고 합니다. 임차권등기명령신청을 할 경우, 신청비용은 얼마인가요?",
+  "reason": "임차권등기명령 비용: 대법원규칙·인지법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=190&pageType=20"
+ },
+ {
+  "qid": "elh-022",
+  "question": "월세를 내고 있는데 집주인이 현금영수증 발급이 어렵다고 합니다. 주택 월세 현금영수증은 어떻게 신청하나요? 임대인의 동의도 필요한가요?",
+  "reason": "월세 현금영수증: 세법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=190&pageType=20"
+ },
+ {
+  "qid": "elh-025",
+  "question": "전세로 아파트에 살면서 관리비를 납부하고 있는데, 이 중 일부는 이사갈 때 집주인으로부터 돌려받을 수 있다고 들었는데, 맞나요?",
+  "reason": "장기수선충당금: 공동주택관리법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=190&pageType=20"
+ },
+ {
+  "qid": "elh-026",
+  "question": "곧 이사를 할 예정인데 혹시라도 이사업체와 분쟁이 생길까 걱정됩니다. 이삿짐 관련 피해분쟁을 미리 예방할 수 있는 방법이 있나요?",
+  "reason": "이삿짐 분쟁: 소비자 조언(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=190&pageType=20"
+ },
+ {
+  "qid": "elh-028",
+  "question": "서울에 살다가 청주로 이사를 가게 되었어요. 이런 경우 자동차 변경등록을 해야 하나요?",
+  "reason": "자동차 변경등록: 자동차관리법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=190&pageType=20"
+ },
+ {
+  "qid": "elh-030",
+  "question": "이사를 해서 아이들의 학교를 옮기게 되었어요. 전학절차가 어떻게 되나요?",
+  "reason": "전학: 초중등교육법 시행령(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=190&pageType=20"
+ },
+ {
+  "qid": "elh-031",
+  "question": "최근 전세사기가 급증하고 있는데, 어떤 유형들이 있나요?",
+  "reason": "전세사기 유형: 실무 조언(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=459&pageType=20"
+ },
+ {
+  "qid": "elh-032",
+  "question": "전세사기를 겪고나니 전셋집을 구하기가 두렵습니다. 나라에서 주택을 낙찰받아 임대해주는 제도가 있다고 들었는데 자세히 알 수 있을까요?",
+  "reason": "든든전세주택: HUG 사업(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=459&pageType=20"
+ },
+ {
+  "qid": "elh-034",
+  "question": "전세피해확인서는 왜 제출해야 하며, 어디서 발급하는 건가요?",
+  "reason": "전세피해확인서: 전세사기피해자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=459&pageType=20"
+ },
+ {
+  "qid": "elh-035",
+  "question": "전세사기피해자는 어떤 사람들을 말하나요?",
+  "reason": "전세사기피해자 정의: 전세사기피해자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=459&pageType=20"
+ },
+ {
+  "qid": "elh-037",
+  "question": "전세계약 체결 권한이 없는 중개보조원으로 인해 피해를 입었는데, 위임한 후 제대로 관리하지 않은 임대인에게도 책임을 물을 수 있을까요?",
+  "reason": "임대인 사용자책임: 민법·판례(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=459&pageType=20"
+ },
+ {
+  "qid": "elh-038",
+  "question": "임대인의 국세 체납으로 주택이 압류되어 보증금을 돌려받지 못할 위기에 처해있습니다. 이런 상황에서 대처할만한 방법이 있을까요?",
+  "reason": "매각유예: 전세사기피해자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=84&onhunqueAstSeq=459&pageType=20"
+ },
+ {
+  "qid": "elh-043",
+  "question": "감염병 확산으로 1개월 이상 휴업하는 경우에도 배달기사 산재보험을 계속 유지해야 하나요?",
+  "reason": "산재보험 노무제공자 휴업 신고는 고용산재보험료징수법 사항(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=395&pageType=20"
+ },
+ {
+  "qid": "elh-044",
+  "question": "플랫폼 노무제공자 공제조합이란 무엇이며, 어떤 사업을 할 수 있는지 알려주세요.",
+  "reason": "플랫폼 노무제공자 공제조합: 생활물류서비스산업발전법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=395&pageType=20"
+ },
+ {
+  "qid": "elh-045",
+  "question": "배달기사는 종합소득세 신고 및 납부를 언제, 어떻게 해야 하나요?",
+  "reason": "종합소득세: 소득세법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=395&pageType=20"
+ },
+ {
+  "qid": "elh-046",
+  "question": "오토바이를 이용한 배달기사 일을 시작하려고 하는데, 어떤 보험에 가입해야 하나요?",
+  "reason": "이륜자동차 보험: 자동차손해배상 보장법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=395&pageType=20"
+ },
+ {
+  "qid": "elh-047",
+  "question": "소화물배송업 인증의 신청방법과 인증 시 혜택에 대해 알려주세요.",
+  "reason": "소화물배송업 인증: 생활물류서비스산업발전법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=395&pageType=20"
+ },
+ {
+  "qid": "elh-049",
+  "question": "가사근로자도 근로기준법 적용을 받을 수 있나요?",
+  "reason": "가사근로자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=432&pageType=20"
+ },
+ {
+  "qid": "elh-050",
+  "question": "현재 가정 내 아이 돌봄 가사서비스를 제공 중인데, 이용고객이 요청하면 세탁 같은 추가 가사서비스도 할 수 있나요?",
+  "reason": "가사근로자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=432&pageType=20"
+ },
+ {
+  "qid": "elh-051",
+  "question": "가사근로자도 다른 근로자처럼 공휴일을 유급휴일로 보장받을 수 있나요?",
+  "reason": "가사근로자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=432&pageType=20"
+ },
+ {
+  "qid": "elh-052",
+  "question": "가사서비스 제공기관과 근로계약을 체결할 때 주의해야 할 부분이 있나요?",
+  "reason": "가사근로자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=432&pageType=20"
+ },
+ {
+  "qid": "elh-053",
+  "question": "가사근로자의 근로시간은 임의로 정해도 되는 건가요?",
+  "reason": "가사근로자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=432&pageType=20"
+ },
+ {
+  "qid": "elh-054",
+  "question": "가사근로자가 되려면 특별한 자격요건이 필요한가요?",
+  "reason": "가사근로자법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=432&pageType=20"
+ },
+ {
+  "qid": "elh-057",
+  "question": "법적으로 인정되는 '고령자'의 기준은 어떻게 되나요?",
+  "reason": "고령자고용법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=308&pageType=20"
+ },
+ {
+  "qid": "elh-058",
+  "question": "정년제도의 운영현황 제출 대상은 어떻게 되나요?",
+  "reason": "고령자고용법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=308&pageType=20"
+ },
+ {
+  "qid": "elh-059",
+  "question": "직원 채용 시 모집 연령을 제한하는 것은 법령 위반인가요?",
+  "reason": "고령자고용법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=308&pageType=20"
+ },
+ {
+  "qid": "elh-060",
+  "question": "업종 및 사업장 규모별 고령자 고용기준은 어떻게 되나요?",
+  "reason": "고령자고용법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=308&pageType=20"
+ },
+ {
+  "qid": "elh-061",
+  "question": "표준교육과정 개정 전 교육과정을 모두 들었으나, 기한 내 자격시험에 응시하지 않는 경우 어떻게 되나요?",
+  "reason": "노인복지법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=471&pageType=20"
+ },
+ {
+  "qid": "elh-062",
+  "question": "요양보호사 자격취득 결격사유는 무엇이며, 어떻게 관리되고 있나요?",
+  "reason": "노인복지법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=471&pageType=20"
+ },
+ {
+  "qid": "elh-063",
+  "question": "현재 요양보호사 교육기관을 운영 중인데 위반사항에 대한 행정처분이 궁금합니다.",
+  "reason": "노인복지법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=471&pageType=20"
+ },
+ {
+  "qid": "elh-064",
+  "question": "5년차 요양보호사라면 장기근속 장려금을 받을 수 있나요?",
+  "reason": "장기요양 장기근속 장려금(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=471&pageType=20"
+ },
+ {
+  "qid": "elh-065",
+  "question": "요양보호사 자격은 없으나 가족을 직접 집에서 케어하는 경우 가족요양비를 지급받을 수 있나요?",
+  "reason": "노인장기요양보험법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=82&onhunqueAstSeq=471&pageType=20"
+ },
+ {
+  "qid": "elh-080",
+  "question": "커피전문점을 운영하는데 돈이 부족한 경우 지원받을 수 있는 방법이 있나요?",
+  "reason": "소상공인 정책자금(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=221&pageType=20"
+ },
+ {
+  "qid": "elh-081",
+  "question": "임신기간 중 그 진료에 드는 비용을 지원 받을 수 있다고 하던데 얼마나 지원 받을 수 있나요?",
+  "reason": "국민건강보험 임신·출산 진료비(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=97&onhunqueAstSeq=240&pageType=20"
+ },
+ {
+  "qid": "elh-082",
+  "question": "결혼한지 5년, 아직 아이는 없습니다. 무주택 신혼부부 특별공급의 신청자격이 될까요? 특별공급의 공급 비율도 궁금합니다.",
+  "reason": "주택공급규칙 신혼부부 특별공급(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=97&onhunqueAstSeq=305&pageType=20"
+ },
+ {
+  "qid": "elh-083",
+  "question": "대학교 학생도 학원 강사로 근무할 수 있는 자격이 되나요?",
+  "reason": "학원법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=318&pageType=20"
+ },
+ {
+  "qid": "elh-084",
+  "question": "매월 나가는 고용보험료가 부담이 됩니다. 도움을 받을 수 있는 방법이 없을까요??",
+  "reason": "소상공인 고용보험료 지원(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=460&pageType=20"
+ },
+ {
+  "qid": "elh-085",
+  "question": "자녀 3명 출산 시 국민연금 가입기간이 얼마나 추가되나요?",
+  "reason": "국민연금법 출산 크레딧(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=97&onhunqueAstSeq=481&pageType=20"
+ },
+ {
+  "qid": "elh-086",
+  "question": "반찬가게를 시작하려는데 정부로부터 지원받을 수 있는 제도에 대해 알고 싶습니다.",
+  "reason": "소상공인 지원(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=99&pageType=20"
+ },
+ {
+  "qid": "elh-087",
+  "question": "소규모로 반찬가게를 운영하는 경우에도 식품위생교육을 받아야 하나요?",
+  "reason": "식품위생법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=99&pageType=20"
+ },
+ {
+  "qid": "elh-088",
+  "question": "식품위생교육을 대신 받을 수 있나요?",
+  "reason": "식품위생법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=262&pageType=20"
+ },
+ {
+  "qid": "elh-089",
+  "question": "조리하지 않는 종업원도 건강진단 대상인가요?",
+  "reason": "식품위생법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=263&pageType=20"
+ },
+ {
+  "qid": "elh-090",
+  "question": "지상조업사업 등록 시 필요한 장비를 반드시 구매해야 하나요?",
+  "reason": "항공사업법(말뭉치 밖)",
+  "url": "https://www.easylaw.go.kr/CSP/OnhunqueansLstRetrieve.laf?onhunqnaAstSeq=91&onhunqueAstSeq=371&pageType=20"
+ },
+ {
+  "qid": "enh-005",
+  "question": "What is a \"fundamental alteration\" under the Fair Housing Act's reasonable accommodation rules?",
+  "reason": "fundamental alteration: case law and the joint statement, not the statute or 24 CFR 100",
+  "url": "https://www.justice.gov/sites/default/files/crt/legacy/2010/12/14/joint_statement_ra.pdf"
+ },
+ {
+  "qid": "enh-006",
+  "question": "What happens if no agreement can be reached through the interactive process on a reasonable accommodation?",
+  "reason": "interactive process: guidance only, not in the corpus",
+  "url": "https://www.justice.gov/sites/default/files/crt/legacy/2010/12/14/joint_statement_ra.pdf"
+ },
+ {
+  "qid": "enh-007",
+  "question": "May a housing provider charge an extra fee or require an additional deposit from applicants or residents with disabilities as a condition of granting a reasonable accommodation?",
+  "reason": "fees for accommodations: joint statement only",
+  "url": "https://www.justice.gov/sites/default/files/crt/legacy/2010/12/14/joint_statement_ra.pdf"
+ },
+ {
+  "qid": "enh-008",
+  "question": "When and how should an individual request a reasonable accommodation from a housing provider?",
+  "reason": "request procedure: joint statement only",
+  "url": "https://www.justice.gov/sites/default/files/crt/legacy/2010/12/14/joint_statement_ra.pdf"
+ },
+ {
+  "qid": "enh-009",
+  "question": "Must a housing provider adopt formal procedures for processing requests for a reasonable accommodation?",
+  "reason": "formal procedures: joint statement only",
+  "url": "https://www.justice.gov/sites/default/files/crt/legacy/2010/12/14/joint_statement_ra.pdf"
+ }
+]

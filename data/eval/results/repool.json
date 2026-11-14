@@ -28,5 +28,10 @@
   "candidates": 692,
   "added": 22,
   "items_with_new_also": 22
+ },
+ "real_heldout": {
+  "candidates": 209,
+  "added": 9,
+  "items_with_new_also": 8
  }
 }

@@ -204,6 +204,16 @@ judge. The set exists because the generated dev sets react to retrieval changes 
 real questions (a heavier dense weight helped dev and hurt both real sets), so tuning
 decisions need a real-question dev set; it is not a test set.
 
+## real_heldout.jsonl (held-out real questions)
+
+33 answerable questions and 64 the corpus does not answer (`real_heldout_unanswerable.json`),
+collected 2026-11-14 after the last retrieval change and measured once: easylaw topics no
+other set uses (부동산 경매, 이사, 전세사기 피해자 지원, 배달앱종사자, 가사근로자, 고령자
+고용, 요양보호사, and labor and lease questions of business and welfare topics; qids
+`elh-`) and the HUD/DOJ Joint Statement on reasonable accommodations, 2004 (`enh-`,
+public domain). Gold chosen by Claude Code reading the statutes, quotes checked
+verbatim; pooled once (`repool.py --sets real_heldout`, 9 spans). Not for tuning.
+
 ## Pooled also-spans (2026-11-14)
 
 `eval/repool.py` judged the top 5 of the four systems the README reports for every

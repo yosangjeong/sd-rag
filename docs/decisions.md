@@ -745,6 +745,62 @@ questions declined 67% / 90%; no answer cites the other country's statutes; the 
 check rewrote 3 answers and left none with an unsupported figure. Declining on labor
 (18 of 27) is lower than the 70-74% of v8-v10, within the run-to-run spread of 27 items.
 
+## Held-out real questions and the scope rule (2026-11-14)
+
+Every earlier real-question set was in use while the system was tuned (several ideas came
+from their misses, said where they were made), so their numbers may be optimistic. This
+set was collected after the last retrieval change and measured once.
+
+**The set** (`data/eval/real_heldout.jsonl`, 33 answerable; `real_heldout_unanswerable.json`,
+64): easylaw 백문백답 topics no other set uses (부동산 경매, 이사, 전세사기 피해자 지원,
+배달앱종사자, 가사근로자, 고령자 고용, 요양보호사, and the labor and lease questions of
+business and welfare topics such as 음식점 운영, 예술인 지원, 저출생 지원), 29 + 59
+Korean questions, and the HUD/DOJ Joint Statement on reasonable accommodations (2004), 4
++ 5 English ones. Three of its questions repeat the 2008 modifications statement's in
+real_re and were left out; "the Act" is written "the Fair Housing Act", since the
+question stands alone. Most of the unanswerable ones are under statutes outside the
+corpus (민사집행법, 전세사기피해자법, 가사근로자법, 고령자고용법, 노인복지법, tax and
+food-safety law). Gold spans were chosen by reading the statutes (`data/raw/heldout/`,
+not committed: questions.csv, labels.json, build.py), each quote checked verbatim, then
+pooled once with `eval/repool.py --sets real_heldout` before reporting (9 spans for 7
+questions, which raised hybrid and left the served numbers unchanged).
+
+| | hit@1 | hit@5 | hit@10 | MRR |
+|---|---|---|---|---|
+| hybrid | 0.424 | 0.576 | 0.727 | 0.526 |
+| **served (wide + rerank + jurisdiction)** | **0.758** | **0.909** | **0.909** | **0.816** |
+
+Lower than real_re (0.964 / 0.941), as a set no decision saw should be. Three of 33 are
+not in the top 10: the delivery rider's accident (elh-039) and the employer of an older
+part-timer (elh-056) got articles that answer them as well (산재법 제91조의18/20 on
+노무제공자 accidents; 고용보험법 시행령 제17조 on job-creation support, arguably better
+than the gold 법 제20조), which the pooling judge rejected because a real question's
+reference is the gold quote; whether a restaurant's staff get social insurance (elh-071)
+is a true miss (노무제공자 articles above 고용보험법 제8조). The labels were not changed
+after seeing the results.
+
+**Scope rule** (answer prompt): many of the unanswerable questions answered in v11 had a
+narrower provision presented as the general rule (foreign workers' termination grounds
+for "what ends an employment relationship", FMLA rules for "when are pay raises
+required"). The rule: check that the sources answer the question as asked; if they cover
+only a narrower case, say first that the documents do not answer it in general, then what
+the narrower provision says, labelled with its scope. Decided on the 27 labor
+unanswerable questions (the dev role here): declined 67% -> 70% (18 -> 19), within the
+run-to-run spread; read one by one, four answers (el-032, el-063, el-066, dol-067) that had
+stated a narrower provision now say first that the documents do not answer, and the three
+that went the other way are answers that open with the same statement (el-085, dol-060) or
+that the corpus partly answers (el-016). On the same 50 test items as v11, correct 44 /
+partial 3 / wrong 3 and supported 42 in both, the gold cited 47 -> 50: kept.
+
+Held-out unanswerable questions, once with the rule (v12): **declined 78%** (Korean 47/59,
+English 3/5). Of the 14 counted as answered, 9 begin by saying the documents do not answer
+and then give related provisions, which the decline judge's prompt allows but grades
+inconsistently; 5 answer outright, two from lease provisions that partly apply (elh-017
+eviction after an auction, elh-038 a landlord's tax arrears), one the corpus does partly
+answer (elh-049: 근로기준법 제11조 excludes 가사사용인), and two that should have declined
+(elh-084, enh-007). Cost of this section: about $3 (retrieval $0.7, pooling $0.2, answers
+$2.1).
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it
