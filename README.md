@@ -19,7 +19,8 @@ tuning (`data/eval/`). hit@10 / MRR of the served system against plain hybrid se
 
 On documents it was never built or tuned on (press releases incl. HWPX and a scan, a NIST
 framework, an IRS guide; uploaded as a user, 35 questions): hit@5 1.00, MRR 0.87, against
-hybrid 0.63 / 0.54 (`eval/unseen.py`).
+hybrid 0.63 / 0.54 (`eval/unseen.py`). Among 35 look-alike press releases of one ministry
+(60 questions) it put the right release first 59 times (hybrid 48), MRR 0.88 against 0.65.
 
 On 97 real questions collected after the last change and measured once (held out:
 easylaw topics no other set uses, the HUD/DOJ accommodations statement): hit@10 0.91,

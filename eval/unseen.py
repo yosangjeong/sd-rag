@@ -18,8 +18,14 @@ guides, reports, tables, scans. This set measures that case:
 - search: as the service searches for that user, over their uploads and the public
   statutes (the statutes are distractors here).
 
+A second suite, `--suite similar`, asks whether the right document is still found when
+many uploads look alike: the 35 latest press releases of one ministry (고용노동부,
+korea.kr, KOGL type 1), same format and vocabulary, two questions each, under its own
+test user. Its `prepare` downloads them (list page filtered to the ministry, each
+release's HWPX attachment, else its PDF).
+
     cd backend && AWS_PROFILE=<profile> uv run python ../eval/unseen.py prepare
-    ... ingest | generate | measure
+    ... ingest | generate | measure          [--suite similar]
 """
 
 import argparse
@@ -62,6 +68,17 @@ SET = DATA / "eval" / "unseen.jsonl"
 OUT = DATA / "eval" / "results" / "unseen"
 PER_DOC = 6
 SEED = 20261114
+SUITES = {
+    "unseen": {"USER": USER, "RAW": RAW, "DOCS": DOCS, "MANIFEST": MANIFEST, "SET": SET,
+               "OUT": OUT, "PER_DOC": PER_DOC},
+    "similar": {"USER": "similar-eval", "RAW": DATA / "raw" / "similar",
+                "DOCS": DATA / "raw" / "similar" / "docs",
+                "MANIFEST": DATA / "eval" / "similar_docs.json", "SET": DATA / "eval" / "similar.jsonl",
+                "OUT": DATA / "eval" / "results" / "similar", "PER_DOC": 2},
+}  # fmt: skip
+KOREA_KR = "https://www.korea.kr"
+MINISTRY = ("A00001", "고용노동부")  # korea.kr's code for the ministry
+N_SIMILAR = 35
 KOGL = "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr"
 PD = "US government work, public domain (17 U.S.C. 105)"
 
@@ -136,6 +153,65 @@ def prepare() -> None:
             shutil.copyfile(src, dst)
         manifest.append({"id": doc_id, "file": dst.name, "title": title, "source": url,
                          "license": lic, "kind": kind})  # fmt: skip
+    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", "utf-8")
+    print(f"{len(manifest)} documents in {DOCS}")
+
+
+def prepare_similar() -> None:
+    """The ministry's latest press releases with an HWPX (else PDF) attachment."""
+    import html as htmllib
+    import re
+    import time
+    import urllib.parse
+
+    import httpx
+
+    get = httpx.Client(timeout=60, follow_redirects=True).get
+    DOCS.mkdir(parents=True, exist_ok=True)
+    manifest, page = [], 1
+    while len(manifest) < N_SIMILAR and page <= 10:
+        q = urllib.parse.urlencode({"pageIndex": page, "repCodeType": "정부부처",
+                                    "repCode": MINISTRY[0], "period": "year"})  # fmt: skip
+        ids = dict.fromkeys(re.findall(r"pressReleaseView\.do\?newsId=(\d+)",
+                                       get(f"{KOREA_KR}/briefing/pressReleaseList.do?{q}").text))  # fmt: skip
+        for news in ids:
+            if len(manifest) >= N_SIMILAR:
+                break
+            url = f"{KOREA_KR}/briefing/pressReleaseView.do?newsId={news}"
+            view = get(url).text
+            if f"<span>{MINISTRY[1]}</span>" not in view and MINISTRY[1] not in view[:20000]:
+                continue
+            title = htmllib.unescape(
+                re.search(r"<title>([^<]*?) - 보도자료", view).group(1)
+            ).strip()
+            # each attachment: <a href="...download.do?fileId=N..."><img ...>name.hwpx</a>
+            att = dict(
+                re.findall(
+                    r"download\.do\?fileId=(\d+)[^>]*>\s*(?:<img[^>]*>)?\s*([^<]+?\.(?:hwpx|pdf))\s*</a>",
+                    view,
+                )
+            )
+            pick = next(
+                (k for k in ("hwpx", "pdf") if any(n.endswith(k) for n in att.values())), None
+            )
+            if pick is None:
+                continue
+            fid = next(f for f, n in att.items() if n.endswith(pick))
+            data = get(f"{KOREA_KR}/common/download.do?fileId={fid}&tblKey=GMN").content
+            if pick == "hwpx" and not data.startswith(b"PK"):  # an old binary HWP named .hwpx
+                pdf = next((f for f, n in att.items() if n.endswith("pdf")), None)
+                if pdf is None:
+                    continue
+                pick, data = (
+                    "pdf",
+                    get(f"{KOREA_KR}/common/download.do?fileId={pdf}&tblKey=GMN").content,
+                )
+            doc_id = f"moel-{news}"
+            (DOCS / f"{doc_id}.{pick}").write_bytes(data)
+            manifest.append({"id": doc_id, "file": f"{doc_id}.{pick}", "title": title,
+                             "source": url, "license": KOGL, "kind": pick})  # fmt: skip
+            time.sleep(0.5)
+        page += 1
     MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", "utf-8")
     print(f"{len(manifest)} documents in {DOCS}")
 
@@ -263,6 +339,10 @@ def measure() -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("stage", choices=("prepare", "ingest", "generate", "measure"))
-    {"prepare": prepare, "ingest": ingest, "generate": generate, "measure": measure}[
-        ap.parse_args().stage
-    ]()
+    ap.add_argument("--suite", choices=tuple(SUITES), default="unseen")
+    a = ap.parse_args()
+    globals().update(SUITES[a.suite])
+    if a.stage == "prepare" and a.suite == "similar":
+        prepare_similar()
+    else:
+        {"prepare": prepare, "ingest": ingest, "generate": generate, "measure": measure}[a.stage]()

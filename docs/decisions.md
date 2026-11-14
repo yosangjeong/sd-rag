@@ -707,8 +707,25 @@ articles, reranker windows and the statute-terms query).
 Every miss at rank 1 was another chunk of the right document (press releases repeat a
 fact in the summary and the body); no statute ever came first. Cross-lingual questions
 MRR 0.83, same-language 0.90; the scan 0.87. Limits: eight documents make picking the
-document easy, and the questions were written from single chunks; many similar uploads
-(forty versions of one policy) were not tested.
+document easy, and the questions were written from single chunks.
+
+**Many similar uploads** (`unseen.py --suite similar`, same day): the 35 latest press
+releases of one ministry (고용노동부, korea.kr, KOGL type 1; 33 HWPX, 2 PDF where the
+"HWPX" attachment was an old binary HWP), same format, same vocabulary, several on the
+same subjects (employment statistics, jobs meetings, safety inspections), uploaded as
+another test user; 2 questions per document by the same generator and check, 60 kept
+(16 in English). This is the case the eight-document set could not test: picking the
+right one among look-alikes, with the labor statutes as distractors on the same topics.
+
+| System | n | right document first | hit@1 | hit@5 | hit@10 | MRR |
+|---|---|---|---|---|---|---|
+| hybrid | 60 | 48 | 0.48 | 0.87 | 0.95 | 0.65 |
+| served | 60 | **59** | **0.80** | **0.97** | **1.00** | **0.88** |
+
+Hybrid put a statute first 8 times; the served system never. Of the served system's 12
+misses at rank 1, 11 were another chunk of the right release, and one (u035, winter jobs
+for low-income households) a release of the jobs meeting that states the same plan.
+Cost about $1.2.
 
 ## Final measurement (2026-11-14)
 

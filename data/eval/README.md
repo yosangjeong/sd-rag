@@ -193,6 +193,13 @@ Publication 15: US government works). `kr-marine-park-scan` is the korea.kr PDF 
 to images with a slight skew and noise (a simulated scan, no text layer). Gold spans are
 offsets in the uploaded documents' parsed text (doc ids `u-<id>`).
 
+## similar.jsonl (many look-alike uploads)
+
+60 questions over the 35 latest press releases of 고용노동부 on korea.kr (KOGL type 1,
+attribution to 대한민국 정책브리핑 www.korea.kr), uploaded as the user `similar-eval`
+(`eval/unseen.py --suite similar`); `similar_docs.json` lists each release's URL. Same
+generator, check and gold format as unseen.jsonl, 2 questions per document.
+
 ## real_dev.jsonl (real questions for tuning)
 
 31 answerable questions (and 2 the corpus does not answer, `real_dev_unanswerable.json`)
