@@ -182,3 +182,31 @@ The correctness judge's prompts and its agreement with the reference grading:
 | gold annotated outside the judge | 0 | 0 | 4 | 0 | 0 | 0 | 3 | 0 |
 
 A real question's language is its source's: easylaw questions are Korean, dol.gov questions English, so the real set has no cross-lingual items.
+
+## unseen.jsonl (documents the system never saw)
+
+35 questions over 8 public documents unrelated to the corpus, uploaded through the upload
+path as the user `unseen-eval` (`eval/unseen.py`). The documents are not committed;
+`unseen_docs.json` lists each one's source URL and license (korea.kr press releases:
+KOGL type 1, attribution to 대한민국 정책브리핑 www.korea.kr; NIST CSF 2.0 and IRS
+Publication 15: US government works). `kr-marine-park-scan` is the korea.kr PDF rendered
+to images with a slight skew and noise (a simulated scan, no text layer). Gold spans are
+offsets in the uploaded documents' parsed text (doc ids `u-<id>`).
+
+## real_dev.jsonl (real questions for tuning)
+
+31 answerable questions (and 2 the corpus does not answer, `real_dev_unanswerable.json`)
+from six easylaw 백문백답 topics no other set uses (근로시간 단축제도, 시간선택제 근로자,
+여성근로자, 유연근무제, 고객응대근로자, 건설일용근로자), collected 2026-11-14. Gold spans
+were chosen by Claude Code reading the candidate articles (BM25 candidates and the
+statutes named in law), each quote checked to occur verbatim in the article; no LLM
+judge. The set exists because the generated dev sets react to retrieval changes unlike
+real questions (a heavier dense weight helped dev and hurt both real sets), so tuning
+decisions need a real-question dev set; it is not a test set.
+
+## Pooled also-spans (2026-11-14)
+
+`eval/repool.py` judged the top 5 of the four systems the README reports for every
+item of dev, dev_re, test, real, test_re and real_re, with the prompts and models of
+finalize_qa.py, and added 210 confirmed spans to `also` (163 items). Each added span is
+listed in the item's `meta.also_repooled`; the sets before pooling are in git history.

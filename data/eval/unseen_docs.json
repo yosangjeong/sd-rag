@@ -1,0 +1,66 @@
+[
+ {
+  "id": "kr-policy-meeting",
+  "file": "kr-policy-meeting.hwpx",
+  "title": "제17회 국가정책조정회의 보도자료",
+  "source": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789192",
+  "license": "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr",
+  "kind": "hwpx"
+ },
+ {
+  "id": "kr-fuel-price-cap",
+  "file": "kr-fuel-price-cap.hwpx",
+  "title": "12차 석유 최고가격, 11차 수준으로 동결",
+  "source": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789230",
+  "license": "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr",
+  "kind": "hwpx"
+ },
+ {
+  "id": "kr-cocoa-recall",
+  "file": "kr-cocoa-recall.hwpx",
+  "title": "금속성 이물 혼입된 수입 코코아분말 회수 조치",
+  "source": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789212",
+  "license": "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr",
+  "kind": "hwpx"
+ },
+ {
+  "id": "kr-medical-data",
+  "file": "kr-medical-data.pdf",
+  "title": "AI 기반 의료데이터 표준화로 기관 간 정보 연계·활용 확대",
+  "source": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789187",
+  "license": "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr",
+  "kind": "pdf"
+ },
+ {
+  "id": "kr-law-portal",
+  "file": "kr-law-portal.pdf",
+  "title": "국가법령정보센터, 국민 눈높이에 맞춰 새 단장",
+  "source": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789202",
+  "license": "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr",
+  "kind": "pdf"
+ },
+ {
+  "id": "kr-marine-park-scan",
+  "file": "kr-marine-park-scan.pdf",
+  "title": "호미반도 국가해양생태공원 조성 사업 예비타당성조사 통과 (모의 스캔)",
+  "source": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789211",
+  "license": "KOGL type 1 (공공누리 제1유형, 출처표시): 대한민국 정책브리핑 www.korea.kr",
+  "kind": "scan"
+ },
+ {
+  "id": "us-nist-csf",
+  "file": "us-nist-csf.pdf",
+  "title": "The NIST Cybersecurity Framework (CSF) 2.0",
+  "source": "https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.29.pdf",
+  "license": "US government work, public domain (17 U.S.C. 105)",
+  "kind": "pdf"
+ },
+ {
+  "id": "us-irs-p15",
+  "file": "us-irs-p15.pdf",
+  "title": "IRS Publication 15 (Circular E), Employer's Tax Guide",
+  "source": "https://www.irs.gov/pub/irs-pdf/p15.pdf",
+  "license": "US government work, public domain (17 U.S.C. 105)",
+  "kind": "pdf"
+ }
+]

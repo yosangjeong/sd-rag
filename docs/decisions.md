@@ -494,6 +494,257 @@ equal on three sets and one question lower on the fourth (0.723 vs 0.735).
 **Prompt injection, repeatable** (`eval/injection.py`): 8 planted-instruction documents x
 basic and agent mode, 16 of 16 resisted; see design.md, Security.
 
+## Figures checked against the sources (`common/numbers.py`, 2026-11-13)
+
+A legal answer is only as good as its periods, ratios and amounts. Reviewing answers
+for the human grading turned up the answer model copying a figure wrongly with the
+right one in front of it: the decree's "1분의 100" (rent x 100) written as "100분의 100"
+(r0111), and "150만원" written as "150,000 won" (g0224, v7 rerun).
+
+- **The check**: every quantity in the answer (a number with a unit, a percent, a Korean
+  fraction) must occur, by value, in the sources the answer cites (all sources if it
+  cites none) or in the question. Values, not strings, because the answer rarely says it
+  the source's way: "7일" / "7 days", "100분의 25" / "25%", "1천분의 2", "6억9천만원" /
+  "690 million won", "5백명", and US statutes in words ("one thousand eight hundred and
+  forty hours", "one and one-half times"). Fractions are matched against the sources'
+  ratios only; article numbers, list markers, dates (decided in code, see Amended
+  articles) and per-unit "1일" / "per day" are not quantities.
+- **What happens**: an answer with an unsupported figure is sent back once with the
+  figures named; if one is still unsupported, the answer keeps it in
+  `unchecked_figures` and the UI shows a warning beside the answer. The first draft's
+  figures are kept in `rewritten_for` (answer rows, logs).
+- **Tuned on** the stored v7 answers (366 answers whose citations still match the
+  index, 127 with figures): it flags the two real errors above and nothing else. The
+  first version, a string match, flagged 29 of 68 answers with figures, almost all
+  translations.
+- **Measured on new answers** (v8, `results/answers/v8-figure-check/`): rewrites in 3
+  of 239 answers. Two were real errors corrected by the rewrite: r0111 again ("100분의
+  100" -> "1분의 100", and now says there is no such cap) and r0163 ("500만원" first
+  written as "500,000 won"). One was a false alarm ("5백명" not read as 500), fixed
+  since and added to the tests. Labor answers never triggered it; correctness is within
+  the run-to-run spread (labor 74%, after 72% and 77%; real estate 74% and 79% in two v8
+  runs, 76% in v7; declining 70% and 93-97%).
+- **Limits**: it catches a figure the sources do not have, not a wrong figure that
+  occurs elsewhere in them (a fine of the neighbouring row of a table), and units are
+  compared loosely (a value matches whatever its unit). Unit conversions add to that: "24개월" also
+  matches a 2 (years) in the source. A long run of scale words ("100만 200만 ..." in an
+  uploaded table) made the first version's patterns take exponential time, found in a
+  code review and fixed before deployment (a test keeps 60 of them under 0.5 s). Production would compare the
+  figure with the unit and the sentence it sits in.
+
+**Citation numbers** (same day): the model cites by position among the six sources it
+is given, so an answer citing only the second, third and fifth read "[2][3][5]" next to
+a source list of three. `agent/answer.py:renumber` numbers the cited sources 1, 2, 3 in
+the order the text first cites them, after the figure check (which works on the
+model's numbering).
+
+## Wider candidate pool and judge v3 (`retrieval/search.py:wide`, 2026-11-13)
+
+**Where the served system missed.** Of 746 questions over the six sets, the gold article
+was outside the answer's six sources for 49, yet the right document was among them for
+97% of all questions. 40 of the 49 were not even among the reranker's 30 candidates, so
+the first stage, not the reranker, was the limit:
+
+- 26: another article of the right document;
+- 15: the law article was retrieved but the answer sits in the decree or rule that
+  carries it out (a fine's amount in a decree table, a delegated authority, a form);
+- 8: another statute.
+
+Two reasons stood out. RRF (`rrf`) ranks a chunk that one list puts near the top below
+chunks both lists put in the middle: a gold that BM25 put 3rd was 38th after fusion. And
+a decree article that carries out "법 제39조" shares few words with a question about
+the law's subject.
+
+**Change.** `Searcher.wide` gives the reranker, in order: the previous candidates
+(question's hybrid top 20, translation's 10 more), then the top 5 of each first-stage
+list on its own (BM25 and dense, question and translation), then up to 5
+cross-references: for each Korean law (or decree) article among them, the decree and
+rule chunks with the phrase "법 제N" ("영 제N" for decrees), best two by BM25 on the
+question (`Searcher.references`). About 50 candidates instead of 30.
+
+- Chosen on the dev sets only (pool size 29 to 69 and passage length tried; the test
+  sets were run once, after). Cutting reranker passages from 1,200 to 800 characters
+  lowered dev hit@1 0.894 -> 0.859 for 7% less cost, so they stay at 1,200.
+- Cross-references changed nothing on the dev sets (106 questions, already at 100% pool
+  recall); they are kept because 15 of the 49 test-set misses are that pattern.
+
+hit@10 / MRR, previous served system -> wide (`results/retrieval-70docs/<set>/`):
+
+| Set | n | previous | wide | p50 latency | cost / query |
+|---|---|---|---|---|---|
+| dev | 85 | 0.953 / 0.902 | 0.977 / 0.911 | 3.7 -> 4.4 s | $0.006 -> $0.010 |
+| dev_re | 21 | 0.905 / 0.843 | 1.000 / 0.914 | 3.4 -> 4.5 s | |
+| test | 338 | 0.947 / 0.884 | 0.962 / 0.882 | 3.5 -> 4.6 s | |
+| real | 137 | 0.949 / 0.893 | 0.964 / 0.894 | 3.4 -> 4.5 s | |
+| test_re | 82 | 0.976 / 0.908 | 0.988 / 0.916 | | |
+| real_re | 83 | 0.868 / 0.829 | **0.928 / 0.866** | 3.6 -> 4.4 s | |
+
+The gain is largest where the previous system was weakest (real-estate real questions,
+situation questions whose answer is a rule they do not name). hit@1 fell on the labor
+test set (0.840 -> 0.828): with more candidates the reranker sometimes puts the gold
+second or third, which the answer, reading six sources, does not mind.
+
+**Judge v3** (`eval/judges.py`). Reading the 43 answers judge v2 did not grade correct
+in the v8 run: 26 were right (a further case or deadline from another cited source
+counted against the answer; the version of an amended article in force today graded
+against a reference written from the amended text; "one of the cases" answered with
+another case of the list), 5 were faulty items, 8 retrieval misses, 4 real answer
+faults. v3 also gets the cited sources and today's date, and says that any item of a
+list answers a "one of" question. On the same v8 answers it moved 16 of the 26 to
+correct and kept 7 of the 8 retrieval misses wrong; it still fails some "one of" answers
+and is still a lower bound.
+
+**Answers** under judge v3 (correct; citation of the gold; unanswerable declined):
+
+| Run | labor (100) | real estate (82) | declined labor / re |
+|---|---|---|---|
+| v8, previous pool | 86%; 89% | 94%; 96% | 70% / 97% |
+| v10, wide pool | 87%; 92% | 91%; 96% | 74% / 90% |
+
+Within the run-to-run spread (13 of 100 grades change between two runs of the same
+system), so the answers are about as good as before; the retrieval gain shows in more
+answers citing the gold passage on labor. A rule tried in between (v9: "a yes/no
+question starts with the conclusion the rest supports") turned a right answer into a
+wrong "Yes" and did not fix the answer it was written for, and was removed.
+
+## Statute terms, definitions, reranker windows (2026-11-14)
+
+Reading the 25 questions the wide pool still missed at rank 10 (20 not among the
+candidates, 5 ranked below 10). Each change was checked without an LLM call (does the
+gold come into the candidate pool; can the reranker see it); the end-to-end measurement
+with the reranker is pending.
+
+- **Cross-references fixed** (`Searcher.references`). It looked at the first 8 law
+  articles among the candidates and scored the decree's chunks by the question alone;
+  for a fine asked in English, 제39조(과태료) was 9th and an English question shares no
+  words with a Korean fine table. Now 15 articles, scored with the question and its
+  translation, all hits ordered by score.
+- **Statute terms for BM25** (`retrieval/terms.py`): everyday words get the statute's
+  term appended (집주인 -> 임대인, 월세 -> 차임, 알바 -> 단시간근로자; in English
+  "fired" -> discharge, "kickback" -> unearned fees). A word is listed only if the statutes
+  rarely use it themselves (under 10 times in that country's corpus, a test checks):
+  adding "산업재해 업무상 재해" to questions with 산재 pushed the right article down in
+  three real questions, because 산재보험 is itself the statute's word. First stage
+  alone, real-estate real questions hit@10 0.723 -> 0.783, other sets unchanged.
+- **Section names** (`terms.SECTIONS`): "RESPA Section 8" -> 12 U.S.C. 2607 and a few
+  others. This one was written after two real CFPB questions asked by that name were
+  missed, i.e. from test-set failures; it is general knowledge of the statutes, but
+  its gain is not an unbiased estimate.
+- **Definition articles** (`Searcher.definitions`): the best three of the 133
+  "제2조(정의)" / "Definitions" chunks join the pool; "평균임금은 어떻게 계산하나요" is
+  answered there, and a definitions article lists dozens of terms, so it matches no
+  single question well in the main search.
+- **Statute-terms query** (`LlmTranslator.to_statute_terms`): the LLM rewrites the
+  question as the provision that answers it would say it, run in parallel with the
+  translation; its hybrid top 10 join the pool. Not measured yet on its own.
+- **Reranker windows** (`rerank.window`): the reranker got the first 1,200 characters of
+  each chunk; in 26 of 725 pooled gold chunks the answer starts later, and 3 of those
+  ranked below 10. Sending only the 1,200 characters that share most words with the
+  query made the gold visible in 15 more and invisible in 16 others, so it was
+  dropped; sending the first 1,200 plus the best later 500 makes it visible in 176 of
+  192 long gold chunks instead of 166, loses none, for 2.4% more characters.
+
+Candidate pool, without the paid statute-terms query: misses 20 -> 13 over the four
+test sets (dev g0345 too), none lost.
+
+First end-to-end check, on a new real-question dev set (`data/eval/real_dev.jsonl`, 31
+easylaw questions from six topics no other set uses, gold chosen by Claude Code
+reading the statutes): hit@10 / MRR / hit@1, previous served 0.871 / 0.847 / 0.839,
+with these additions 0.903 / 0.840 / 0.806, hybrid 0.839 / 0.430 / 0.194. One more
+question found (산재 for construction day workers), one fewer ranked first. The
+injection test was re-run after the changes: 16 of 16 resisted.
+
+Two reranker-side ideas were tried on real_dev and dev_re and dropped (hit@10 / MRR on
+real_dev, served 0.903 / 0.840): presenting the pool in RRF order over all its lists
+instead of arrival order, against an LLM's bias toward the top of a long list (0.871 /
+0.805; dev_re 1.00 -> 0.95), and a reranker rule that a question whether a rule covers
+some group is answered by the provision setting its scope (0.871 / 0.807; dev_re
+unchanged). Each is one or two questions on 31, inside the noise, but neither helped.
+`Searcher.wide_fused` stays as the ablation.
+
+**Reranker model** (2026-11-14). Every model Bedrock serves on demand in ap-southeast-2
+was tried as the reranker over the same pools (`run_retrieval.py --rerank-llm`, the
+translation, jurisdiction and statute-terms replies cached so only the reranker
+differs). Claude is offered in this Region only through cross-Region inference
+profiles (au. routes to Melbourne too), which the project's one-Region rule excludes.
+
+| Reranker | real_dev 31 hit@1 / MRR | dev_re 21 | dev 85 (hit@6 / MRR) | rerank $/query |
+|---|---|---|---|---|
+| GLM-4.7 (served) | 0.806 / 0.840 | 0.857 / 0.914 | 1.000 / 0.947 | 0.012 |
+| GLM-5 | 0.871 / 0.876 | 0.857 / 0.910 | 0.965 / 0.934 | 0.019 |
+| DeepSeek V3.2 | 0.774 / 0.812 | 0.762 / 0.835 | - | 0.012 |
+| Qwen3 235B | 0.774 / 0.804 | 0.714 / 0.843 | - | 0.004 |
+| gpt-oss-120b | 0.194 / 0.432 | 0.571 / 0.713 | - | 0.003 |
+
+GLM-5 won on the real questions (two more first) but lost on the larger labor dev set,
+three golds falling out of the answer's six sources; over all 137 dev questions MRR
+0.918 vs 0.917 and hit@6 0.978 vs 0.949, for 60% more reranking cost. GLM-4.7 stays.
+gpt-oss-120b mostly returned no usable ranking (the first-stage order then stands).
+The dev run also shows the 2026-11-14 additions on the labor dev set: hit@10 / MRR
+0.977 / 0.911 (wide, 2026-11-13) -> 1.000 / 0.947.
+
+## Documents the system never saw (`eval/unseen.py`, 2026-11-14)
+
+Every other set measures the 70 statutes, and part of the retrieval is specific to them
+(cross-references, definition articles, statute terms). An evaluator uploads other
+things, so a small set was built from public files unrelated to the corpus, downloaded
+on 2026-11-14 (`data/eval/unseen_docs.json`, sources and licenses): five Korean
+government press releases from korea.kr (KOGL type 1; three HWPX, two PDF), one more
+turned into a simulated scan (rendered to images, skewed, noised, no text layer: OCR'd),
+the NIST Cybersecurity Framework 2.0 and IRS Publication 15 (US government works). They
+went through the upload path (parse, OCR, chunk, embed, index) as a test user. Questions:
+up to 6 sampled chunks per document, written by Qwen and checked by DeepSeek with the
+generator's prompts made field-neutral; 14 of 35 asked in the other language. The search
+runs as for that user: their uploads plus all public statutes, with the served system
+as of 2026-11-14 (wide pool with the cross-reference fix, statute terms, definition
+articles, reranker windows and the statute-terms query).
+
+| System | n | hit@1 | hit@5 | hit@10 | MRR |
+|---|---|---|---|---|---|
+| hybrid (BM25 + vectors) | 35 | 0.43 | 0.63 | 0.83 | 0.54 |
+| served (wide + rerank + jurisdiction) | 35 | **0.77** | **1.00** | **1.00** | **0.87** |
+
+Every miss at rank 1 was another chunk of the right document (press releases repeat a
+fact in the summary and the body); no statute ever came first. Cross-lingual questions
+MRR 0.83, same-language 0.90; the scan 0.87. Limits: eight documents make picking the
+document easy, and the questions were written from single chunks; many similar uploads
+(forty versions of one policy) were not tested.
+
+## Final measurement (2026-11-14)
+
+The served system with all of the above, on every set, after pooling the gold spans
+(`eval/repool.py`): the top 5 of the four systems the README reports (served now and
+before, hybrid, agent) were judged with finalize_qa.py's prompts and models (DeepSeek
+V3.2 finds passages giving the same answer, gpt-oss-120b confirms each); 210 spans were
+added to `also` for 163 questions, logged in each item's `meta.also_repooled`, and
+every stored result file was re-scored, so all systems gain alike. Before pooling, the
+served system's own top answers that differed from the single gold counted as misses
+(the youth-wage question's top passage, "during the first 90 consecutive calendar
+days", next to its gold sentence).
+
+hit@10 / MRR (hit@1), pooled gold:
+
+| Set | n | hybrid | served until 2026-11-13 (bilingual union) | **served now (wide)** | agent |
+|---|---|---|---|---|---|
+| test | 338 | 0.784 / 0.539 | 0.956 / 0.897 (0.858) | **0.968 / 0.899 (0.852)** | - |
+| real | 137 | 0.890 / 0.604 | 0.949 / 0.902 (0.869) | **0.978 / 0.910 (0.869)** | - |
+| test_re | 82 | 0.854 / 0.582 | 0.988 / 0.933 (0.902) | **0.988 / 0.945 (0.915)** | 0.988 / 0.921 |
+| real_re | 83 | 0.759 / 0.520 | 0.892 / 0.859 (0.843) | **0.964 / 0.941 (0.928)** | 0.952 / 0.884 |
+| dev | 85 | 0.788 / 0.504 | 0.953 / 0.911 | 1.000 / 0.956 | - |
+| dev_re | 21 | 0.857 / 0.604 | 0.952 / 0.867 | 1.000 / 0.938 | - |
+
+On real-estate real questions the basic mode now beats the agent (0.964 / 0.941 against
+0.952 / 0.884) at about half its latency. The statute-terms query alone (without it,
+real_re 0.952 / 0.882, hit@1 0.843) moves answers up rather than finding new ones.
+Cost and latency per query: about $0.012 and 5.7 s p50 for retrieval with reranking
+(was $0.006 and 3.5 s), 7.7-8.1 s p50 with the answer.
+
+Answers (v11, judge v3; labor 100 / real estate 82): correct 87% / 89% (v2 judge 78% /
+77%), without flagged items 92% / 90%; a citation of the gold 96% / 98%; unanswerable
+questions declined 67% / 90%; no answer cites the other country's statutes; the figure
+check rewrote 3 answers and left none with an unsupported figure. Declining on labor
+(18 of 27) is lower than the 70-74% of v8-v10, within the run-to-run spread of 27 items.
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it

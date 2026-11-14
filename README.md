@@ -7,18 +7,25 @@ regulations (Korean labor and real-estate acts with their decrees and rules; US 
 CFR, Federal Register), and each user's uploads are searched only for that user.
 
 The focus is retrieval accuracy, measured on held-out sets that were never used for
-tuning (`data/eval/`). hit@10 / MRR of the served system against plain hybrid search:
+tuning (`data/eval/`). hit@10 / MRR of the served system against plain hybrid search
+(gold spans pooled from every reported system's top 5, TREC-style, `eval/repool.py`):
 
 | Set | Questions | Served | Hybrid (BM25 + vectors) |
 |---|---|---|---|
-| Labor, generated (test) | 338 | **0.95 / 0.88** | 0.78 / 0.53 |
-| Labor, real user questions (government FAQs) | 137 | **0.95 / 0.89** | 0.89 / 0.60 |
-| Real estate, generated (test) | 82 | **0.98 / 0.91** | 0.84 / 0.57 |
-| Real estate, real user questions | 83 | **0.87 / 0.83** (agent mode 0.95 / 0.86) | 0.75 / 0.51 |
+| Labor, generated (test) | 338 | **0.97 / 0.90** | 0.78 / 0.54 |
+| Labor, real user questions (government FAQs) | 137 | **0.98 / 0.91** | 0.89 / 0.60 |
+| Real estate, generated (test) | 82 | **0.99 / 0.95** | 0.85 / 0.58 |
+| Real estate, real user questions | 83 | **0.96 / 0.94** (agent mode 0.95 / 0.88) | 0.76 / 0.52 |
 
-Answers (automatic judge, a lower bound): 72-77% correct over two runs of the same system,
-91% cite the gold passage (real estate 76%, 93%); unanswerable questions declined 67%
-(real estate 93%); the other country's law cited 0 times. How far the judge can be
+On documents it was never built or tuned on (press releases incl. HWPX and a scan, a NIST
+framework, an IRS guide; uploaded as a user, 35 questions): hit@5 1.00, MRR 0.87, against
+hybrid 0.63 / 0.54 (`eval/unseen.py`).
+
+Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real estate (judge v3,
+which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
+passage; questions the corpus cannot answer declined 67% / 90%; the other country's law cited
+0 times. Every figure in an answer (period, ratio, amount) is checked against the cited sources
+before it is shown. How far the judge can be
 trusted, and every choice behind these numbers: `docs/decisions.md`.
 
 ## For evaluators
@@ -53,7 +60,9 @@ trusted, and every choice behind these numbers: `docs/decisions.md`.
 ```
 upload -> S3 -> SQS -> worker: parse (OCR for scans) -> chunk -> embed -> OpenSearch
 question -> which country's law (KR / US / none): the other country's statutes are left out
-         -> BM25 + vector search (RRF), top 20; same for its translation, +10 more
+         -> BM25 + vector search (RRF), top 20; same for its translation, +10 more;
+            each list's own top 5; decree / rule articles citing the law articles found;
+            the question in statute terms; definition articles
          -> LLM rerank -> answer with [n] citations
          (or: an agent chooses keyword / vector / filtered searches itself)
 ```
@@ -114,7 +123,7 @@ TLS-inspecting proxy, set `SDRAG_BUILD_CA` to its CA for the image build.
 ```bash
 cd backend
 AWS_PROFILE=<profile> uv run python ../eval/run_retrieval.py --set ../data/eval/test.jsonl \
-  --systems hybrid@chunks-structure bilingual_union+rerank+jur@chunks-structure agent+rerank@chunks-structure
+  --systems hybrid@chunks-structure wide+rerank+jur@chunks-structure agent+rerank@chunks-structure
 ```
 
 Results per question and summaries by language and file type: `data/eval/results/`

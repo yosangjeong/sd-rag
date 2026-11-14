@@ -1,8 +1,8 @@
 {
- "bilingual_union+rerank+jur@chunks-structure~glm-4.7": {
-  "span_hit@10": 0.9048,
-  "span_mrr": 0.8429,
-  "tolerance": 0.05,
-  "measured": "2026-11-13, real-estate dev set, 70-document corpus, served system (jurisdiction filter, statute versions), local OpenSearch 3.7"
+ "wide+rerank+jur@chunks-structure~glm-4.7": {
+  "span_hit@10": 1.0,
+  "span_mrr": 0.9381,
+  "measured": "2026-11-14, real-estate dev set after repooling, 70-document corpus, served system (wide pool with statute terms, definitions, cross-references, reranker windows; jurisdiction filter; statute versions), local OpenSearch 3.7",
+  "tolerance": 0.05
  }
 }

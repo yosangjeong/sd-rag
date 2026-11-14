@@ -41,7 +41,7 @@ jobs:
         run: |
           for s in dev dev_re; do
             uv run python ../eval/run_retrieval.py --set ../data/eval/$s.jsonl --out ../ci-eval/$s \
-              --systems bilingual_union+rerank+jur@chunks-structure
+              --systems wide+rerank+jur@chunks-structure
           done
           uv run python ../eval/gate.py ../ci-eval/dev/summary.json ../data/eval/baseline-dev.json
           uv run python ../eval/gate.py ../ci-eval/dev_re/summary.json ../data/eval/baseline-dev_re.json

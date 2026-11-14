@@ -1,0 +1,32 @@
+{
+ "dev": {
+  "candidates": 627,
+  "added": 20,
+  "items_with_new_also": 16
+ },
+ "dev_re": {
+  "candidates": 149,
+  "added": 7,
+  "items_with_new_also": 6
+ },
+ "test": {
+  "candidates": 2373,
+  "added": 92,
+  "items_with_new_also": 63
+ },
+ "real": {
+  "candidates": 913,
+  "added": 44,
+  "items_with_new_also": 35
+ },
+ "test_re": {
+  "candidates": 645,
+  "added": 25,
+  "items_with_new_also": 21
+ },
+ "real_re": {
+  "candidates": 692,
+  "added": 22,
+  "items_with_new_also": 22
+ }
+}

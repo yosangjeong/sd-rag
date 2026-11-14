@@ -20,6 +20,7 @@ data/eval/results/answers/<version>/ (one folder per measured version).
 """
 
 import argparse
+import datetime as dt
 import json
 import random
 import statistics
@@ -27,8 +28,9 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 from evalset import DATA, LLM_CACHE, doc_texts, load_items, overlaps
-from judges import correct_prompt, correct_user
+from judges import correct_prompt, correct_user, correct_user_v3
 
+from sdrag.agent.answer import KST
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat, CachedChat, parse_json
 from sdrag.common.search_client import make_client
@@ -92,10 +94,12 @@ def main() -> None:
         test = sample(load_items(DATA / "eval" / "test.jsonl"), texts, a.n)
         unanswerable = load_items(DATA / "eval" / "real_unanswerable.jsonl")
         correct_system = correct_prompt("labor")
+        correct_v3 = correct_prompt("labor", 3)
     else:
         test = sample(load_items(DATA / "eval" / "test_re.jsonl"), texts, a.n)
         unanswerable = load_items(DATA / "eval" / "real_re_unanswerable.jsonl")
         correct_system = correct_prompt("real-estate")
+        correct_v3 = correct_prompt("real-estate", 3)
 
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
@@ -105,10 +109,13 @@ def main() -> None:
     jllm = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), LLM_CACHE)
 
     def run(it, answerable: bool) -> dict:
+        today = dt.datetime.now(KST).date().isoformat()  # the date the answer step used
         reply = service.ask("eval", it.question)
         ans = reply.answer
         row = {"qid": it.qid, "question": it.question, "answer": ans.text,
-               "cited": [c.chunk_id for c in ans.citations], "latency_ms": round(reply.latency_ms),
+               "cited": [c.chunk_id for c in ans.citations], "cited_n": [c.n for c in ans.citations],
+               "rewritten_for": ans.rewritten_for, "unchecked_figures": ans.unchecked_figures,
+               "latency_ms": round(reply.latency_ms),
                "tokens": [reply.input_tokens, reply.output_tokens]}  # fmt: skip
         if not answerable:
             row["decline"] = judge(
@@ -120,12 +127,17 @@ def main() -> None:
             overlaps(vars(c), s) for c in ans.citations for s in [*it.gold, *it.also]
         )
         ref = it.meta.get("check_answer") or it.meta.get("answer", "")
+        sources = [(c.n, texts[c.doc_id].text[c.start : c.end]) for c in ans.citations]
+        # judge v3 (eval/judges.py) also sees the cited sources and today's date; v2 is
+        # kept beside it so this version compares with the earlier ones
+        row["today"] = today
         row["correct"] = judge(
+            jllm, correct_v3, correct_user_v3(it.question, ref, g.quote, ans.text, sources, today)
+        )
+        row["correct_v2"] = judge(
             jllm, correct_system, correct_user(it.question, ref, g.quote, ans.text)
         )
-        cited = "\n\n".join(
-            f"[{c.n}] {texts[c.doc_id].text[c.start : c.end][:2000]}" for c in ans.citations
-        )
+        cited = "\n\n".join(f"[{n}] {s[:2000]}" for n, s in sources)
         row["grounded"] = judge(
             jllm, GROUNDED_SYSTEM, f"Answer: {ans.text}\n\nCited sources:\n{cited or '(none)'}"
         )

@@ -23,6 +23,10 @@ The decisions they support are in `docs/decisions.md`.
 | `jurisdiction_check.py` | answers citing the other country's law, per answer version |
 | `judges.py` | the correctness judge's prompts (v1, v2), shared by the answer scripts |
 | `rejudge.py` | re-grades every stored answer version with the current judge |
+| `run_retrieval.py --rerank-llm <model> --cache-aux` | compares rerankers on the same pools (translation, jurisdiction and statute terms cached) |
+| `unseen.py` | retrieval on public documents unrelated to the corpus, uploaded as a user (prepare, ingest, generate, measure) |
+| `repool.py` | adds the reported systems' top results to the gold spans after judging them (TREC-style pooling) |
+| `rejudge_v3.py` | re-grades one stored answer run with judge v3 (cited sources and the run's date) |
 | `check_items.py` | checks every graded item's reference answer and question (third model family) |
 | `real_re.py` | the real-estate real questions: gold by the same pooling as the labor ones |
 | `ocr_corpus.py` | OCR accuracy on every scanned corpus page (cached results, no calls) |

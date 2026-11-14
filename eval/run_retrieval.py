@@ -7,10 +7,11 @@ summary.json, broken down by question -> answer language, answer file type and
 question kind.
 
 Systems are named <mode>[+rerank][+jur]@<index>, e.g. hybrid@chunks-structure or
-bilingual_union+rerank+jur@chunks-structure; modes are the Searcher methods (bm25,
-dense, hybrid, per_language, bilingual, bilingual_union, bilingual_union_dense) and
+wide+rerank+jur@chunks-structure (served); modes are the Searcher methods (bm25,
+dense, hybrid, per_language, bilingual, bilingual_union, bilingual_union_dense, wide) and
 agent (sdrag.agent).
-"+rerank" reorders the first stage's top 20 with the LLM reranker; "+jur" first asks
+"+rerank" reorders the first stage's candidates with the LLM reranker (20 for most modes,
+30 for bilingual_union, about 50 for wide); "+jur" first asks
 which country's law the question is about and searches only that country's statutes
 (retrieval/jurisdiction.py, as served). --llm picks the model for these LLM steps.
 
@@ -33,12 +34,12 @@ from collections import defaultdict
 from dataclasses import asdict
 from pathlib import Path
 
-from evalset import doc_texts, load_items, score
+from evalset import LLM_CACHE, doc_texts, load_items, score
 from opensearchpy import OpenSearch
 
 from sdrag.agent.search import SearchAgent
 from sdrag.common.config import settings
-from sdrag.common.llm import BedrockChat
+from sdrag.common.llm import BedrockChat, CachedChat
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.retrieval.index import PUBLIC, list_documents
 from sdrag.retrieval.jurisdiction import jurisdiction
@@ -49,45 +50,63 @@ DEPTH = 20
 # USD per 1M tokens (input, output)
 PRICES = {
     "amazon.titan-embed-text-v2:0": (0.02, 0.0),
-    "zai.glm-4.7": (0.60, 2.20),
-    "openai.gpt-oss-120b-1:0": (0.15, 0.60),
+    # ap-southeast-2 on-demand list prices, AWS Price List API, 2026-11-14
+    "zai.glm-4.7": (0.62, 2.27),
+    "zai.glm-5": (1.03, 3.30),
+    "deepseek.v3.2": (0.64, 1.91),
+    "openai.gpt-oss-120b-1:0": (0.155, 0.62),
     "qwen.qwen3-next-80b-a3b": (0.15, 1.20),
+    "qwen.qwen3-235b-a22b-2507-v1:0": (0.22, 0.88),  # not in the price list: estimate
 }
 
 
 class Meter:
-    """Token totals of the embedder and the LLM, read before and after each query."""
+    """Token totals of the embedder and the LLMs, read before and after each query.
+    The cost is priced per model; `read` reports the first chat's tokens."""
 
-    def __init__(self, embedder, chat):
-        self.embedder, self.chat = embedder, chat
+    def __init__(self, embedder, chat, *more):
+        self.embedder, self.chats = embedder, [chat, *more]
+        self.chat = chat
 
-    def read(self) -> tuple[int, int, int]:
-        return self.embedder.input_tokens, self.chat.input_tokens, self.chat.output_tokens
+    def read(self) -> tuple[int, ...]:
+        toks = [self.embedder.input_tokens]
+        for c in self.chats:
+            toks += [c.input_tokens, c.output_tokens]
+        return tuple(toks)
 
-    def cost(self, d: tuple[int, int, int]) -> float:
+    def cost(self, d: tuple[int, ...]) -> float:
         e_in = PRICES[self.embedder.model_id][0]
-        c_in, c_out = PRICES.get(self.chat.model_id, (0.0, 0.0))
-        return (d[0] * e_in + d[1] * c_in + d[2] * c_out) / 1e6
+        total = d[0] * e_in
+        for i, c in enumerate(self.chats):
+            c_in, c_out = PRICES.get(c.model_id, (0.0, 0.0))
+            total += d[1 + 2 * i] * c_in + d[2 + 2 * i] * c_out
+        return total / 1e6
 
 
-def run_system(system: str, items, client, embedder, chat) -> list[dict]:
+def run_system(system: str, items, client, embedder, chat, rerank_chat=None,
+               aux_chat=None) -> list[dict]:  # fmt: skip
+    """rerank_chat: the reranker's model when it is not `chat`'s; aux_chat: the chat
+    for translation, jurisdiction and statute terms (a cached one keeps them the same
+    across runs that compare rerankers)."""
+    aux = aux_chat or chat
     spec, index = system.split("@")
     mode, *stages = spec.split("+")
     # the public corpus only: user uploads in the same index must not change the scores
-    s = Searcher(client, index, embedder, LlmTranslator(chat), owners=[PUBLIC])
-    reranker = LlmReranker(chat) if "rerank" in stages else None
+    s = Searcher(client, index, embedder, LlmTranslator(aux), owners=[PUBLIC])
+    reranker = LlmReranker(rerank_chat or chat) if "rerank" in stages else None
     by_country = "jur" in stages  # the served filter: the question's country only
     agent = None
     if mode == "agent":
         docs = list_documents(client, index, [PUBLIC])
         agent = SearchAgent(chat.client, chat.model_id, s, docs)
-    meter = Meter(embedder, chat)
+    meters = [chat] + ([rerank_chat] if rerank_chat else [])
+    meter = Meter(embedder, *meters)
     rows = []
     for it in items:
         before = meter.read()
         t = time.perf_counter()
         steps = None
-        country = s.country = jurisdiction(chat, it.question) if by_country else None
+        country = s.country = jurisdiction(aux, it.question) if by_country else None
         if agent:
             res = agent.run(it.question)
             hits, steps = res.hits[:DEPTH], res.steps
@@ -98,7 +117,8 @@ def run_system(system: str, items, client, embedder, chat) -> list[dict]:
         else:
             hits = getattr(s, mode)(it.question, size=DEPTH)
         if reranker:
-            hits = reranker.rerank(it.question, hits)
+            hits = reranker.rerank(it.question, hits, s.last_queries or None)
+            s.last_queries = []
         ms = 1000 * (time.perf_counter() - t)
         used = tuple(a - b for a, b in zip(meter.read(), before, strict=True))
         retrieved = [
@@ -109,7 +129,7 @@ def run_system(system: str, items, client, embedder, chat) -> list[dict]:
         sc = score(retrieved, it.gold, it.also)
         rows.append({
             "qid": it.qid, "question": it.question, "latency_ms": round(ms, 1),
-            "embed_tokens": used[0], "llm_tokens": [used[1], used[2]],
+            "embed_tokens": used[0], "llm_tokens": list(used[1:]),
             "cost_usd": meter.cost(used),
             **({"country": country} if by_country else {}),
             "scores": asdict(sc), "retrieved": retrieved,
@@ -182,6 +202,10 @@ def main() -> None:
         "--out", type=Path, help="default: ../data/eval/results/retrieval-70docs/<set name>"
     )
     ap.add_argument("--llm", default="zai.glm-4.7", help="reranker and translator model")
+    ap.add_argument("--rerank-llm", help="another model for the reranker only (labels ~rr-<model>)")
+    ap.add_argument("--cache-aux", action="store_true",
+                    help="cache translation, jurisdiction and statute-terms replies (LLM_CACHE), "
+                         "so runs comparing rerankers share them")  # fmt: skip
     a = ap.parse_args()
     items = load_items(a.set)
     texts = doc_texts()
@@ -190,10 +214,14 @@ def main() -> None:
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     embedder = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
     chat = BedrockChat(a.llm, settings.aws_region)
+    aux = CachedChat(chat, LLM_CACHE) if a.cache_aux else None
+    rerank_chat = BedrockChat(a.rerank_llm, settings.aws_region) if a.rerank_llm else None
     for system in a.systems:
-        rows = run_system(system, items, client, embedder, chat)
+        rows = run_system(system, items, client, embedder, chat, rerank_chat, aux)
         uses_llm = "+rerank" in system or system.startswith(("bilingual", "agent"))
         label = f"{system}~{a.llm.split('.', 1)[1]}" if uses_llm else system  # e.g. ~glm-4
+        if rerank_chat and "+rerank" in system:
+            label += f"~rr-{a.rerank_llm.split('.', 1)[1].split(':')[0]}"
         (out / f"{label}.jsonl").write_text(
             "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), "utf-8"
         )
