@@ -25,6 +25,7 @@ The decisions they support are in `docs/decisions.md`.
 | `rejudge.py` | re-grades every stored answer version with the current judge |
 | `run_retrieval.py --rerank-llm <model> --cache-aux` | compares rerankers on the same pools (translation, jurisdiction and statute terms cached) |
 | `unseen.py` | retrieval on public documents unrelated to the corpus, uploaded as a user (prepare, ingest, generate, measure; `--suite similar`: 35 look-alike press releases) |
+| `doc2query.py` | everyday-word questions per chunk appended to BM25 text in an index copy (tried, not adopted: docs/decisions.md) |
 | `repool.py` | adds the reported systems' top results to the gold spans after judging them (TREC-style pooling; `--sets` to pool some sets) |
 | `rejudge_v3.py` | re-grades one stored answer run with judge v3 (cited sources and the run's date) |
 | `check_items.py` | checks every graded item's reference answer and question (third model family) |

@@ -818,6 +818,35 @@ answer (elh-049: 근로기준법 제11조 excludes 가사사용인), and two tha
 (elh-084, enh-007). Cost of this section: about $3 (retrieval $0.7, pooling $0.2, answers
 $2.1).
 
+## doc2query, tried and not adopted (`eval/doc2query.py`, 2026-11-14)
+
+For each of the 8,049 public chunks gpt-oss-120b wrote 3 questions in everyday words
+that the passage answers (not Qwen, which wrote the generated sets: same-model wording
+would inflate them; judged on real questions only), appended to `search_text` in a copy
+of the index, `chunks-d2q` (embeddings, shown text and the reranker's passage unchanged).
+Cost $1.9 to generate, $1.8 to measure.
+
+| Set | system | hit@1 | hit@10 | MRR |
+|---|---|---|---|---|
+| real_dev (31, decides) | hybrid | 0.194 -> 0.355 | 0.839 -> 0.839 | 0.430 -> 0.521 |
+| | served | 0.806 -> 0.806 | 0.903 -> 0.935 | 0.840 -> 0.852 |
+| real (137) | hybrid | 0.474 -> 0.489 | 0.890 -> 0.898 | 0.604 -> 0.632 |
+| real_re (83) | hybrid | 0.410 -> 0.458 | 0.759 -> 0.807 | 0.520 -> 0.569 |
+| | served | 0.928 -> 0.916 | 0.964 -> 0.988 | 0.941 -> 0.936 |
+| real_heldout (33) | hybrid | 0.424 -> 0.364 | 0.727 -> 0.818 | 0.526 -> 0.518 |
+| | served | 0.758 -> 0.667 | 0.909 -> 0.939 | 0.816 -> 0.777 |
+
+The keyword search gains on every real set (it finds the article from everyday words, as
+intended) and the served system finds more answers in its top 10 everywhere; but the
+article ranked first got worse on the two reported sets (one question on real_re, three
+on the held-out set), so MRR fell. Adopted only if clearly better; it is not, so the
+served index stays `chunks-structure`. A likely cause: the generated questions also match
+neighbouring articles of the same statute, so more look-alike candidates reach the
+reranker. Using doc2query only to add candidates, or for the first stage only, would be
+the next thing to try, decided on real_dev; the held-out set has now been used twice and
+is no longer clean for that. The questions are in `data/raw/d2q/` (not committed;
+`doc2query.py generate` rebuilds them from the LLM cache).
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it
