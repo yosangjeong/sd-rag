@@ -13,6 +13,8 @@ favor the query's language (docs/decisions.md), so a question is also searched i
 the other language. The LLM translates it literally, keeping legal terms.
 """
 
+import re
+
 from sdrag.common.llm import parse_json
 from sdrag.common.text import is_korean, strip_think
 from sdrag.retrieval.search import Hit
@@ -23,21 +25,31 @@ Return only JSON: {"ranking": [<passage numbers, best first>]}"""
 
 TRANSLATE_SYSTEM = """Translate the user's search query into {target}. Translate literally and keep it a search query of the same kind (a question stays a question, keywords stay keywords). Use the standard {target} term of the field where one exists (for a legal question, the term {target_law} uses). Keep names, numbers and codes as they are. Return only the translation."""
 
-MAX_PASSAGE_CHARS = 1200  # a long chunk is cut for the reranker only; ~20 x 1,200 chars fits easily
+STATUTE_TERMS_SYSTEM = """You turn a user's question into a search query for a collection of Korean and US statutes (labor, real estate) and other documents.
+Write the query the way the provision that answers it is written: the legal concept in the statute's own terms (not the asker's situation or everyday words), the rule asked about, and the statute and its article or section number when you know them; a popular name of a provision (a program name, "Section N of <Act>") is replaced by the codified title and section it refers to.
+Write it in Korean (법령 용어) for Korean law and in English for US law; for a question that names no country, use the language of the question. If the question is not about law, return it unchanged. Do not answer the question.
+Return only the query, on one line."""
+
+TAIL_CHARS = 500  # the later part of a long passage that matches the query best
+MAX_PASSAGE_CHARS = 1200  # a long chunk is cut for the reranker only; 800 cost dev hit@1 (0.894 -> 0.859) and saved 7%
 
 
 class LlmReranker:
     def __init__(self, chat, max_tokens: int = 400) -> None:
         self.chat, self.max_tokens, self.name = chat, max_tokens, f"llm:{chat.name}"
 
-    def rerank(self, question: str, hits: list[Hit]) -> list[Hit]:
+    def rerank(self, question: str, hits: list[Hit], queries: list[str] | None = None) -> list[Hit]:
+        """queries: the texts the passages were searched with (the question, its
+        translation, ...); a passage longer than MAX_PASSAGE_CHARS is cut to the window
+        that shares most with them (`window`)."""
         if len(hits) < 2:
             return hits
+        terms = _terms(" ".join(queries or [question]))
         blocks = []
         for n, h in enumerate(hits, 1):
             s = h.source
             head = f"{s.get('title', '')} > {s.get('heading') or ''}".rstrip(" >")
-            blocks.append(f"[{n}] {head}\n{s.get('text', '')[:MAX_PASSAGE_CHARS]}")
+            blocks.append(f"[{n}] {head}\n{window(s.get('text', ''), terms)}")
         user = f"Question: {question}\n\nPassages:\n\n" + "\n\n".join(blocks)
         out = parse_json(self.chat.complete(RERANK_SYSTEM, user, max_tokens=self.max_tokens).text)
         order = out.get("ranking", []) if isinstance(out, dict) else []
@@ -47,6 +59,38 @@ class LlmReranker:
                 seen.append(n - 1)
         rest = [i for i in range(len(hits)) if i not in seen]  # unranked keep their order
         return [hits[i] for i in seen + rest]
+
+
+def _terms(text: str) -> set[str]:
+    """Hangul bigrams and lowercase Latin words: enough to tell which part of a passage
+    a question is about, in either language."""
+    words = set(re.findall(r"[a-z0-9]{3,}", text.lower()))
+    return words | {w[i : i + 2] for w in re.findall(r"[가-힣]+", text) for i in range(len(w) - 1)}
+
+
+def window(text: str, terms: set[str], size: int = MAX_PASSAGE_CHARS, extra: int = TAIL_CHARS,
+           step: int = 100) -> str:  # fmt: skip
+    """The first `size` characters of `text`, and, when a later part shares more terms
+    with the query than any part of those, that part too (`extra` characters). The
+    reranker used to get the first 1,200 characters only; in 26 of 725 pooled gold
+    chunks the answer started later, and 3 of those (an exception at the end of a long
+    section) fell out of the top 10. Sending only the best-matching window instead of
+    the start lost as many answers as it found (docs/decisions.md, "Reranker window")."""
+    head = text[:size]
+    if len(text) <= size or not terms:
+        return head
+
+    def best(lo: int, hi: int) -> tuple[int, int]:
+        scores = [
+            (len(_terms(text[s : s + extra]) & terms), s) for s in range(lo, max(lo + 1, hi), step)
+        ]
+        return max(scores, key=lambda x: (x[0], -x[1]))
+
+    head_score, _ = best(0, size - extra + 1)
+    tail_score, start = best(size, len(text) - extra + 1)
+    if tail_score <= head_score:
+        return head
+    return f"{head}\n...\n{text[start : start + extra]}"
 
 
 class LlmTranslator:
@@ -63,6 +107,14 @@ class LlmTranslator:
         c = self.chat.complete(system, query, max_tokens=400)
         text = strip_think(c.text)
         return text.strip('"'), lang
+
+    def to_statute_terms(self, query: str) -> str:
+        """The question as the provision that answers it would say it ("주변에서 계약기간을
+        1년으로 하라는데" -> the lease-term rule of 주택임대차보호법), for the wide pool:
+        situation questions and a provision's popular name share few words with the
+        statute (docs/decisions.md, "Wider candidate pool")."""
+        c = self.chat.complete(STATUTE_TERMS_SYSTEM, query, max_tokens=200)
+        return strip_think(c.text).strip().strip('"')
 
 
 CONDENSE_SYSTEM = """You turn the user's last message in a conversation with a document search engine into a standalone search question.

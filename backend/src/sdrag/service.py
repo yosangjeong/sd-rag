@@ -86,15 +86,16 @@ class RagService:
         question = standalone
         # a legal question naming no country means its language's (jurisdiction.py);
         # a search limited to chosen documents needs no guess. The translation does
-        # not depend on it, so both LLM calls run at once.
+        # not depend on it, nor does the question in statute terms: the calls run at once.
         translator = LlmTranslator(chat)
-        with ThreadPoolExecutor(2) as pool:
+        with ThreadPoolExecutor(3) as pool:
             country_f = pool.submit(jurisdiction, chat, question) if not scope else None
-            translation_f = (
-                pool.submit(translator.to_other_language, question) if mode != "agent" else None
-            )
+            basic = mode != "agent"
+            translation_f = pool.submit(translator.to_other_language, question) if basic else None
+            terms_f = pool.submit(translator.to_statute_terms, question) if basic else None
             country = country_f.result() if country_f else None
             translation = translation_f.result()[0] if translation_f else None
+            statute_terms = terms_f.result() if terms_f else None
         s = Searcher(self.client, self.index, self.embedder, translator,
                      owners=[user_id, PUBLIC], scope=scope or None, country=country)  # fmt: skip
         steps: list[dict] = []
@@ -111,15 +112,17 @@ class RagService:
             for st in steps:
                 log("tool_call", request_id=request_id, tool=st["tool"], input=st["input"])
         else:
-            hits = s.bilingual_union(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA,
-                                     translation=translation)  # fmt: skip
-        hits = LlmReranker(chat).rerank(question, hits)
+            # the wider pool (search.Searcher.wide): served retrieval since 2026-11-13
+            hits = s.wide(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA,
+                          translation=translation, statute_terms=statute_terms)  # fmt: skip
+        hits = LlmReranker(chat).rerank(question, hits, s.last_queries or None)
         log("retrieval", request_id=request_id, mode=mode, country=country,
             results=[{"chunk_id": h.chunk_id, "doc_id": h.source.get("doc_id")} for h in hits[:10]])  # fmt: skip
         ans = answer(chat, question, hits[:ANSWER_SOURCES])
         ms = 1000 * (time.perf_counter() - t0)
         log("answer", request_id=request_id, mode=mode, latency_ms=round(ms),
             llm_input_tokens=chat.input_tokens, llm_output_tokens=chat.output_tokens,
-            cited=[c.chunk_id for c in ans.citations])  # fmt: skip
+            cited=[c.chunk_id for c in ans.citations], rewritten_for=ans.rewritten_for,
+            unchecked_figures=ans.unchecked_figures)  # fmt: skip
         return Reply(ans, mode, ms, chat.input_tokens, chat.output_tokens, steps,
                      [h.chunk_id for h in hits], standalone)  # fmt: skip

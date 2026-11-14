@@ -160,3 +160,62 @@ def test_agent_document_list_follows_the_country():
     docs = [{"id": "kr-a-law", "owner": "public"}, {"id": "us-b", "owner": "public"},
             {"id": "u-x", "owner": "u1"}]  # fmt: skip
     assert [d["id"] for d in docs if not is_other_country(d, "kr")] == ["kr-a-law", "u-x"]
+
+
+class ArticleClient(FakeClient):
+    """Returns one law article for every search; records the reference queries."""
+
+    def search(self, index, body):
+        self.bodies.append(body)
+        src = {
+            "doc_id": "kr-equal-employment-law",
+            "heading": "제39조(과태료) [2026. 11. 27. 시행]",
+        }
+        return {
+            "hits": {"hits": [{"_id": "kr-equal-employment-law#90", "_score": 1.0, "_source": src}]}
+        }
+
+
+def test_references_look_for_decree_and_rule_chunks_citing_the_article():
+    client = ArticleClient()
+    s = Searcher(client, "chunks-structure", FakeEmbedder(), country="kr")
+    s.references(
+        "육아기 근로시간 단축 거부 과태료",
+        [Hit("x", 1.0, client.search("", {})["hits"]["hits"][0]["_source"])],
+    )
+    body = client.bodies[-1]["query"]["bool"]
+    assert {"match_phrase": {"search_text": "법 제39"}} in body["filter"]
+    assert {"terms": {"doc_id": ["kr-equal-employment-dec", "kr-equal-employment-rul"]}} in body[
+        "filter"
+    ]
+
+
+def test_wide_keeps_bilingual_union_first_and_adds_each_list():
+    client = FakeClient()
+    s = Searcher(client, "chunks-structure", FakeEmbedder())
+    hits = s.wide("해고 예고", translation="dismissal notice")
+    assert [h.chunk_id for h in hits] == ["x#0"]  # every list returned the same chunk: no repeats
+    assert (
+        len(client.bodies) == 5
+    )  # bm25 and dense for the question and its translation, definitions
+
+
+def test_wide_searches_the_statute_terms_too():
+    client = FakeClient()
+    s = Searcher(client, "chunks-structure", FakeEmbedder())
+    s.wide("집주인이 계약기간을 1년으로 하재요", translation="landlord one-year lease",
+           statute_terms="주택임대차보호법 임대차기간 2년")  # fmt: skip
+    assert len(client.bodies) == 7  # bm25 + dense for question, translation, terms; definitions
+    assert (
+        client.bodies[4]["query"]["bool"]["must"]["multi_match"]["query"]
+        == "주택임대차보호법 임대차기간 2년"
+    )
+
+
+def test_definitions_search_only_definition_articles():
+    client = FakeClient()
+    Searcher(client, "chunks-structure", FakeEmbedder(), country="kr").definitions(
+        ["평균임금 계산"]
+    )
+    f = client.bodies[0]["query"]["bool"]["filter"]
+    assert any("wildcard" in str(x) and "(정의)" in str(x) for x in f)

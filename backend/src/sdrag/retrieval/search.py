@@ -5,6 +5,9 @@
 - ``hybrid``: both, fused by Reciprocal Rank Fusion
 - ``bilingual``: the hybrid search run with the question and with its translation into
   the other corpus language (rerank.LlmTranslator), fused
+- ``wide`` (served): bilingual_union plus each first-stage list on its own and the
+  decree/rule articles that cite the retrieved law articles, about 50 candidates for
+  the reranker (docs/decisions.md, "Wider candidate pool")
 - ``per_language``: the hybrid search run once per corpus language and fused. Both
   embedding models measured favor chunks in the query's language: a Korean query put
   Korean chunks in 74% of Titan's top 10, and the corpus holds 4.5x more Korean than
@@ -17,11 +20,13 @@ different scales (BM25, cosine) need no normalization. k = 60 is the usual const
 pipeline so that the same code merges the per-language lists.
 """
 
+import re
 from dataclasses import dataclass, field
 
 from opensearchpy import OpenSearch
 
 from sdrag.retrieval.embed import Embedder
+from sdrag.retrieval.terms import expand
 
 RRF_K = 60
 LANGS = ("ko", "en")
@@ -83,6 +88,7 @@ class Searcher:
         self.client, self.index, self.embedder = client, index, embedder
         self.translator, self.owners, self.scope = translator, owners, scope
         self.country = country
+        self.last_queries: list[str] = []  # the texts the last wide() searched with
 
     def bm25(self, query: str, size: int = 10, langs=None, doc_ids=None) -> list[Hit]:
         body = {
@@ -168,3 +174,141 @@ class Searcher:
                               doc_ids=None) -> list[Hit]:  # fmt: skip
         """bilingual_union on dense search alone, for the ablation (eval/run_retrieval.py)."""
         return self.bilingual_union(query, size, extra, doc_ids, base="dense")
+
+    def wide(self, query: str, size: int = 20, extra: int = 10, each: int = 5, refs: int = 5,
+             defs: int = 3,
+             doc_ids=None, translation: str | None = None,
+             statute_terms: str | None = None, fused: bool = False) -> list[Hit]:  # fmt: skip
+        """A wider candidate list for the reranker than bilingual_union, in five parts:
+
+        1. bilingual_union: the question's hybrid top `size`, its translation's `extra`.
+        2. Each first-stage list on its own, top `each` of BM25 and of dense for both the
+           question and its translation. RRF keeps a chunk that only one list ranks high
+           below chunks both lists rank middling: of 49 served misses (top 6), a gold
+           BM25 put 3rd was 38th after fusion.
+        3. Cross-references (`references`): where a Korean statute leaves the figure,
+           the authority or the procedure to a decree or rule ("대통령령으로 정한다"), the
+           answer is in the decree article that cites it ("법 제39조제3항제6호"), which
+           shares few words with the question. 15 of the 49 misses were such a decree
+           or rule article while its law article was retrieved.
+        4. The question in the statute's terms (`LlmTranslator.to_statute_terms`): its
+           hybrid top `extra` not yet in. A situation question ("주변에서 계약기간을 1년으로
+           하라는데") or a provision's popular name shares few words with the article.
+        5. Definition articles (`definitions`): "평균임금은 어떻게 계산하나요" is answered
+           by 제2조(정의), which lists dozens of terms and matches no single question well.
+
+        BM25 searches each query with the statute terms of its everyday words appended
+        (terms.expand: 집주인 -> 임대인); the vector search embeds the query as it is.
+        """
+        if translation is None:
+            translation, _ = self.translator.to_other_language(query)
+        if statute_terms is None and hasattr(self.translator, "to_statute_terms"):
+            statute_terms = self.translator.to_statute_terms(query)
+        queries = [query] + ([translation] if translation.strip() else [])
+        lists = []
+        for q in queries:
+            vector = self.embedder.embed([q])[0]
+            b = self.bm25(expand(q), 50, None, doc_ids)  # everyday words -> statute terms
+            d = self.dense(q, 50, None, doc_ids, vector)
+            lists.append((rrf(b, d, size=size), b, d))
+        out: dict[str, Hit] = {}
+
+        def add(hits, n):
+            for h in [h for h in hits if h.chunk_id not in out][:n]:
+                out[h.chunk_id] = h
+
+        add(lists[0][0], size)
+        if len(lists) > 1:
+            add(lists[1][0], extra)
+        for _, b, d in lists:
+            add(b, each)
+            add(d, each)
+        ranked = [x for _, b, d in lists for x in (b, d)]  # every list, for `fused`
+        terms = (statute_terms or "").strip()
+        if terms and terms not in queries:
+            t_hits = self.hybrid(terms, extra, 50, None, doc_ids)
+            add(t_hits, extra)
+            ranked.append(t_hits)
+            queries.append(terms)
+        r_hits = self.references(queries, list(out.values()), doc_ids)
+        d_hits = self.definitions(queries, doc_ids)
+        add(r_hits, refs)
+        add(d_hits, defs)
+        ranked += [r_hits, d_hits]
+        self.last_queries = queries  # for the reranker's passage windows
+        pool = list(out.values())
+        if fused:  # present the pool in the order all its lists agree on, not arrival
+            fused_rank = {h.chunk_id: i for i, h in enumerate(rrf(*ranked, size=10_000))}
+            pool.sort(key=lambda h: fused_rank.get(h.chunk_id, len(fused_rank)))
+        return pool
+
+    def wide_no_terms(self, query: str, size: int = 20, **kw) -> list[Hit]:
+        """wide without the statute-terms query (an ablation: what that LLM call adds)."""
+        return self.wide(query, size, statute_terms="", **kw)
+
+    def wide_fused(self, query: str, size: int = 20, **kw) -> list[Hit]:
+        """wide with the pool ordered by RRF over all its lists (an ablation)."""
+        return self.wide(query, size, fused=True, **kw)
+
+    def references(self, queries: list[str], hits: list[Hit], doc_ids=None, per_article: int = 3,
+                   articles: int = 15) -> list[Hit]:  # fmt: skip
+        """Decree and rule chunks that cite the law (or decree) articles among `hits`:
+        for "제39조(과태료)" of kr-equal-employment-law, the chunks of -dec and -rul
+        with the phrase "법 제39", best `per_article` by BM25 on the queries (the
+        question and its translation: an English question shares no words with a
+        Korean decree table), all of them ordered by that score.
+
+        The first version looked at the first 8 articles only and scored with the
+        question alone; for a fine asked in English the 제39조(과태료) article was the
+        9th among the candidates and the decree's fine table never came up."""
+        seen, found = set(), {}
+        for h in hits:
+            doc = h.source.get("doc_id", "")
+            m = RE_ARTICLE.match(h.source.get("heading") or "")
+            fam, _, kind = doc.rpartition("-")
+            if not m or not doc.startswith("kr-") or kind not in CITED_BY:
+                continue
+            key = (fam, kind, m.group(1))
+            if key in seen:
+                continue
+            seen.add(key)
+            if len(seen) > articles:
+                break
+            phrase = f"{'법' if kind == 'law' else '영'} 제{m.group(1)}"
+            targets = [f"{fam}-{k}" for k in CITED_BY[kind]]
+            if doc_ids:
+                targets = [t for t in targets if t in doc_ids]
+            if not targets:
+                continue
+            filters = _filters(None, targets, self.owners, self.scope, self.country)
+            filters.append({"match_phrase": {"search_text": phrase}})
+            should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"]}}
+                      for q in queries if q.strip()]  # fmt: skip
+            body = {"size": per_article, "_source": SOURCE,
+                    "query": {"bool": {"should": should, "filter": filters}}}  # fmt: skip
+            for r in _hits(self.client.search(index=self.index, body=body)):
+                if r.chunk_id not in found or r.score > found[r.chunk_id].score:
+                    found[r.chunk_id] = r
+        return sorted(found.values(), key=lambda r: (-r.score, r.chunk_id))
+
+    def definitions(self, queries: list[str], doc_ids=None, size: int = 3) -> list[Hit]:
+        """The definition articles ("제2조(정의)", "§ 1024.2 Definitions.") that best match
+        the queries by BM25: a question about what a term means, or how it is computed,
+        is answered there. 133 such chunks in the 70-document corpus."""
+        should = [{"multi_match": {"query": expand(q), "fields": ["search_text", "search_text.en"]}}
+                  for q in queries if q.strip()]  # fmt: skip
+        heading = {"bool": {"should": [
+            {"wildcard": {"heading": "*(정의)*"}},
+            {"wildcard": {"heading": {"value": "*definition*", "case_insensitive": True}}}],
+            "minimum_should_match": 1}}  # fmt: skip
+        filters = _filters(None, doc_ids, self.owners, self.scope, self.country) + [heading]
+        body = {"size": size, "_source": SOURCE,
+                "query": {"bool": {"should": should, "minimum_should_match": 1, "filter": filters}}}  # fmt: skip
+        return _hits(self.client.search(index=self.index, body=body))
+
+
+# a Korean article heading: "제39조(과태료)", "제18조의3(난임치료휴가) [2026. 11. 27. 시행]"
+RE_ARTICLE = re.compile(r"제(\d+)조(?:의\d+)?\(")
+# which documents cite a law or decree article: the decree and rule cite "법 제N조",
+# the rule cites "영 제N조"
+CITED_BY = {"law": ("dec", "rul"), "dec": ("rul",)}
