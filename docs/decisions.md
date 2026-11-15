@@ -880,6 +880,31 @@ the answer). No reported run had an empty answer (checked every result file);
 `answer_models.py` now grades empty answers `no_answer` without asking the judge.
 Cost about $3.7.
 
+## Future dates and Korean amounts in English answers (`agent/answer.py`, 2026-11-15)
+
+The six labor dev answers that were not graded correct (`v12-scope-dev`), read one by
+one: two were judge errors (g0175, g0330: the answer had the law in force right), one
+arguable (g0524: $211 is the inflation-adjusted penalty in force, the reference has the
+statute's $100), three wrong answers. Two of those had a general cause:
+
+- g0279: a notice announces next year's rate ("beginning January 6, 2027"); the answer
+  gave it as today's. The version rule covered only labelled statute versions. New
+  prompt rule: a rate or rule that a source says applies from a date after today is
+  given with that date, after the one that applies today when the sources have it.
+- g0224: the source's 150만원 became "150,000 won" in an English answer, and again after
+  the figure check named it. Sources for an English answer now carry the value in
+  digits, in code (`with_digits`: "150만원(=1,500,000 won)"), so the model copies it.
+
+The third (g0308, the answer said the documents did not answer) has no general fix here.
+g0224 is now right on the amount but still adds a ratio condition: its table chunk has no
+column headings (limitations). Measured (`v14-dates-digits-dev` vs `v12-scope-dev`, same
+50 + 27 items): correct 88% -> 90% (+3 -2), supported 84% -> 92% (+4 -0), declined 70% ->
+74% (+3 -2), latency unchanged; single-file 50 with fixed sources 80% -> 78% (5 grades
+moved, none on an English answer with a Korean amount or a future date: the wording of
+the answers changes with the prompt). Adopted: both target errors are gone, nothing got
+worse beyond noise. The README's final numbers (v11-final) are from before this; a
+re-measure belongs with the served re-measure after the final deploy. Cost about $1.3.
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it

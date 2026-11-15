@@ -151,3 +151,13 @@ def test_reranker_window_picks_the_part_the_question_is_about():
     piece = window(text, _terms("난임치료휴가 유급 며칠"), size=400, extra=100, step=50)
     assert piece.startswith("가" * 400) and "난임치료휴가" in piece
     assert window("짧은 조문", _terms("아무거나"), size=400) == "짧은 조문"
+
+
+def test_korean_amounts_get_digits_for_english_answers_only():
+    hits = [hit("a", "150만원 이상: 진료제한 7개월")]
+    en = FakeChat("It is 1,500,000 won [1].")
+    answer(en, "What is the threshold?", hits)
+    assert "150만원(=1,500,000 won)" in en.prompts[0]
+    ko = FakeChat("150만원입니다 [1].")
+    answer(ko, "기준 금액은?", hits)
+    assert "(=" not in ko.prompts[0]

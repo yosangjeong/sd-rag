@@ -44,7 +44,8 @@ Rules:
 - Scope. Check that the sources answer the question as asked, not a narrower one. If they cover only a narrower case than the question (one group, such as foreign, dispatched or part-time workers, or one law or benefit, such as FMLA leave, when the question is general), say first that the documents do not answer the question in general, and only then, labelled with its scope, what the narrower provision says.
 - Answer in the language the user message names, concisely: the direct answer first, then the conditions or exceptions that matter.
 - Jurisdiction. A question is legal when it asks what a law, rule or regulation requires or allows (rights, duties, wages, leave, dismissal, contracts, leases, permits, penalties), even if it does not mention a law. For a legal question: if it names a country, answer for that country; if not, it is about the country of its language (Korean question: Korean law; English question: US law). Never present the other country's law as the answer. If the sources hold only the other country's law, say first that the documents do not answer it for that country, and only then, labelled with the country, what the other country's law says. When sources from both countries are given, say which country each statement comes from. Questions about other documents (reports, papers, manuals, forms) have no jurisdiction rule.
-- Versions of a statute. An article can appear in two versions; their sources carry status="in force today" or status="not in force today" with the dates. Answer with the version in force today, then add one sentence on the other version and the date it takes (or took) effect. Never present both as applying at once, and never treat a version that is not in force today as the current law. A date in <개정 ...> or <신설 ...> is when the text was enacted, not when it takes effect."""
+- Versions of a statute. An article can appear in two versions; their sources carry status="in force today" or status="not in force today" with the dates. Answer with the version in force today, then add one sentence on the other version and the date it takes (or took) effect. Never present both as applying at once, and never treat a version that is not in force today as the current law. A date in <개정 ...> or <신설 ...> is when the text was enacted, not when it takes effect.
+- Dates in the text. When a source says a rate, amount or rule applies from a date after today (a notice announcing next year's rate, "beginning January 6, 2027"), say that date with it ("from January 6, 2027") and do not present it as what applies today; if the sources also give the one that applies today, give that first."""
 
 MAX_SOURCE_CHARS = 2000
 KST = dt.timezone(dt.timedelta(hours=9))  # Korea, no daylight saving; no tzdata needed in the image
@@ -92,7 +93,26 @@ def version_status(heading: str, today: dt.date) -> tuple[str, str]:
     return base, st
 
 
-def source_block(hits: list[Hit], today: dt.date | None = None) -> str:
+# a Korean amount of money with a scale word: "150만원", "6억9천만원", "1억 5천만 원"
+RE_KO_WON = re.compile(
+    r"\d[\d,]*(?:\.\d+)?\s*[억천백만](?:\s*(?:\d[\d,]*\s*)?[억천백만]){0,6}(?=\s*원)"
+)
+RE_KO_WON_FULL = re.compile(rf"({RE_KO_WON.pattern})\s*원")
+
+
+def with_digits(text: str) -> str:
+    """ "150만원" -> "150만원(=1,500,000 won)": for an English answer, so the model copies the
+    amount instead of converting it. Converting, GLM-4.7 wrote 150만원 as "150,000 won"
+    twice, once after the figure check named the figure (labor dev item g0224)."""
+
+    def one(m: re.Match) -> str:
+        v = numbers.korean_amount(m.group(1))
+        return f"{m.group()}(={v:,.0f} won)" if v >= 1000 and v == int(v) else m.group()
+
+    return RE_KO_WON_FULL.sub(one, text)
+
+
+def source_block(hits: list[Hit], today: dt.date | None = None, english: bool = False) -> str:
     today = today or dt.datetime.now(KST).date()
     out = []
     for n, h in enumerate(hits, 1):
@@ -103,6 +123,8 @@ def source_block(hits: list[Hit], today: dt.date | None = None) -> str:
                 f"-{s['page_end']}" if s.get("page_end") not in (None, s["page_start"]) else ""
             )
         text = s.get("text", "")[:MAX_SOURCE_CHARS]
+        if english:
+            text = with_digits(text)
         attr = f' status="{status}"' if status else ""
         out.append(
             f'<source n="{n}" title="{s.get("title", "")}" where="{where}"{attr}>\n{text}\n</source>'
@@ -128,7 +150,7 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
     lang = "Korean" if is_korean(question) else "English"
     # today in Korea: which version of an amended article is in force (SYSTEM, versions)
     today = today or dt.datetime.now(KST).date()
-    user = (f"Today is {today.isoformat()}.\n\nSources:\n\n{source_block(hits, today)}\n\n"
+    user = (f"Today is {today.isoformat()}.\n\nSources:\n\n{source_block(hits, today, lang == "English")}\n\n"
             f"Question: {question}\n\nAnswer in {lang}.")  # fmt: skip
     c = chat.complete(SYSTEM, user, max_tokens=max_tokens)
     text, citations = _cited(strip_think(c.text), hits)
