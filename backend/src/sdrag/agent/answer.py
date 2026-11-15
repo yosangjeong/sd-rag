@@ -117,6 +117,8 @@ def _citation(n: int, h: Hit) -> Citation:
 
 
 RE_CITE = re.compile(r"\[(\d+)\]")
+# gpt-oss cites as 【1】 or 【1†L2-L4】 (its browsing format), not [1] (eval/answer_models.py)
+RE_WIDE_CITE = re.compile(r"【(\d+)(?:†[^】]*)?】")
 
 
 def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
@@ -163,6 +165,7 @@ def renumber(text: str, citations: list[Citation]) -> tuple[str, list[Citation]]
 
 def _cited(text: str, hits: list[Hit]) -> tuple[str, list[Citation]]:
     """The text without citation numbers that are not sources, and the cited sources."""
+    text = RE_WIDE_CITE.sub(r"[\1]", text)
     cited = sorted({int(m) for m in RE_CITE.findall(text)})
     # a number that is not a source is removed from the text rather than shown as a link
     text = RE_CITE.sub(lambda m: m.group(0) if 1 <= int(m.group(1)) <= len(hits) else "", text)

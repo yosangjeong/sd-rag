@@ -859,7 +859,7 @@ text models; DeepSeek is left out (the judge's family), Claude too (cross-Region
 | GLM-4.7 (served) | 80% | | |
 | GLM-5 | 84% | +3 -1 | |
 | Kimi K2.5 | 82% | +3 -2 | |
-| gpt-oss-120b | 84% (80% at 4000 tokens) | +6 -4 | cites as `【1】`: 35 of 50 answers had no parsed citation |
+| gpt-oss-120b | 84% (80% at 4000 tokens) | +6 -4 | cited as `【1】` / `【1†L2-L4】`; now read as `[1]` (`answer.py`), same grades |
 | Mistral Large 3 | 80% | +5 -5 | |
 | Qwen3 235B | 78% | +4 -5 | |
 | MiniMax M2.5 | 54% (54% at 4000 tokens) | | thinks through its budget: 18-23 empty answers |
@@ -868,7 +868,9 @@ The best clean candidate, GLM-5, then ran the labor dev run of the served pipeli
 only the answer model swapped (`answers.py --answer-model zai.glm-5`, 50 test items + 27
 unanswerable real questions, against `v12-scope-dev`): correct 88% -> 90% (+4 -3 items),
 supported 84% -> 88% (+4 -2), declined 70% -> 81% (+4 -1), latency p50 8.3 s -> 11.9 s,
-answer-step price about 1.5x. The differences are a few items each, except the
+answer-step price about 1.5x. gpt-oss-120b, about a quarter of GLM-4.7's price, the same
+way (`v13-gptoss-dev`): correct 88% -> 86% (+3 -4), supported 84% -> 88% (+4 -2),
+declined 70% -> 56% (+2 -6), p50 9.0 s. The differences are a few items each, except the
 declines, and the answers are slower; adopted only if clearly better, so GLM-4.7 stays.
 If declining out-of-scope questions mattered more than latency, GLM-5 would be the
 switch to make (one setting: `RagService(answer_chat=...)` / `answers.py --answer-model`).
@@ -876,7 +878,7 @@ switch to make (one setting: `RagService(answer_chat=...)` / `answers.py --answe
 Found on the way: the judge graded an empty answer "correct" (it took the reference for
 the answer). No reported run had an empty answer (checked every result file);
 `answer_models.py` now grades empty answers `no_answer` without asking the judge.
-Cost about $2.7.
+Cost about $3.7.
 
 ## Deployment rehearsal (2026-11-12)
 

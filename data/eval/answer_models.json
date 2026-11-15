@@ -406,8 +406,8 @@
    "end_turn": 50
   },
   "new_tokens": [
-   127277,
-   5376
+   0,
+   0
   ]
  },
  "zai.glm-5": {
@@ -1237,17 +1237,17 @@
    {
     "qid": "g0027",
     "field": "labor",
-    "answer": "귀하가 진행하려는 냉동·냉장 창고의 **연면적이 5 000㎡ 이상**인 경우에는 유해위험방지계획서 제출 대상에 해당합니다. 산업안전보건법 시행령 제42조는 “연면적 5 000제곱미터 이상인 시설 … 7) 냉동ㆍ냉장 창고시설”을 포함하고, 또한 “연면적 5 000제곱미터 이상인 냉동ㆍ냉장 창고시설의 설비공사 및 단열공사”도 같은 규정에 따라 유해위험방지계획서를 제출해야 한다고 명시하고 있습니다【1】.  \n\n따라서 **연면적이 5 000㎡ 미만**인 냉동창고라면, 현재 규정상 유해위험방지계획서 제출 의무는 없습니다【1】.  \n\n※ 연면적이 5 000㎡ 이상인지 여부에 따라 제출 여부가 달라지니, 정확한 면적을 확인한 후 판단하시기 바랍니다.",
+    "answer": "귀하가 진행하려는 냉동·냉장 창고의 **연면적이 5 000㎡ 이상**인 경우에는 유해위험방지계획서 제출 대상에 해당합니다. 산업안전보건법 시행령 제42조는 “연면적 5 000제곱미터 이상인 시설 … 7) 냉동ㆍ냉장 창고시설”을 포함하고, 또한 “연면적 5 000제곱미터 이상인 냉동ㆍ냉장 창고시설의 설비공사 및 단열공사”도 같은 규정에 따라 유해위험방지계획서를 제출해야 한다고 명시하고 있습니다[1].  \n\n따라서 **연면적이 5 000㎡ 미만**인 냉동창고라면, 현재 규정상 유해위험방지계획서 제출 의무는 없습니다[1].  \n\n※ 연면적이 5 000㎡ 이상인지 여부에 따라 제출 여부가 달라지니, 정확한 면적을 확인한 후 판단하시기 바랍니다.",
     "grade": "correct",
-    "why": "The candidate correctly states that a hazardous risk prevention plan must be submitted if the total floor area is 5,000 square meters or more, which matches the key fact from the passage.",
+    "why": "The candidate correctly states that a hazardous risk prevention plan must be submitted for expansion work on a cold storage warehouse if its total floor area is 5,000 square meters or more, matching the key fact from the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0029",
     "field": "labor",
-    "answer": "The minimum‑wage rate for workers on federal contracts covered by Executive Order 13658 is adjusted **once each calendar year**. The Secretary must determine a new rate annually, applying the CPI‑W increase and rounding to the nearest $0.05, and the updated rate is announced at least 90 days before it takes effect【2】. The regulations expressly refer to “Annual Increases to the Minimum Wage Rate”【3】.",
+    "answer": "The minimum‑wage rate for workers on federal contracts covered by Executive Order 13658 is adjusted **once each calendar year**. The Secretary must determine a new rate annually, applying the CPI‑W increase and rounding to the nearest $0.05, and the updated rate is announced at least 90 days before it takes effect[1]. The regulations expressly refer to “Annual Increases to the Minimum Wage Rate”[2].",
     "grade": "correct",
-    "why": "The candidate states the key fact that the rate is adjusted annually (once each calendar year), which matches the passage's requirement for an annual update beginning January 1, 2016.",
+    "why": "The candidate states the key fact of annual updates and correctly includes the starting year, matching the passage.",
     "unchecked_figures": []
    },
    {
@@ -1261,7 +1261,7 @@
    {
     "qid": "g0054",
     "field": "labor",
-    "answer": "Yes. Under the FMLA’s special rules for school employees, an “instructional employee” is anyone whose principal function is to teach or instruct students, and the definition expressly includes “special education assistants such as signers for the hearing impaired”【1】. Because you perform that role, you are classified as an instructional employee, so the special FMLA provisions that govern leave near the end of an academic term apply to you【2】.",
+    "answer": "Yes. Under the FMLA’s special rules for school employees, an “instructional employee” is anyone whose principal function is to teach or instruct students, and the definition expressly includes “special education assistants such as signers for the hearing impaired”[1]. Because you perform that role, you are classified as an instructional employee, so the special FMLA provisions that govern leave near the end of an academic term apply to you[2].",
     "grade": "correct",
     "why": "The candidate correctly states that the job counts as an instructional employee under the FMLA, matching the passage's definition and inclusion of such assistants.",
     "unchecked_figures": []
@@ -1269,9 +1269,9 @@
    {
     "qid": "g0143",
     "field": "labor",
-    "answer": "The law does **not** allow an employer to use any pay structure they like as long as the employee receives at least the minimum wage and time‑and‑a‑half for overtime.  \n\n* The Fair Labor Standards Act (FLSA) requires that the **regular rate of pay** be at least the statutory minimum wage and that overtime be paid at **no less than one‑and‑a‑half times that regular rate**【2】.  \n* While an employer may choose different methods of compensation (hourly, salary, commission, etc.), the **regular rate must be correctly calculated** and cannot be reduced by arbitrarily labeling part of the wages as a “bonus”【1】【6】.  \n* **Bonuses that are promised, negotiated, or tied to continued employment** (e.g., hiring bonuses, collective‑ bargaining bonuses, attendance or production bonuses) must be **included in the regular rate** and therefore increase the overtime calculation【5】.  \n* Only certain **excludable payments** listed in § 7(e) (the eight categories) may be left out of the regular rate; these are the **only permissible exclusions**【1】.  \n* For salaried employees, the regular hourly rate is derived by dividing the salary by the number of hours the salary is intended to cover; overtime is then paid on that computed rate【3】.  \n* For hourly employees who receive a bonus, the bonus is added to the total earnings before dividing by total hours to determine the regular rate, and overtime is then paid on that higher rate【4】.  \n\nTherefore, an employer may use various compensation structures, but they must **include most bonuses in the regular rate** and cannot avoid overtime liability by re‑labeling regular wages as bonuses or by using a pay scheme that results in a regular rate below the minimum wage.",
+    "answer": "The law does **not** allow an employer to use any pay structure they like as long as the employee receives at least the minimum wage and time‑and‑a‑half for overtime.  \n\n* The Fair Labor Standards Act (FLSA) requires that the **regular rate of pay** be at least the statutory minimum wage and that overtime be paid at **no less than one‑and‑a‑half times that regular rate**[1].  \n* While an employer may choose different methods of compensation (hourly, salary, commission, etc.), the **regular rate must be correctly calculated** and cannot be reduced by arbitrarily labeling part of the wages as a “bonus”[2][3].  \n* **Bonuses that are promised, negotiated, or tied to continued employment** (e.g., hiring bonuses, collective‑ bargaining bonuses, attendance or production bonuses) must be **included in the regular rate** and therefore increase the overtime calculation[4].  \n* Only certain **excludable payments** listed in § 7(e) (the eight categories) may be left out of the regular rate; these are the **only permissible exclusions**[2].  \n* For salaried employees, the regular hourly rate is derived by dividing the salary by the number of hours the salary is intended to cover; overtime is then paid on that computed rate[5].  \n* For hourly employees who receive a bonus, the bonus is added to the total earnings before dividing by total hours to determine the regular rate, and overtime is then paid on that higher rate[6].  \n\nTherefore, an employer may use various compensation structures, but they must **include most bonuses in the regular rate** and cannot avoid overtime liability by re‑labeling regular wages as bonuses or by using a pay scheme that results in a regular rate below the minimum wage.",
     "grade": "wrong",
-    "why": "The candidate incorrectly states the law does not allow any pay structure under those conditions, directly contradicting the passage which says the FLSA generally does not restrict the forms of remuneration.",
+    "why": "The candidate incorrectly states the law does not allow any pay structure under those conditions, which directly contradicts the passage's general allowance.",
     "unchecked_figures": []
    },
    {
@@ -1285,7 +1285,7 @@
    {
     "qid": "g0201",
     "field": "labor",
-    "answer": "공익을 대표하는 노동위원회 위원이 되려면, 학교나 공인된 연구기관에서 교원 또는 연구원으로 **5년 이상** 근무한 경력이 있어야 합니다【1】.",
+    "answer": "공익을 대표하는 노동위원회 위원이 되려면, 학교나 공인된 연구기관에서 교원 또는 연구원으로 **5년 이상** 근무한 경력이 있어야 합니다[1].",
     "grade": "partial",
     "why": "The candidate states the required period but omits the key condition that the person must have majored in labor-related studies.",
     "unchecked_figures": []
@@ -1293,31 +1293,31 @@
    {
     "qid": "g0207",
     "field": "labor",
-    "answer": "A labor union may be dissolved when **(1) it has no officers, (2) it is deemed to have not carried out any union activity for at least one year, and (3) the administrative authority approves the dissolution after obtaining a resolution from the Labor Relations Commission**【1】.",
+    "answer": "A labor union may be dissolved when **(1) it has no officers, (2) it is deemed to have not carried out any union activity for at least one year, and (3) the administrative authority approves the dissolution after obtaining a resolution from the Labor Relations Commission**[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states all three required conditions from the passage, including the key procedural fact that dissolution requires the administrative authority to obtain a resolution from the Labor Relations Commission.",
+    "why": "The candidate answer correctly states all three required conditions from the passage, including the key fact that the administrative authority must obtain a resolution from the Labor Relations Commission.",
     "unchecked_figures": []
    },
    {
     "qid": "g0233",
     "field": "labor",
-    "answer": "임신 기간 중에 **별표 3에 해당하는 질환을 진단받은 경우**에 한해 “유산·조산 등 위험이 있는 여성 근로자”로 간주됩니다【1】.  \n\n별표 3에는 다음과 같은 질환(및 해당 질병코드)이 포함됩니다(예시).  \n\n* 임신·출산 관련 질환  \n  - 임신·출산에 합병된 전·만성 고혈압(O10‑O16)  \n  - 절박유산(O20.0)  \n  - 대사장애를 동반한 임신과다구토(O21.1)  \n  - 임신중 당뇨병(O24)  \n  - 다태 임신 및 합병증(O30‑O31)  \n  - 자궁·태반·양수·양막·분만 전·조산·전치태반 등 각종 산모·태아 관리 질환(O34‑O45 등)  \n\n* 순환기 계통 질환(예: 급성·만성 류마티스열, 고혈압성 질환, 허혈성 심장 질환 등)【3】  \n* 비뇨생식기계통 질환(예: 사구체질환, 신부전, 요로결석 등)【4】\n\n또한, 별표 3 제2호·제3호에 해당하는 질환은 진단서에 질환명과 질병코드가 함께 기재되어야 합니다【5】.  \n\n따라서, 임신 중에 위 표에 열거된 질환 중 하나라도 진단을 받으면 “유산·조산 위험이 있는 여성 근로자”에 해당합니다.",
+    "answer": "임신 기간 중에 **별표 3에 해당하는 질환을 진단받은 경우**에 한해 “유산·조산 등 위험이 있는 여성 근로자”로 간주됩니다[1].  \n\n별표 3에는 다음과 같은 질환(및 해당 질병코드)이 포함됩니다(예시).  \n\n* 임신·출산 관련 질환  \n  - 임신·출산에 합병된 전·만성 고혈압(O10‑O16)  \n  - 절박유산(O20.0)  \n  - 대사장애를 동반한 임신과다구토(O21.1)  \n  - 임신중 당뇨병(O24)  \n  - 다태 임신 및 합병증(O30‑O31)  \n  - 자궁·태반·양수·양막·분만 전·조산·전치태반 등 각종 산모·태아 관리 질환(O34‑O45 등)  \n\n* 순환기 계통 질환(예: 급성·만성 류마티스열, 고혈압성 질환, 허혈성 심장 질환 등)[2]  \n* 비뇨생식기계통 질환(예: 사구체질환, 신부전, 요로결석 등)[3]\n\n또한, 별표 3 제2호·제3호에 해당하는 질환은 진단서에 질환명과 질병코드가 함께 기재되어야 합니다[4].  \n\n따라서, 임신 중에 위 표에 열거된 질환 중 하나라도 진단을 받으면 “유산·조산 위험이 있는 여성 근로자”에 해당합니다.",
     "grade": "correct",
-    "why": "The candidate answer correctly states that a pregnant worker is considered at risk of miscarriage or premature birth if diagnosed with a disease listed in Appendix 3, which matches the key fact from the passage.",
+    "why": "The candidate answer correctly states that a pregnant worker is considered at risk of miscarriage or premature birth if diagnosed with a disease listed in Appendix 3, which matches the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0241",
     "field": "labor",
-    "answer": "남녀고용평등과 일·가정 양립 지원에 관한 법률 시행령 제18조의2에 따르면, 노동위원회(중앙노동위원회·지방노동위원회)에 두는 전문위원회의 위원 수는 10명 이내로 제한됩니다【1】.",
+    "answer": "남녀고용평등과 일·가정 양립 지원에 관한 법률 시행령 제18조의2에 따르면, 노동위원회(중앙노동위원회·지방노동위원회)에 두는 전문위원회의 위원 수는 10명 이내로 제한됩니다[1].",
     "grade": "correct",
-    "why": "The candidate correctly states the maximum number of members (10명 이내) for the specialized committee under the Labor Commission as specified in the passage.",
+    "why": "The candidate answer correctly states the maximum number of members (10명 이내) for the specialized committee as specified in the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0248",
     "field": "labor",
-    "answer": "구직급여를 산정할 때 적용되는 임금일액의 상한액은 **11만 3,500원**이며, 이를 초과하는 경우에는 11만 3,500원을 임금일액으로 적용합니다【1】.",
+    "answer": "구직급여를 산정할 때 적용되는 임금일액의 상한액은 **11만 3,500원**이며, 이를 초과하는 경우에는 11만 3,500원을 임금일액으로 적용합니다[1].",
     "grade": "correct",
     "why": "The candidate correctly states the upper limit of the daily wage for calculating job-seeking benefits as 11,3500 won, matching the passage.",
     "unchecked_figures": []
@@ -1341,49 +1341,49 @@
    {
     "qid": "g0276",
     "field": "labor",
-    "answer": "제출한 남녀 근로자 현황을 거짓으로 보고한 경우, 사업주는 300만원의 과태료를 부과받습니다【1】.",
+    "answer": "제출한 남녀 근로자 현황을 거짓으로 보고한 경우, 사업주는 300만원의 과태료를 부과받습니다[1].",
     "grade": "correct",
-    "why": "The candidate correctly states the key fact of a 3 million won penalty for falsely submitting the gender workforce status.",
+    "why": "The candidate correctly states the key fact of a 3 million won penalty for falsely submitting the gender workforce status report.",
     "unchecked_figures": []
    },
    {
     "qid": "g0277",
     "field": "labor",
-    "answer": "직원에게 제공되는 안전·보건 관련 의료 기록은 **미국 노동부 장관(즉, OSHA)과 보건복지부 장관**에게 전달됩니다. 또한 직원이 요청하면 그 직원의 **주치의(또는 지정한 의사)**에게도 제공될 수 있습니다【3】.",
+    "answer": "직원에게 제공되는 안전·보건 관련 의료 기록은 **미국 노동부 장관(즉, OSHA)과 보건복지부 장관**에게 전달됩니다. 또한 직원이 요청하면 그 직원의 **주치의(또는 지정한 의사)**에게도 제공될 수 있습니다[1].",
     "grade": "correct",
-    "why": "The candidate correctly states that the record is furnished to the Secretary of Labor (OSHA) and the Secretary of Health and Human Services, and, at the employee's request, to his or her physician.",
+    "why": "The candidate correctly states that the record is furnished to the Secretary of Labor (OSHA) and the Secretary of HHS, and to the employee's physician upon request, matching the key fact from the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0281",
     "field": "labor",
-    "answer": "퇴직연금사업자는 가입자에게 적립금액·운용수익률·운용방법별 구성비율 등 운용현황을 다음 중 하나의 방법으로 알려야 합니다【1】.\n\n1. 우편 발송  \n2. 서면 교부  \n3. 정보통신망(예: 전자우편·홈페이지 등) 전송  \n4. 계약 체결 시 당사자가 합의한 기타 방식  \n\n또한, 아래와 같은 사유가 발생한 경우에는 그 사유가 발생한 날로부터 **10일 이내**에 구체적인 운용현황을 추가로 통지해야 합니다【2】.\n\n- 부담금이 납입 예정일부터 1개월 이상 미납된 경우  \n- 적립금 운용수익률이 현저히 변동하는 등 고용노동부장관이 정한 기준에 해당하는 경우  \n\n(단, 확정급여형퇴직연금제도는 제외됩니다【1】)",
+    "answer": "퇴직연금사업자는 가입자에게 적립금액·운용수익률·운용방법별 구성비율 등 운용현황을 다음 중 하나의 방법으로 알려야 합니다[1].\n\n1. 우편 발송  \n2. 서면 교부  \n3. 정보통신망(예: 전자우편·홈페이지 등) 전송  \n4. 계약 체결 시 당사자가 합의한 기타 방식  \n\n또한, 아래와 같은 사유가 발생한 경우에는 그 사유가 발생한 날로부터 **10일 이내**에 구체적인 운용현황을 추가로 통지해야 합니다[2].\n\n- 부담금이 납입 예정일부터 1개월 이상 미납된 경우  \n- 적립금 운용수익률이 현저히 변동하는 등 고용노동부장관이 정한 기준에 해당하는 경우  \n\n(단, 확정급여형퇴직연금제도는 제외됩니다[1])",
     "grade": "correct",
-    "why": "The candidate correctly lists all the required methods for providing information as stated in the passage.",
+    "why": "The candidate correctly lists all the methods (postal delivery, written delivery, transmission via information and communications networks, or other methods agreed upon in the contract) by which the company must inform the subscriber of the fund's status, as stated in the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0287",
     "field": "labor",
-    "answer": "A business owner who has already received a special‑wage support (special “용자”) may file a new application only **after three years have passed from the date the employer received the “special‑user confirmation notice” for the most recent approval**【1】.",
+    "answer": "A business owner who has already received a special‑wage support (special “용자”) may file a new application only **after three years have passed from the date the employer received the “special‑user confirmation notice” for the most recent approval**[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states the key fact that reapplication is permitted after three years have passed from the date of the confirmation notice for the most recent support.",
+    "why": "The candidate answer correctly states the key fact that reapplication is permitted after three years from the date of the confirmation notice for the most recent support.",
     "unchecked_figures": []
    },
    {
     "qid": "g0294",
     "field": "labor",
-    "answer": "The regulations specify that the small‑business retirement‑pension fund may be deposited with or entrusted to the following kinds of financial institutions:\n\n* **Insurance companies** governed by the Insurance Business Act.  \n* **Post‑office savings agencies** (체신관서) governed by the Postal Savings and Insurance Act.  \n* **Banks** governed by the Banking Act, including:\n  * ordinary commercial banks,  \n  * Korea Development Bank (under the Korea Industrial Bank Act),  \n  * Industrial Bank of Korea (under the Small‑and‑Medium Enterprise Bank Act),  \n  * Nonghyup Bank (under the Agricultural Cooperatives Act), and  \n  * Suhyup Bank (under the Fisheries Cooperatives Act).  \n* Entities licensed under the Capital Markets and Financial Investment Services Act, namely:\n  * investment dealers,  \n  * investment brokers,  \n  * trust companies,  \n  * collective investment companies, and  \n  * comprehensive financial companies.  \n\nThese are the only institutions listed as permissible for holding or managing the small‑business retirement pension fund【1】.",
+    "answer": "The regulations specify that the small‑business retirement‑pension fund may be deposited with or entrusted to the following kinds of financial institutions:\n\n* **Insurance companies** governed by the Insurance Business Act.  \n* **Post‑office savings agencies** (체신관서) governed by the Postal Savings and Insurance Act.  \n* **Banks** governed by the Banking Act, including:\n  * ordinary commercial banks,  \n  * Korea Development Bank (under the Korea Industrial Bank Act),  \n  * Industrial Bank of Korea (under the Small‑and‑Medium Enterprise Bank Act),  \n  * Nonghyup Bank (under the Agricultural Cooperatives Act), and  \n  * Suhyup Bank (under the Fisheries Cooperatives Act).  \n* Entities licensed under the Capital Markets and Financial Investment Services Act, namely:\n  * investment dealers,  \n  * investment brokers,  \n  * trust companies,  \n  * collective investment companies, and  \n  * comprehensive financial companies.  \n\nThese are the only institutions listed as permissible for holding or managing the small‑business retirement pension fund[1].",
     "grade": "correct",
-    "why": "The candidate answer lists all the types of financial institutions specified in the passage, including the detailed breakdown of banks and the entities under the Capital Markets Act.",
+    "why": "The candidate answer lists all the types of financial institutions exactly as specified in the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0327",
     "field": "labor",
-    "answer": "Occupational aptitude tests are conducted by using **both a written (pen‑and‑paper) exam and a practical/instrument (hands‑on) exam**【1】.  \nThe regulation allows the **instrument test to be omitted** when the head of the employment‑stability institution deems it appropriate and gives recognition for the omission【1】.  \n\n(For interest and occupational‑preference tests, the method is limited to a written exam【1】.)",
+    "answer": "Occupational aptitude tests are conducted by using **both a written (pen‑and‑paper) exam and a practical/instrument (hands‑on) exam**[1].  \nThe regulation allows the **instrument test to be omitted** when the head of the employment‑stability institution deems it appropriate and gives recognition for the omission[1].  \n\n(For interest and occupational‑preference tests, the method is limited to a written exam[1].)",
     "grade": "correct",
-    "why": "The candidate correctly states both the methods (written and instrument/practical) and the condition under which the apparatus test can be skipped (when the head of the employment-stability institution approves).",
+    "why": "The candidate correctly states both the methods (written and practical/instrument) and the condition under which the apparatus test can be omitted (when the head of the employment-stability institution approves).",
     "unchecked_figures": []
    },
    {
@@ -1397,31 +1397,31 @@
    {
     "qid": "g0396",
     "field": "labor",
-    "answer": "유해하거나 위험한 작업을 배치할 경우, 사업주는 해당 근로자에게 **안전·보건교육을 반드시 실시해야 합니다**.\n\n1. **기본 교육** – 근로자를 채용하거나 작업내용을 변경할 때, 고용노동부령이 정하는 바에 따라 해당 작업에 필요한 안전보건교육을 해야 합니다【1†L2-L4】.  \n2. **추가 교육** – 유해·위험 작업을 배치하거나 작업내용을 그 작업으로 변경할 경우, 제29조 제3항에 따라 “유해하거나 위험한 작업에 필요한 안전보건교육을 추가로” 실시해야 합니다【1†L6-L8】.  \n3. **면제 사유** – 근로자가 이미 해당 작업에 대한 경험이 있거나, 고용노동부령이 정하는 교육을 이수한 경우에는 전부 또는 일부 교육을 하지 않아도 됩니다【2†L9-L12】.  \n\n또한, 유해·위험 작업은 **자격·면허·경험**이 요구되는 경우가 많아(제140조 제1항) 해당 자격을 갖추지 않은 사람에게는 작업을 시킬 수 없으며, 필요한 자격은 지정된 교육기관을 통해 취득하도록 규정되어 있습니다【4†L1-L4】.  \n\n따라서, 유해작업을 배치하려면 (①) 해당 작업에 대한 기본·추가 안전보건교육을 실시하고, (②) 필요 시 자격·면허·경험을 갖춘 인력을 배치해야 합니다. 교육 면제는 위에 명시된 요건을 충족하는 경우에만 가능합니다.",
+    "answer": "유해하거나 위험한 작업을 배치할 경우, 사업주는 해당 근로자에게 **안전·보건교육을 반드시 실시해야 합니다**.\n\n1. **기본 교육** – 근로자를 채용하거나 작업내용을 변경할 때, 고용노동부령이 정하는 바에 따라 해당 작업에 필요한 안전보건교육을 해야 합니다[1].  \n2. **추가 교육** – 유해·위험 작업을 배치하거나 작업내용을 그 작업으로 변경할 경우, 제29조 제3항에 따라 “유해하거나 위험한 작업에 필요한 안전보건교육을 추가로” 실시해야 합니다[1].  \n3. **면제 사유** – 근로자가 이미 해당 작업에 대한 경험이 있거나, 고용노동부령이 정하는 교육을 이수한 경우에는 전부 또는 일부 교육을 하지 않아도 됩니다[2].  \n\n또한, 유해·위험 작업은 **자격·면허·경험**이 요구되는 경우가 많아(제140조 제1항) 해당 자격을 갖추지 않은 사람에게는 작업을 시킬 수 없으며, 필요한 자격은 지정된 교육기관을 통해 취득하도록 규정되어 있습니다[3].  \n\n따라서, 유해작업을 배치하려면 (①) 해당 작업에 대한 기본·추가 안전보건교육을 실시하고, (②) 필요 시 자격·면허·경험을 갖춘 인력을 배치해야 합니다. 교육 면제는 위에 명시된 요건을 충족하는 경우에만 가능합니다.",
     "grade": "correct",
-    "why": "The candidate correctly states that the employer must provide additional safety and health education when assigning workers to hazardous or dangerous work, which is the key fact from the passage.",
+    "why": "The candidate answer correctly states the key fact that the employer must provide additional safety and health education when assigning workers to hazardous or dangerous work.",
     "unchecked_figures": []
    },
    {
     "qid": "g0399",
     "field": "labor",
-    "answer": "The severe‑treatment‑status rating becomes effective on the date a physician’s diagnosis (the attached medical certificate required under Articles 64 (1) and (3) of the Act) is issued. If the exact day the severe condition arose or changed can be clearly identified, the rating is applied from that day instead【1】.",
+    "answer": "The severe‑treatment‑status rating becomes effective on the date a physician’s diagnosis (the attached medical certificate required under Articles 64 (1) and (3) of the Act) is issued. If the exact day the severe condition arose or changed can be clearly identified, the rating is applied from that day instead[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states both the default effective date (issuance of the doctor's diagnosis certificate) and the alternative (the date the severe condition occurred or changed if clearly identifiable), matching the passage.",
+    "why": "The candidate answer correctly states both the default effective date (issuance of the doctor's certificate) and the alternative (the date the condition occurred or changed if clearly identifiable), matching the key fact from the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0412",
     "field": "labor",
-    "answer": "안전관리자는 보수교육을 24시간 이상 이수해야 합니다【1】.",
+    "answer": "안전관리자는 보수교육을 24시간 이상 이수해야 합니다[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states the required refresher training time for safety managers as 24 hours or more, matching the passage.",
+    "why": "The candidate answer correctly states the required refresher training time for safety managers as 24 hours or more, which matches the key fact from the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0450",
     "field": "labor",
-    "answer": "The labor union must attach **(1) a copy of the written request it submitted to the employer asking for collective‑bargaining** and **(2) any material that proves the employer announced the request incorrectly or differently from what the union submitted** when it files a corrective‑action request with the labor commission【1】.",
+    "answer": "The labor union must attach **(1) a copy of the written request it submitted to the employer asking for collective‑bargaining** and **(2) any material that proves the employer announced the request incorrectly or differently from what the union submitted** when it files a corrective‑action request with the labor commission[1].",
     "grade": "correct",
     "why": "The candidate answer correctly states the two required documents as specified in the passage.",
     "unchecked_figures": []
@@ -1429,39 +1429,39 @@
    {
     "qid": "g0496",
     "field": "labor",
-    "answer": "노사협의회 간사는 근로자측 위원 중 1명과 사용자측 위원 중 1명을 각각 선출합니다【1】.",
+    "answer": "노사협의회 간사는 근로자측 위원 중 1명과 사용자측 위원 중 1명을 각각 선출합니다[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states that one representative each is elected from the worker-side and employer-side members, matching the key fact from the passage.",
+    "why": "The candidate answer correctly states that one secretary is elected from the worker-side members and one from the employer-side members, matching the key fact from the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0558",
     "field": "labor",
-    "answer": "Yes. Under the Worker Participation and Cooperation Promotion Act, a committee member may continue to perform the duties of the office after the term has expired until a successor is elected【1】.",
+    "answer": "Yes. Under the Worker Participation and Cooperation Promotion Act, a committee member may continue to perform the duties of the office after the term has expired until a successor is elected[1].",
     "grade": "correct",
-    "why": "The candidate correctly states the key fact that a member continues duties after term expiration until a successor is elected, matching the passage.",
+    "why": "The candidate correctly states that a member whose term has ended continues to perform duties until a successor is elected, matching the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0597",
     "field": "labor",
-    "answer": "네, 미국 FMLA(가족·의료휴가법)에서는 가족 구성원의 중병 상태가 **휴가 종료일에 실제로 존재했음**을 명시한 인증서만으로도 해당 휴가를 인정받을 수 있습니다. § 2614(i)‑(ii) 에 따르면, “휴가가 종료된 날에 중병 상태에 있는 아들·딸·배우자·부모를 돌볼 필요가 있다는 진술이 포함된 인증서”이면 충분하다고 규정하고 있습니다【1】.\n\n다만, FMLA는 인증서에 추가적인 내용도 요구합니다. § 2613(b) 에 따르면, 인증서에는 (1) 중병이 시작된 날짜, (2) 예상 지속 기간, (3) 의료 제공자가 알고 있는 관련 의료 사실 등 여러 항목이 포함되어야 합니다【2】. 따라서 **휴가 종료일에 중병이 있었음을 증명하는 진술만**으로는 최소 요건을 충족하지만, 실제로는 위와 같은 추가 정보가 포함된 인증서를 제출해야 합니다.",
+    "answer": "네, 미국 FMLA(가족·의료휴가법)에서는 가족 구성원의 중병 상태가 **휴가 종료일에 실제로 존재했음**을 명시한 인증서만으로도 해당 휴가를 인정받을 수 있습니다. § 2614(i)‑(ii) 에 따르면, “휴가가 종료된 날에 중병 상태에 있는 아들·딸·배우자·부모를 돌볼 필요가 있다는 진술이 포함된 인증서”이면 충분하다고 규정하고 있습니다[1].\n\n다만, FMLA는 인증서에 추가적인 내용도 요구합니다. § 2613(b) 에 따르면, 인증서에는 (1) 중병이 시작된 날짜, (2) 예상 지속 기간, (3) 의료 제공자가 알고 있는 관련 의료 사실 등 여러 항목이 포함되어야 합니다[2]. 따라서 **휴가 종료일에 중병이 있었음을 증명하는 진술만**으로는 최소 요건을 충족하지만, 실제로는 위와 같은 추가 정보가 포함된 인증서를 제출해야 합니다.",
     "grade": "correct",
-    "why": "The candidate correctly states that certification showing the serious health condition existed on the leave expiration date is sufficient, which matches the key fact from the passage.",
+    "why": "The candidate answer correctly states that a certification showing the family member had a serious health condition on the leave expiration date is sufficient, matching the key fact from the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "g0609",
     "field": "labor",
-    "answer": "근로자 위원은 **총연합단체인 노동조합**에서 추천한 사람 중에서 제청되고, 사용자 위원은 **고용노동부장관이 지정하는 전국적 규모의 사용자단체**에서 추천한 사람 중에서 제청됩니다【1†③】. (※ 같은 내용이 최저임금법 시행령 제10조에도 규정되어 있습니다【2†】)",
+    "answer": "근로자 위원은 **총연합단체인 노동조합**에서 추천한 사람 중에서 제청되고, 사용자 위원은 **고용노동부장관이 지정하는 전국적 규모의 사용자단체**에서 추천한 사람 중에서 제청됩니다[1]. (※ 같은 내용이 최저임금법 시행령 제10조에도 규정되어 있습니다[2])",
     "grade": "correct",
-    "why": "The candidate correctly states that worker members are recommended by the nationwide labor union and employer members are recommended by a nationwide employer organization designated by the Minister of Employment and Labor.",
+    "why": "The candidate correctly states that worker members are recommended from a nationwide labor union federation and employer members from a nationwide employer group designated by the Minister of Employment and Labor.",
     "unchecked_figures": []
    },
    {
     "qid": "g0634",
     "field": "labor",
-    "answer": "The components that must be counted as “wages” when calculating the statutory minimum wage in Korea are:\n\n1. **Overtime, night‑time or holiday work wages and the corresponding premium wages**【1】  \n2. **Payment for unused annual leave** as defined in the Labor Standards Act【1】  \n3. **Wages for days that are treated as paid holidays** (excluding the statutory paid holidays under the Labor Standards Act)【1】  \n4. **Any other remuneration that is equivalent to items 1–3 regardless of its name**【1】\n\nThese items are specified in the *Minimum Wage Act Enforcement Rules* that are in force as of the implementation date of 2 January 2026【2】【3】.",
+    "answer": "The components that must be counted as “wages” when calculating the statutory minimum wage in Korea are:\n\n1. **Overtime, night‑time or holiday work wages and the corresponding premium wages**[1]  \n2. **Payment for unused annual leave** as defined in the Labor Standards Act[1]  \n3. **Wages for days that are treated as paid holidays** (excluding the statutory paid holidays under the Labor Standards Act)[1]  \n4. **Any other remuneration that is equivalent to items 1–3 regardless of its name**[1]\n\nThese items are specified in the *Minimum Wage Act Enforcement Rules* that are in force as of the implementation date of 2 January 2026[2][3].",
     "grade": "correct",
     "why": "The candidate answer correctly lists all four categories of pay components that count toward the minimum wage as specified in the passage.",
     "unchecked_figures": []
@@ -1469,15 +1469,15 @@
    {
     "qid": "g0635",
     "field": "labor",
-    "answer": "파견근로자에 대한 차별적 처우의 시정 신청은 **고용노동부장관(또는 고용노동부 장관이 위임받은 지방고용노동관서) 또는 노동위원회**에 제출합니다【3】.  \n\n※ 위 기관은 파견근로자 보호법 제21조에 근거한 차별 시정 신청 업무를 수행하도록 권한이 위임되어 있습니다【2】.",
+    "answer": "파견근로자에 대한 차별적 처우의 시정 신청은 **고용노동부장관(또는 고용노동부 장관이 위임받은 지방고용노동관서) 또는 노동위원회**에 제출합니다[1].  \n\n※ 위 기관은 파견근로자 보호법 제21조에 근거한 차별 시정 신청 업무를 수행하도록 권한이 위임되어 있습니다[2].",
     "grade": "partial",
-    "why": "The candidate correctly identifies the authority (Ministry of Employment and Labor or Labor Relations Commission) but omits the specific legal provision (Enforcement Decree Article 6-2(6)) that defines this as the relevant administrative task.",
+    "why": "The candidate correctly identifies the responsible authorities but omits the key fact that this matter is defined in the Enforcement Decree of the Act on the Protection, etc. of Dispatched Workers, Article 6-2, Subparagraph 6.",
     "unchecked_figures": []
    },
    {
     "qid": "r0015",
     "field": "real-estate",
-    "answer": "The fine for not posting the registered office certificate (중개사무소등록증) is **300,000 won**【1】.  \n\n(Under the 2023 amendment, the imposing authority may reduce the amount by up to one‑half if the violation is minor, the violator has taken corrective steps, or other mitigating factors exist【2】.)",
+    "answer": "The fine for not posting the registered office certificate (중개사무소등록증) is **300,000 won**[1].  \n\n(Under the 2023 amendment, the imposing authority may reduce the amount by up to one‑half if the violation is minor, the violator has taken corrective steps, or other mitigating factors exist[2].)",
     "grade": "correct",
     "why": "The candidate correctly states the key fact of the fine amount as specified in the passage.",
     "unchecked_figures": []
@@ -1485,9 +1485,9 @@
    {
     "qid": "r0020",
     "field": "real-estate",
-    "answer": "네, 자진 신고를 하면 과태료가 감경되거나 면제될 수 있습니다. 부동산 거래신고 등에 관한 법률 제29조는 “자진 신고한 자에 대하여 대통령령으로 정하는 바에 따라 같은 규정에 따른 과태료를 감경 또는 면제할 수 있다”고 규정하고 있습니다【1】. 따라서 자진 신고를 하면 과태료가 줄어들 가능성이 있습니다.",
+    "answer": "네, 자진 신고를 하면 과태료가 감경되거나 면제될 수 있습니다. 부동산 거래신고 등에 관한 법률 제29조는 “자진 신고한 자에 대하여 대통령령으로 정하는 바에 따라 같은 규정에 따른 과태료를 감경 또는 면제할 수 있다”고 규정하고 있습니다[1]. 따라서 자진 신고를 하면 과태료가 줄어들 가능성이 있습니다.",
     "grade": "correct",
-    "why": "The candidate correctly states the key fact from the passage that self-reporting can lead to a reduction or exemption of the penalty.",
+    "why": "The candidate correctly states that self-reporting can lead to a reduction or exemption of the penalty, matching the key fact from the passage.",
     "unchecked_figures": []
    },
    {
@@ -1509,15 +1509,15 @@
    {
     "qid": "r0037",
     "field": "real-estate",
-    "answer": "The Commercial Building Lease Protection Act does **not** apply in the following situations:\n\n1. **Leases of large‑scale or quasi‑large‑scale stores** – If the leased commercial building is part of a “large store” or “quasi‑large store” defined under the Distribution Industry Development Act, the Act is excluded (traditional markets are excluded from this exception)【1】.  \n2. **State‑owned or communal property** – Leases of commercial buildings that are state property under the State Property Act or communal property under the Public Property and Goods Management Act are excluded【1】.  \n3. **Temporary‑use leases** – When the lease is clearly for temporary use, the Act does not apply【2】.  \n4. **Leases exceeding the prescribed deposit limit** – If the security deposit (including the converted rent amount) exceeds the amount set by presidential decree after review by the Commercial Building Lease Committee, the general provisions of the Act do not apply【3】.  \n   *Note:* Certain specific provisions (e.g., Articles 10‑4, 10‑5, 11‑2, 19, etc.) still apply even to leases that exceed that deposit limit【4】.",
+    "answer": "The Commercial Building Lease Protection Act does **not** apply in the following situations:\n\n1. **Leases of large‑scale or quasi‑large‑scale stores** – If the leased commercial building is part of a “large store” or “quasi‑large store” defined under the Distribution Industry Development Act, the Act is excluded (traditional markets are excluded from this exception)[1].  \n2. **State‑owned or communal property** – Leases of commercial buildings that are state property under the State Property Act or communal property under the Public Property and Goods Management Act are excluded[1].  \n3. **Temporary‑use leases** – When the lease is clearly for temporary use, the Act does not apply[2].  \n4. **Leases exceeding the prescribed deposit limit** – If the security deposit (including the converted rent amount) exceeds the amount set by presidential decree after review by the Commercial Building Lease Committee, the general provisions of the Act do not apply[3].  \n   *Note:* Certain specific provisions (e.g., Articles 10‑4, 10‑5, 11‑2, 19, etc.) still apply even to leases that exceed that deposit limit[4].",
     "grade": "partial",
-    "why": "The candidate correctly includes the deposit-limit exception from the passage but incorrectly adds three other exceptions not mentioned in the provided passage.",
+    "why": "The candidate correctly states the deposit-limit exception from the passage but incorrectly adds three other exceptions not mentioned in the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "r0040",
     "field": "real-estate",
-    "answer": "A person must file the complaint within **one year** after the alleged discriminatory housing practice has occurred or terminated【1】.",
+    "answer": "A person must file the complaint within **one year** after the alleged discriminatory housing practice has occurred or terminated[1].",
     "grade": "correct",
     "why": "The candidate answer correctly states the one-year filing period from the occurrence or termination of the discriminatory housing practice, matching the passage.",
     "unchecked_figures": []
@@ -1533,9 +1533,9 @@
    {
     "qid": "r0049",
     "field": "real-estate",
-    "answer": "The lease is deemed to continue — the rental relationship is considered to remain in effect until the tenant receives the return of the deposit, even after the contractual term has expired【1】.",
+    "answer": "The lease is deemed to continue — the rental relationship is considered to remain in effect until the tenant receives the return of the deposit, even after the contractual term has expired[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states the key fact from the passage that the lease is deemed to continue until the tenant receives the deposit back.",
+    "why": "The candidate answer correctly states the key fact from the passage that the lease continues until the deposit is returned.",
     "unchecked_figures": []
    },
    {
@@ -1557,10 +1557,12 @@
    {
     "qid": "r0083",
     "field": "real-estate",
-    "answer": "토지거래 허가 신청을 접수하면 지방자치단체장은 «민원 처리에 관한 법률» 이 정한 **처리기간** 안에 허가 또는 불허가 결정을 내려야 하며, 그 결과를 신청인에게 서면으로 통보해야 합니다【1】.  \n\n선매협의(先買協議) 절차가 진행 중인 경우에도, 위의 처리기간 내에 그 사실을 신청인에게 알려야 합니다【1】.  \n\n반면, 선매협의가 이루어지지 않은 경우에는 **‘지체 없이’** 허가·불허가 여부를 결정하고 통보하도록 규정되어 있습니다【2】.  \n\n따라서 구체적인 일수는 «민원 처리에 관한 법률»에 규정된 기간에 따르며, 제공된 문서에는 그 기간이 숫자로 명시되어 있지 않습니다.",
+    "answer": "토지거래 허가 신청을 접수하면 시장·군수·구청장은 «민원 처리에 관한 법률» 이 정한 **처리기간** 안에 허가 또는 불허가 결정을 내려야 하며, 그 결과를 신청인에게 서면으로 통보해야 합니다[1].  \n\n다만, 제15조에 따라 **선매협의가 진행 중인 경우**에는 그 처리기간 내에 선매협의가 진행되고 있음을 신청인에게 알려야 합니다[1].  \n\n반면 **선매협의가 이루어지지 않은 경우**에는 “지체 없이” 허가·불허가 여부를 결정하고 통보하도록 규정되어 있습니다[2].  \n\n※ 제공된 문서에는 «민원 처리에 관한 법률»이 정한 구체적인 일수(예: 30일 등)는 명시되어 있지 않으며, 따라서 정확한 일수는 해당 법률을 확인해야 합니다.   (출처: [1], [2])",
     "grade": "correct",
-    "why": "The candidate correctly states that the decision must be made within the processing period specified by the relevant law, which matches the key fact from the passage.",
-    "unchecked_figures": []
+    "why": "The candidate correctly states that the decision must be made and notified within the processing period specified by the 「민원 처리에 관한 법률」, which is the key fact requested.",
+    "unchecked_figures": [
+     "30일"
+    ]
    },
    {
     "qid": "r0088",
@@ -1573,17 +1575,17 @@
    {
     "qid": "r0103",
     "field": "real-estate",
-    "answer": "외국인이 부동산을 취득하고 신고·허가 절차를 마치면 신고관청이 **‘외국인 부동산등 취득·계속보유 신고확인증’**을 발급합니다【1†③】.  \n\n※ 토지 매매와 같이 토지취득 허가가 필요한 경우에는 신고관청이 **‘외국인 토지취득 허가증’**을 발급합니다【2†③】.",
+    "answer": "외국인이 부동산을 취득하고 신고·허가 절차를 마치면 신고관청이 **‘외국인 부동산등 취득·계속보유 신고확인증’**을 발급합니다[1].  \n\n※ 토지 매매와 같이 토지취득 허가가 필요한 경우에는 신고관청이 **‘외국인 토지취득 허가증’**을 발급합니다[2].",
     "grade": "correct",
-    "why": "The candidate correctly states the key fact that the certificate issued is the '외국인 부동산등 취득·계속보유 신고확인증', matching the passage.",
+    "why": "The candidate correctly states the key fact that the certificate issued is the '외국인 부동산등 취득·계속보유 신고확인증', which matches the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "r0127",
     "field": "real-estate",
-    "answer": "예, 1991년 3월 13일 이후에 처음 입주하는 모든 다세대 주거시설은 접근 가능한 경로에 연결된 건물 출입구를 최소 1개 이상 설치해야 합니다. 다만, 지형이나 부지의 특수성 등으로 인해 실질적으로 제공할 수 없는 경우(“비현실적”인 경우)에는 예외가 적용되며, 그 비현실성을 입증할 책임은 설계·시공자에게 있습니다【1】.",
+    "answer": "예, 1991년 3월 13일 이후에 처음 입주하는 모든 다세대 주거시설은 접근 가능한 경로에 연결된 건물 출입구를 최소 1개 이상 설치해야 합니다. 다만, 지형이나 부지의 특수성 등으로 인해 실질적으로 제공할 수 없는 경우(“비현실적”인 경우)에는 예외가 적용되며, 그 비현실성을 입증할 책임은 설계·시공자에게 있습니다[1].",
     "grade": "correct",
-    "why": "The candidate answer correctly states the key fact, including the requirement and the exception.",
+    "why": "The candidate answer correctly states the requirement and the key exception as specified in the passage.",
     "unchecked_figures": []
    },
    {
@@ -1613,25 +1615,25 @@
    {
     "qid": "r0172",
     "field": "real-estate",
-    "answer": "A tenant can receive priority over other creditors for the return of the deposit from the auction proceeds **when the tenant has satisfied the “opposition‑right” requirement of Article 3 (1) and has obtained a fixed‑date (확정일자) from the competent tax office for the lease contract**. In that case the tenant’s deposit is paid ahead of junior claimants in the sale proceeds of the foreclosed property【1†L2-L4】【2†L1-L3】.",
+    "answer": "A tenant can receive priority over other creditors for the return of the deposit from the auction proceeds **when the tenant has satisfied the “opposition‑right” requirement of Article 3 (1) and has obtained a fixed‑date (확정일자) from the competent tax office for the lease contract**. In that case the tenant’s deposit is paid ahead of junior claimants in the sale proceeds of the foreclosed property[1][2].",
     "grade": "correct",
-    "why": "The candidate answer correctly states both required conditions from the passage: securing the opposition‑right requirement under Article 3(1) and obtaining a confirmed date from the competent tax office.",
+    "why": "The candidate answer correctly states both required conditions as specified in the passage.",
     "unchecked_figures": []
    },
    {
     "qid": "r0176",
     "field": "real-estate",
-    "answer": "공무원이 중개사를 출입·검사할 때는 “공무원증”과 “국토교통부령이 정하는 증표”를 제시해야 합니다. 이 증표는 별지 제 26 호 ‘중개사무소조사·검사증명서’ 또는 별지 제 27 호 ‘한국공인중개사협회조사·검사증명서’를 말합니다【1】【2】.",
+    "answer": "공무원이 중개사를 출입·검사할 때는 “공무원증”과 “국토교통부령이 정하는 증표”를 제시해야 합니다. 이 증표는 별지 제 26 호 ‘중개사무소조사·검사증명서’ 또는 별지 제 27 호 ‘한국공인중개사협회조사·검사증명서’를 말합니다[1][2].",
     "grade": "partial",
-    "why": "The candidate correctly includes the required documents but adds an incorrect option (별지 제26호) not mentioned in the passage as part of the key fact.",
+    "why": "The candidate correctly includes the required official ID and the form from 별지 제27호, but incorrectly adds 별지 제26호 as an alternative, which is not mentioned in the passage as a valid document for this specific inspection context.",
     "unchecked_figures": []
    },
    {
     "qid": "r0178",
     "field": "real-estate",
-    "answer": "예, 맞습니다. 연방 관련 주택담보대출의 서비스가 다른 회사로 이전될 경우, **대출을 제공한 사람이 계약 체결(정산) 시점에 서면 통지를 제공하면** (A)·(B) 항목에 규정된 사전 통지(예: 이전일 15일 전 통지 등) 의무가 적용되지 않습니다[1][2].  \n\n즉, 정산 시점에 § 2605(b)(3)‑에 따라 요구되는 내용이 포함된 서면 통지를 대출자에게 제공하면, 이전 전 별도의 사전 통지를 할 필요가 없습니다. (통지 내용은 § 2605(4)‑에 명시된 항목을 포함해야 함)【4】.",
+    "answer": "예, 맞습니다. 연방 관련 주택담보대출의 서비스가 다른 회사로 이전될 경우, **대출을 제공한 사람이 계약 체결(정산) 시점에 서면 통지를 제공하면** (A)·(B) 항목에 규정된 사전 통지(예: 이전일 15일 전 통지 등) 의무가 적용되지 않습니다[1][2].  \n\n즉, 정산 시점에 § 2605(b)(3)‑에 따라 요구되는 내용이 포함된 서면 통지를 대출자에게 제공하면, 이전 전 별도의 사전 통지를 할 필요가 없습니다. (통지 내용은 § 2605(4)‑에 명시된 항목을 포함해야 함)[3].",
     "grade": "correct",
-    "why": "The candidate correctly states that the key fact—providing written notice at settlement—exempts the servicer from the advance notice requirements.",
+    "why": "The candidate correctly states that providing written notice at settlement means the prior notice requirements do not apply, matching the passage.",
     "unchecked_figures": []
    }
   ],
@@ -1639,8 +1641,8 @@
    "end_turn": 51
   },
   "new_tokens": [
-   120012,
-   22037
+   2574,
+   743
   ]
  },
  "moonshotai.kimi-k2.5": {

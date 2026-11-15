@@ -130,6 +130,13 @@ def test_answer_with_supported_figures_is_not_rewritten():
     assert len(chat.prompts) == 1 and a.rewritten_for == []
 
 
+def test_wide_bracket_citations_are_read_as_numbers():
+    hits = [hit(c) for c in "ab"]
+    a = answer(FakeChat("매년 바뀝니다【2】. 근거【1†L2-L4】."), "q", hits)
+    assert a.text == "매년 바뀝니다[1]. 근거[2]."
+    assert [(c.n, c.chunk_id) for c in a.citations] == [(1, "b"), (2, "a")]
+
+
 def test_cited_sources_are_numbered_from_one_in_order_of_first_citation():
     hits = [hit(c) for c in "abcde"]
     a = answer(FakeChat("첫째 [5]. 둘째 [2][5]. 셋째 [3]."), "q", hits)
