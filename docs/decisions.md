@@ -847,6 +847,37 @@ the next thing to try, decided on real_dev; the held-out set has now been used t
 is no longer clean for that. The questions are in `data/raw/d2q/` (not committed;
 `doc2query.py generate` rebuilds them from the LLM cache).
 
+## Answer model compared, GLM-4.7 kept (`eval/answer_models.py`, 2026-11-15)
+
+Only the answer step changes: the 50 single-file questions get the same top 6 sources
+(served retrieval, GLM-4.7 translation + rerank, run once) and the served answer prompt;
+judge v2 (DeepSeek V3.2) grades every answer. Candidates are the in-Region on-demand
+text models; DeepSeek is left out (the judge's family), Claude too (cross-Region only).
+
+| Answer model | correct | vs GLM-4.7 (items) | note |
+|---|---|---|---|
+| GLM-4.7 (served) | 80% | | |
+| GLM-5 | 84% | +3 -1 | |
+| Kimi K2.5 | 82% | +3 -2 | |
+| gpt-oss-120b | 84% (80% at 4000 tokens) | +6 -4 | cites as `【1】`: 35 of 50 answers had no parsed citation |
+| Mistral Large 3 | 80% | +5 -5 | |
+| Qwen3 235B | 78% | +4 -5 | |
+| MiniMax M2.5 | 54% (54% at 4000 tokens) | | thinks through its budget: 18-23 empty answers |
+
+The best clean candidate, GLM-5, then ran the labor dev run of the served pipeline with
+only the answer model swapped (`answers.py --answer-model zai.glm-5`, 50 test items + 27
+unanswerable real questions, against `v12-scope-dev`): correct 88% -> 90% (+4 -3 items),
+supported 84% -> 88% (+4 -2), declined 70% -> 81% (+4 -1), latency p50 8.3 s -> 11.9 s,
+answer-step price about 1.5x. The differences are a few items each, except the
+declines, and the answers are slower; adopted only if clearly better, so GLM-4.7 stays.
+If declining out-of-scope questions mattered more than latency, GLM-5 would be the
+switch to make (one setting: `RagService(answer_chat=...)` / `answers.py --answer-model`).
+
+Found on the way: the judge graded an empty answer "correct" (it took the reference for
+the answer). No reported run had an empty answer (checked every result file);
+`answer_models.py` now grades empty answers `no_answer` without asking the judge.
+Cost about $2.7.
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it

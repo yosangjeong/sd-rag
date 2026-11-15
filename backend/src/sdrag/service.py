@@ -71,8 +71,11 @@ class Reply:
 
 
 class RagService:
-    def __init__(self, client, index: str, embedder, chat) -> None:
+    def __init__(self, client, index: str, embedder, chat, answer_chat=None) -> None:
+        """answer_chat: a different model for the answer step only (eval/answer_models.py
+        compares them); translation, reranking and the agent keep ``chat``."""
         self.client, self.index, self.embedder, self.chat = client, index, embedder, chat
+        self.answer_chat = answer_chat
 
     def ask(self, user_id: str, question: str, mode: str = "basic", request_id: str = "",
             history: list[dict] | None = None, scope: list[str] | None = None) -> Reply:  # fmt: skip
@@ -118,7 +121,12 @@ class RagService:
         hits = LlmReranker(chat).rerank(question, hits, s.last_queries or None)
         log("retrieval", request_id=request_id, mode=mode, country=country,
             results=[{"chunk_id": h.chunk_id, "doc_id": h.source.get("doc_id")} for h in hits[:10]])  # fmt: skip
-        ans = answer(chat, question, hits[:ANSWER_SOURCES])
+        if self.answer_chat is None:
+            ans = answer(chat, question, hits[:ANSWER_SOURCES])
+        else:
+            ans = answer(self.answer_chat, question, hits[:ANSWER_SOURCES])
+            chat.input_tokens += ans.input_tokens
+            chat.output_tokens += ans.output_tokens
         ms = 1000 * (time.perf_counter() - t0)
         log("answer", request_id=request_id, mode=mode, latency_ms=round(ms),
             llm_input_tokens=chat.input_tokens, llm_output_tokens=chat.output_tokens,

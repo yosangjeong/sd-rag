@@ -89,6 +89,7 @@ def main() -> None:
     ap.add_argument(
         "--n-test", type=int, help="test items to run (default --n; 0: unanswerable only)"
     )
+    ap.add_argument("--answer-model", help="a different model for the answer step only")
     ap.add_argument("--reuse", action="store_true",
                     help="keep the version's existing result files, run only what is missing")  # fmt: skip
     a = ap.parse_args()
@@ -117,9 +118,9 @@ def main() -> None:
 
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    service = RagService(
-        client, settings.index, emb, BedrockChat(settings.llm_model, settings.aws_region)
-    )
+    answer_chat = BedrockChat(a.answer_model, settings.aws_region) if a.answer_model else None
+    service = RagService(client, settings.index, emb,
+                         BedrockChat(settings.llm_model, settings.aws_region), answer_chat)  # fmt: skip
     jllm = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), LLM_CACHE)
 
     def run(it, answerable: bool) -> dict:
@@ -186,7 +187,10 @@ def main() -> None:
         return ", ".join(f"{k} {v / len(rs):.0%}" for k, v in c.most_common())
 
     lines = [
-        "# Answer quality (served pipeline: translation union + rerank + GLM-4.7 answers)",
+        (
+            "# Answer quality (served pipeline: translation union + rerank + "
+            f"{a.answer_model or 'GLM-4.7'} answers)"
+        ),
         "",
         (
             f"{'Test' if a.set == 'labor' else 'Real-estate test'} sample: {len(rows)} items "

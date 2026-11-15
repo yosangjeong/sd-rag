@@ -32,6 +32,7 @@ The decisions they support are in `docs/decisions.md`.
 | `real_re.py` | the real-estate real questions: gold by the same pooling as the labor ones |
 | `ocr_corpus.py` | OCR accuracy on every scanned corpus page (cached results, no calls) |
 | `single_file.py` | the brief's one-file comparison with Claude and ChatGPT |
+| `answer_models.py` | answer models compared on the same sources (single-file questions, judge v2) |
 | `upload_bench.py` | upload throughput through the API |
 | `gate.py` | CI: fail when dev retrieval falls below `data/eval/baseline-dev.json` |
 | `search_smoke.py` | a few questions through every retrieval mode (local index works) |

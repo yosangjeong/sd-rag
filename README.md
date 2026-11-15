@@ -125,7 +125,7 @@ question -> which country's law (KR / US / none): the other country's statutes a
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |
 | Cross-lingual | query translation, candidates added | test ko->en hit@10 0.47 -> 0.90 |
 | Reranker | GLM-4.7 listwise | test MRR 0.53 -> 0.80 on hybrid |
-| Answers / agent | GLM-4.7 (in-Region, tool use) | fast; no cross-Region inference |
+| Answers / agent | GLM-4.7 (in-Region, tool use) | fast; 6 other in-Region models no clearly better (decisions.md) |
 
 ## Repository
 
