@@ -101,4 +101,14 @@ Real-estate real questions in `data/eval/real_re_questions_candidates.csv` (titl
 - Consumer Financial Protection Bureau: RESPA FAQs and Mortgage Servicing FAQs (2021) (consumerfinance.gov) - US-PD-105
 - HUD and DOJ: Joint Statement, Reasonable Modifications under the Fair Housing Act (2008) (justice.gov) - US-PD-105
 
+Held-out real questions (`data/eval/real_heldout.jsonl`, `real_heldout_unanswerable.json`), questions only:
+
+- 출처: 법제처 찾기쉬운 생활법령정보, 백문백답 - 부동산 경매, 이사, 전세사기 피해자 지원, 배달앱종사자, 가사근로자, 고령자 고용, 요양보호사 and labor / lease questions of business and welfare topics (easylaw.go.kr) - MOLEG-EASYLAW
+- HUD and DOJ: Joint Statement, Reasonable Accommodations under the Fair Housing Act (2004) (justice.gov) - US-PD-105
+
+Documents uploaded for `data/eval/unseen.jsonl` and `similar.jsonl` (not committed; each file's URL in `unseen_docs.json`, `similar_docs.json`):
+
+- 대한민국 정책브리핑 (www.korea.kr) press releases, incl. the 35 latest of 고용노동부 - KOGL type 1 (공공누리 제1유형, 출처표시)
+- NIST Cybersecurity Framework 2.0; IRS Publication 15 (Circular E) - US-PD-105
+
 Generated questions are written by a model from the corpus above; see `data/eval/README.md`.

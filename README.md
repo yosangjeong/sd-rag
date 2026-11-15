@@ -33,6 +33,50 @@ passage; questions the corpus cannot answer declined 67% / 90%; the other countr
 before it is shown. How far the judge can be
 trusted, and every choice behind these numbers: `docs/decisions.md`.
 
+### Ablations (the brief's comparisons)
+
+Labor test set (338 generated questions, not used for tuning; pooled gold), retrieval only.
+Latency p50 and LLM cost per query (query embeddings, about $0.00001, not counted):
+
+| Chunking | Search | hit@1 | hit@10 | MRR | nDCG@10 | p50 | $/query |
+|---|---|---|---|---|---|---|---|
+| fixed windows | BM25 | 0.37 | 0.57 | 0.44 | 0.47 | <0.1 s | 0 |
+| fixed windows | dense | 0.41 | 0.76 | 0.53 | 0.58 | 0.3 s | 0 |
+| fixed windows | hybrid | 0.42 | 0.76 | 0.54 | 0.58 | 0.3 s | 0 |
+| per article | BM25 | 0.34 | 0.57 | 0.42 | 0.46 | <0.1 s | 0 |
+| per article | dense | 0.46 | 0.79 | 0.58 | 0.63 | 0.3 s | 0 |
+| per article | hybrid | 0.42 | 0.78 | 0.54 | 0.59 | 0.3 s | 0 |
+| per article | hybrid + reranker | 0.78 | 0.85 | 0.81 | 0.82 | 1.5 s | 0.004 |
+| per article | + translation candidates | 0.85 | 0.93 | 0.89 | 0.90 | 3.0 s | 0.006 |
+| per article | **served** (+ wider pool, jurisdiction) | **0.85** | **0.97** | **0.90** | **0.91** | 5.7 s | 0.012 |
+
+Agent against the basic (served) search, real-estate sets (the agent was measured there):
+
+| Set | System | hit@1 | hit@10 | MRR | p50 | $/query |
+|---|---|---|---|---|---|---|
+| test_re (82) | basic | 0.91 | 0.99 | 0.94 | 5.6 s | 0.012 |
+| | agent + reranker | 0.87 | 0.99 | 0.92 | 5.0 s | 0.016 |
+| real_re (83 real questions) | basic | 0.93 | 0.96 | 0.94 | 5.7 s | 0.012 |
+| | agent + reranker | 0.86 | 0.95 | 0.88 | 9.6 s | 0.023 |
+
+The agent is kept as a mode, not the default: it costs more and is not more accurate.
+
+### By language and file type (labor test set, hit@10 / MRR)
+
+| Slice | n | hybrid | served |
+|---|---|---|---|
+| Korean question -> Korean document | 155 | 0.91 / 0.69 | 0.97 / 0.92 |
+| Korean -> English | 49 | 0.47 / 0.12 | 0.94 / 0.84 |
+| English -> English | 68 | 0.97 / 0.79 | 0.99 / 0.91 |
+| English -> Korean | 66 | 0.53 / 0.23 | 0.95 / 0.89 |
+| text PDF | 160 | 0.78 / 0.54 | 0.97 / 0.91 |
+| HWPX | 58 | 0.78 / 0.54 | 0.93 / 0.91 |
+| DOCX | 57 | 0.82 / 0.60 | 1.00 / 0.90 |
+| scanned PDF (OCR) | 54 | 0.72 / 0.44 | 0.94 / 0.85 |
+| answer in a table | 36 | 0.75 / 0.43 | 0.97 / 0.90 |
+
+Every set and slice: `data/eval/results/retrieval-70docs/<set>/summary.md`.
+
 ## For evaluators
 
 - **Service**: <URL, filled in at deployment> - up from submission to 2026-12-07 and on
