@@ -66,3 +66,48 @@ def correct_user_v3(question: str, reference: str, passage: str, candidate: str,
     cited = "\n\n".join(f"[{n}] {s[:2000]}" for n, s in sources) or "(none)"
     return (f"Question: {question}\nReference answer: {reference}\nPassage: {passage}\n"
             f"Today: {today}\n\nCandidate answer: {candidate}\n\nCandidate's cited sources:\n{cited}")  # fmt: skip
+
+
+def wide_passage(client, index: str, doc_id: str, spans: list[tuple[int, int]],
+                 extra: list[str] = (), limit: int = 14000) -> str:  # fmt: skip
+    """The judge's passage for judge v4: the chunks of ``doc_id`` that hold the gold
+    spans (start, end), widened to the run of chunks under the same heading (a table or
+    a long article split into pieces) and one chunk on each side (the next article: an
+    exemption, a delegated rule), plus ``extra`` chunk ids, in document order.
+
+    Why: with only the gold article, judge v2 made 15 errors in 80 grades on the
+    one-file comparison (data/eval/single_file/regrade20.json), all from what the
+    passage left out (rows 2-3 of a table in later chunks, an exemption in the next
+    article). Long chunks are cut around the gold; the whole is capped at ``limit``."""
+    body = {"size": 5000, "_source": ["chunk_id", "heading", "start", "end", "text"],
+            "sort": [{"start": "asc"}], "query": {"term": {"doc_id": doc_id}}}  # fmt: skip
+    chunks = [h["_source"] for h in client.search(index=index, body=body)["hits"]["hits"]]
+    gold = {i for i, c in enumerate(chunks) for a, b in spans if c["start"] < b and c["end"] > a}
+    keep = set(gold)
+    for i in gold:
+        head, j = chunks[i].get("heading"), i
+        while head and j > 0 and chunks[j - 1].get("heading") == head:
+            j -= 1
+            keep.add(j)
+        j = i
+        while head and j + 1 < len(chunks) and chunks[j + 1].get("heading") == head:
+            j += 1
+            keep.add(j)
+    for i in list(keep):
+        keep |= {k for k in (i - 1, i + 1) if 0 <= k < len(chunks)}
+    keep |= {i for i, c in enumerate(chunks) if c["chunk_id"] in extra}
+    parts, total = [], 0
+    order = sorted(keep, key=lambda i: (i not in gold, i))  # gold first under the cap
+    picked = []
+    for i in order:
+        c, text = chunks[i], chunks[i]["text"]
+        if len(text) > 4000:
+            at = next((a - c["start"] for a, b in spans if c["start"] < b and c["end"] > a), 0)
+            at = max(0, at)
+            text = ("…" if at > 1500 else "") + text[max(0, at - 1500) : at + 2500] + "…"
+        if total + len(text) > limit and i not in gold:
+            continue
+        total += len(text)
+        picked.append((i, f"[{c.get('heading') or ''}]\n{text}"))
+    parts = [p for _, p in sorted(picked)]
+    return "\n\n".join(parts)

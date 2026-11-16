@@ -1,0 +1,722 @@
+[
+ {
+  "qid": "g0029",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "updated annually, beginning January 1, 2016",
+  "why": "The candidate answer states the key fact that the update is annual, which matches the passage's requirement for annual updates starting January 1, 2016."
+ },
+ {
+  "qid": "g0029",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "updated annually, beginning January 1, 2016",
+  "why": "The candidate answer correctly states that the minimum wage rate is updated once a year, which matches the key fact from the passage that it is determined on an annual basis starting January 1, 2016."
+ },
+ {
+  "qid": "g0029",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "updated annually, beginning January 1, 2016",
+  "why": "The candidate answer states the key fact that the update is annual, matching the passage's requirement for annual adjustments starting January 1, 2016."
+ },
+ {
+  "qid": "g0029",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "updated annually, beginning January 1, 2016",
+  "why": "The candidate answer correctly states that the minimum wage rate is updated annually, which matches the key fact from the passage."
+ },
+ {
+  "qid": "g0143",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "FLSA does not restrict forms of remuneration if regular rate meets minimum wage and overtime is 1.5 times regular rate",
+  "why": "The candidate states the key fact that the law allows various pay structures as long as minimum wage and overtime requirements are met, matching the passage."
+ },
+ {
+  "qid": "g0143",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "wrong",
+  "key_fact": "FLSA does not restrict forms of remuneration as long as regular rate meets minimum wage and overtime is paid at 1.5 times regular rate",
+  "why": "The candidate answer incorrectly states 'No' and emphasizes additional conditions, contradicting the passage's clear statement that the law generally does not restrict pay structures beyond those basic requirements."
+ },
+ {
+  "qid": "g0143",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "FLSA does not restrict forms of remuneration if regular rate meets minimum wage and overtime is 1.5 times regular rate",
+  "why": "The candidate answer states the key fact that the FLSA generally allows any pay structure as long as minimum wage and overtime requirements are met, matching the passage's condition."
+ },
+ {
+  "qid": "g0143",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "wrong",
+  "key_fact": "FLSA does not restrict forms of remuneration if regular rate meets minimum wage and overtime is 1.5 times regular rate",
+  "why": "The candidate incorrectly states 'No, the law does not allow any pay structure,' contradicting the passage's clear statement that the FLSA generally does not restrict the forms of remuneration as long as minimum wage and overtime requirements are met."
+ },
+ {
+  "qid": "g0233",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "임신 기간 중에 별표 3에 따른 질환을 진단받은 경우",
+  "why": "The candidate answer correctly states the key fact from the passage that a pregnant worker is considered at risk of miscarriage or premature birth if diagnosed with a disease listed in Appendix 3."
+ },
+ {
+  "qid": "g0233",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "임신 기간 중에 별표 3에 따른 질환을 진단받은 여성 근로자",
+  "why": "The candidate answer correctly states that a pregnant worker is considered at risk of miscarriage or premature birth if diagnosed with a disease listed in Appendix 3 during pregnancy, which matches the key fact from the passage."
+ },
+ {
+  "qid": "g0233",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "임신 기간 중에 별표 3에 따른 질환을 진단받은 여성 근로자",
+  "why": "The candidate answer correctly states the key fact from the passage (Article 12-3) that a pregnant worker is considered at risk if diagnosed with a disease listed in Appendix 3, and it provides additional correct details about the categories and conditions without contradicting the passage."
+ },
+ {
+  "qid": "g0233",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "임신 기간 중에 별표 3에 따른 질환을 진단받은 경우",
+  "why": "The candidate answer correctly states the key fact from the passage that a pregnant worker is considered at risk of miscarriage or premature birth if diagnosed with a disease listed in 별표 3 during pregnancy."
+ },
+ {
+  "qid": "g0266",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "대한상공회의소, 중소기업중앙회, 소상공인연합회, 고용노동부장관 지정·고시 전국적 사용자단체",
+  "why": "The candidate answer lists all four categories of organizations that can represent employers in objecting to a minimum wage proposal, exactly as specified in the passage."
+ },
+ {
+  "qid": "g0266",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "대한상공회의소, 중소기업중앙회, 소상공인연합회, 고용노동부장관이 지정·고시하는 전국적 규모 사용자단체",
+  "why": "The candidate answer correctly lists all four categories of organizations that can represent employers in objecting to a minimum wage proposal as specified in the passage."
+ },
+ {
+  "qid": "g0266",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "대한상공회의소, 중소기업중앙회, 소상공인연합회, 고용노동부장관 지정·고시 전국적 사용자단체",
+  "why": "The candidate answer lists all four categories of user-representative organizations exactly as specified in the passage."
+ },
+ {
+  "qid": "g0266",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "대한상공회의소, 중소기업중앙회, 소상공인연합회, 고용노동부장관 지정·고시 전국적 사용자단체",
+  "why": "The candidate answer lists all four categories of organizations that can represent employers in objecting to a minimum wage proposal, exactly as specified in the passage."
+ },
+ {
+  "qid": "g0274",
+  "field": "labor",
+  "system": "ours",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "written employment contract stating wages, working hours, and other conditions, including those in Article 17 of the Act on the Protection, etc. of Fixed-Term and Part-Time Workers",
+  "why": "The candidate answer correctly states all key facts from the passage: the requirement for a written contract clearly stating wages, working hours, and other conditions, and the inclusion of conditions specified in Article 17 of the relevant Act."
+ },
+ {
+  "qid": "g0274",
+  "field": "labor",
+  "system": "claude",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "a written employment contract clearly stating wages, working hours, and other working conditions, including those in Article 17 of the Act on the Protection, etc. of Fixed-Term and Part-Time Workers",
+  "why": "The candidate answer correctly states the key fact from the passage that an employer must provide a part-time worker with a written contract specifying wages, working hours, and other conditions, including those from the cited Act."
+ },
+ {
+  "qid": "g0274",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "a written employment contract clearly stating wages, working hours, and other working conditions, including those in Article 17 of the Act on the Protection, etc. of Fixed-Term and Part-Time Workers",
+  "why": "The candidate answer correctly states the key fact that the employer must provide a written contract specifying wages, working hours, and other conditions, and explicitly mentions the inclusion of conditions from Article 17 of the relevant Act."
+ },
+ {
+  "qid": "g0274",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "written employment contract stating wages, working hours, and other conditions, including those in Article 17 of the Act on the Protection, etc. of Fixed-Term and Part-Time Workers",
+  "why": "The candidate answer correctly states the key fact from the passage that the employer must provide a written contract with the specified details."
+ },
+ {
+  "qid": "g0276",
+  "field": "labor",
+  "system": "ours",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "300만원 과태료",
+  "why": "The candidate correctly states the key fact of a 3 million won administrative fine for submitting false male/female workforce status, as specified in the passage."
+ },
+ {
+  "qid": "g0276",
+  "field": "labor",
+  "system": "claude",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "과태료 300만원",
+  "why": "The candidate correctly states the key fact that the penalty is a 3 million won administrative fine, as specified in the passage for submitting false male/female worker status reports."
+ },
+ {
+  "qid": "g0276",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": true,
+  "grade": "wrong",
+  "key_fact": "300만원 과태료 (법 제39조제4항제3호)",
+  "why": "The candidate states the fine is 2 million won for a different violation (false reporting under Article 31), but the passage specifies 3 million won for false submission of the male/female workforce status under Article 39(4)3."
+ },
+ {
+  "qid": "g0276",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "과태료 300만원",
+  "why": "The candidate correctly states the key fact that the fine is 3 million won, as specified in the passage for submitting false male/female worker status reports."
+ },
+ {
+  "qid": "g0327",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "written and apparatus tests in parallel, apparatus test can be omitted if head of employment security agency approves",
+  "why": "The candidate correctly states both the standard method (written and apparatus tests in parallel) and the condition under which the apparatus test can be skipped (if the head of the employment security agency approves)."
+ },
+ {
+  "qid": "g0327",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "written and apparatus tests together, apparatus test can be omitted if head of employment security agency approves",
+  "why": "The candidate correctly states both the methods (written and apparatus tests) and the condition under which the apparatus test can be skipped."
+ },
+ {
+  "qid": "g0327",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "written and apparatus tests, apparatus test can be omitted if head of employment security agency approves",
+  "why": "The candidate correctly states the two methods and the condition under which the apparatus test can be skipped, matching the passage."
+ },
+ {
+  "qid": "g0327",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "written and apparatus tests in parallel, apparatus test can be omitted if head of employment security agency approves",
+  "why": "The candidate correctly states the two methods and the condition under which the apparatus test can be skipped, matching the passage."
+ },
+ {
+  "qid": "g0396",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "additional safety and health education required for hazardous or dangerous work",
+  "why": "The candidate correctly states that additional education is required when assigning workers to hazardous or dangerous work, which matches the key fact from the passage."
+ },
+ {
+  "qid": "g0396",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "additional safety and health education required for hazardous or dangerous work",
+  "why": "The candidate answer correctly states the key fact from Article 29(3) that additional education is required when assigning workers to hazardous or dangerous work."
+ },
+ {
+  "qid": "g0396",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "additional safety and health education required for hazardous or dangerous work",
+  "why": "The candidate correctly states that the employer must provide additional safety and health education when assigning workers to hazardous or dangerous work, as per Article 29(3) of the passage."
+ },
+ {
+  "qid": "g0396",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "additional safety and health education required for hazardous or dangerous work",
+  "why": "The candidate correctly states the key fact that additional education is required when assigning workers to hazardous or dangerous work, as per the passage."
+ },
+ {
+  "qid": "g0399",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "from the date the attached doctor's diagnosis certificate is issued, or from the date the severe treatment status occurred or changed if that date can be clearly identified",
+  "why": "The candidate answer accurately states both the general rule and the exception as specified in the passage."
+ },
+ {
+  "qid": "g0399",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "from the date the doctor's diagnosis certificate is issued, or from the date the severe condition arose or changed if that date is clearly identifiable",
+  "why": "The candidate answer correctly states both the general rule and the exception for the effective date of the severe treatment status rating as specified in the passage."
+ },
+ {
+  "qid": "g0399",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "from the date the attached doctor's diagnosis certificate is issued, or from the date the severe treatment status occurred or changed if that date can be clearly identified",
+  "why": "The candidate answer correctly states both the general rule and the exception as specified in the passage."
+ },
+ {
+  "qid": "g0399",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "from the date the attached doctor's diagnosis certificate is issued, or from the date the severe treatment status occurred or changed if that date can be clearly identified",
+  "why": "The candidate answer accurately states both conditions for when the severe treatment status rating takes effect as specified in the passage."
+ },
+ {
+  "qid": "g0412",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "24시간 이상",
+  "why": "The candidate answer correctly states the key fact from the passage that the refresher training time for a safety manager is 24 hours or more."
+ },
+ {
+  "qid": "g0412",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "24시간 이상",
+  "why": "The candidate answer correctly states the key fact that the refresher training time for a safety manager is 24 hours or more, as specified in the passage."
+ },
+ {
+  "qid": "g0412",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "24시간 이상",
+  "why": "The candidate answer correctly states the key fact that the refresher training time for a safety manager is 24 hours or more, as specified in the passage."
+ },
+ {
+  "qid": "g0412",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "24시간 이상",
+  "why": "The candidate answer correctly states the key fact that the refresher training time for a safety manager is 24 hours or more, as specified in the passage."
+ },
+ {
+  "qid": "g0558",
+  "field": "labor",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "member continues duties until successor elected",
+  "why": "The candidate correctly states the key fact from Article 8(3) that a member continues performing duties until a successor is elected."
+ },
+ {
+  "qid": "g0558",
+  "field": "labor",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "continue duties until successor elected",
+  "why": "The candidate answer directly quotes and correctly states the key fact from Article 8(3) of the passage."
+ },
+ {
+  "qid": "g0558",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "continue duties until successor elected",
+  "why": "The candidate correctly states that a member continues performing duties after term expiration until a successor is elected, matching the key fact from Article 8(3) of the passage."
+ },
+ {
+  "qid": "g0558",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "member continues duties until successor elected",
+  "why": "The candidate correctly states the key fact from Article 8(3) that a member whose term has ended continues performing duties until a successor is elected."
+ },
+ {
+  "qid": "g0597",
+  "field": "labor",
+  "system": "ours",
+  "fixed": true,
+  "grade": "wrong",
+  "key_fact": "certificate stating employee needed to care for family member with serious health condition on leave expiration date is sufficient for excusing failure to return (premium recovery), not for granting leave",
+  "why": "The candidate incorrectly states that a certificate with details like onset date, duration, and medical facts is required for leave approval, whereas the passage indicates such a certificate is sufficient only for excusing failure to return under §2614(c), not for granting the leave itself."
+ },
+ {
+  "qid": "g0597",
+  "field": "labor",
+  "system": "claude",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "certificate alone is not sufficient for leave approval; initial certification requires more details",
+  "why": "The candidate correctly states that a certificate showing the family member's serious health condition on the leave expiration date is not sufficient for approving the leave itself, as the initial certification for FMLA leave requires additional details such as the start date, expected duration, medical facts, and the employee's need to provide care, per §2613."
+ },
+ {
+  "qid": "g0597",
+  "field": "labor",
+  "system": "chatgpt",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "certificate stating employee needed to care for family member with serious health condition on leave expiration date is sufficient for excusing failure to return, not for approving leave",
+  "why": "The candidate correctly distinguishes that a certificate showing the family member had a serious health condition on the leave expiration date is sufficient only for excusing the failure to return to work (preventing premium recovery under §2614(c)), not for approving the leave itself, which follows separate certification rules."
+ },
+ {
+  "qid": "g0597",
+  "field": "labor",
+  "system": "ours_now",
+  "fixed": true,
+  "grade": "wrong",
+  "key_fact": "certificate stating employee needed to care for family member with serious health condition on leave expiration date is sufficient for excusing failure to return (premium recovery), not for granting leave",
+  "why": "The candidate incorrectly states that a certificate with details like onset date, expected duration, medical facts, and required time is needed for leave approval, whereas the passage indicates such a certificate is sufficient only for excusing failure to return under §2614(c), not for granting the leave itself."
+ },
+ {
+  "qid": "r0015",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": false,
+  "grade": "wrong",
+  "key_fact": "300,000 won",
+  "why": "The passage states the fine for failing to display the registered office certificate (법 제17조 위반) is 300,000 won, but the candidate answer incorrectly states it as 300,000 won, which is a different amount."
+ },
+ {
+  "qid": "r0015",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "300,000 won",
+  "why": "The candidate answer correctly states the fine amount of 300,000 won (30만원) as specified in the passage for violating Article 17 by failing to display the registration certificate."
+ },
+ {
+  "qid": "r0015",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "wrong",
+  "key_fact": "300,000 won",
+  "why": "The passage states the fine is 30만원 (300,000 won), but the candidate incorrectly states it as KRW 300,000 (₩300,000) which is the same amount but misrepresents the source as stating a different figure."
+ },
+ {
+  "qid": "r0015",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "wrong",
+  "key_fact": "30만원 (300,000 won)",
+  "why": "The candidate states the fine is 300,000 won, but the passage specifies the fine for violating Article 17 (failing to display the registration certificate) is 30만원, which is 300,000 won, but the candidate's number is incorrectly formatted or interpreted as 300,000 won which is actually 30만원, but the reference answer says 300,000 won which matches the passage's 30만원, so the candidate is correct in value but the passage shows '30만원' and the candidate says '300,000 won' which is the same, so it's correct. Wait, re-evaluating: The passage under '파.' lists '법 제17조를 위반하여 중개사무소등록증 등을 게시하지 않은 경우' with a fine of '30만원'. 30만원 is 300,000 won. The candidate says '300,000 won'. That is the same amount. So the key fact is 300,000 won (30만원). The candidate states that exactly. Therefore, it is correct. The reference answer also says 300,000 won. So the candidate is correct."
+ },
+ {
+  "qid": "r0031",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "unlawful to retaliate for assisting in a Fair Housing Act proceeding",
+  "why": "The candidate states the key fact that retaliation for assisting in a Fair Housing Act proceeding is unlawful, which matches the passage's prohibition on interference, coercion, or intimidation."
+ },
+ {
+  "qid": "r0031",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "unlawful to threaten or interfere because person aided another in exercising fair housing rights",
+  "why": "The candidate correctly states the key fact from § 100.400(b) that it is unlawful to coerce, intimidate, threaten, or interfere with a person for aiding another in exercising rights protected by the Fair Housing Act, which directly addresses the question."
+ },
+ {
+  "qid": "r0031",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "threatening eviction for aiding a discrimination complaint is prohibited",
+  "why": "The candidate correctly states that the landlord's threat is illegal under § 100.400(b) and (c), which prohibit such retaliation for aiding another person's exercise of fair housing rights."
+ },
+ {
+  "qid": "r0031",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "threatening eviction for aiding a discrimination complaint is prohibited interference/coercion/intimidation",
+  "why": "The candidate states the key fact that such conduct is unlawful under the Fair Housing Act, citing the relevant prohibitions on interference, coercion, intimidation, and retaliation."
+ },
+ {
+  "qid": "r0037",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": true,
+  "grade": "partial",
+  "key_fact": "deposit exceeds amount set by Presidential Decree after committee deliberation",
+  "why": "The candidate correctly identifies the deposit threshold as a key exception but incorrectly adds a 'temporary use' exception and misstates the scope of exclusions for key money protection, which are not general exceptions to the law's application but specific to certain provisions."
+ },
+ {
+  "qid": "r0037",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": true,
+  "grade": "partial",
+  "key_fact": "leases where the deposit exceeds the amount set by Presidential Decree after deliberation by the Commercial Building Lease Committee",
+  "why": "The candidate correctly identifies the deposit threshold as a key exclusion but also lists other conditions (e.g., building not subject to business registration, temporary-use lease) that are not stated in the passage as making the law not apply, thereby partially misrepresenting the scope of the question."
+ },
+ {
+  "qid": "r0037",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": true,
+  "grade": "partial",
+  "key_fact": "leases whose deposit exceeds the amount set by Presidential Decree after deliberation by the Commercial Building Lease Committee",
+  "why": "The candidate correctly identifies the deposit threshold exclusion but incorrectly includes 'temporary-use leases' and 'non-commercial premises' as cases where the law does not apply, which are not stated in the passage as exclusions from the Act's applicability under Article 2."
+ },
+ {
+  "qid": "r0037",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": true,
+  "grade": "partial",
+  "key_fact": "leases where the deposit exceeds the amount set by Presidential Decree",
+  "why": "The candidate correctly identifies the deposit threshold as a key exception but incorrectly adds other exceptions (temporary use, specific property types for key money protection) not stated in the passage as general non-applications of the law."
+ },
+ {
+  "qid": "r0051",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "법무부장관이 법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 위촉, 임기 2년",
+  "why": "The candidate answer correctly states both the qualification (expertise in law, economics, or real estate studies) and the term (2 years) as specified in the passage."
+ },
+ {
+  "qid": "r0051",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 법무부장관이 위촉, 임기 2년",
+  "why": "The candidate answer correctly states both the qualification (from people with expertise and experience in law, economics, or real estate, appointed by the Minister of Justice) and the term (2 years) as specified in the passage."
+ },
+ {
+  "qid": "r0051",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 법무부장관이 위촉, 임기 2년",
+  "why": "The candidate answer correctly states both the qualification (academic background and experience in law, economics, or real estate) and the appointment authority (Minister of Justice) as well as the term (2 years) as specified in the passage."
+ },
+ {
+  "qid": "r0051",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "법학, 경제학 또는 부동산학 등에 학식과 경험을 갖춘 사람 중에서 법무부장관이 위촉, 임기 2년",
+  "why": "The candidate answer correctly states both the qualification (expertise in law, economics, or real estate) and the term (2 years) as specified in the passage."
+ },
+ {
+  "qid": "r0083",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "민원 처리에 관한 법률에 따른 처리기간 내",
+  "why": "The candidate answer correctly states the key fact that the local government must decide and notify the applicant within the processing period set by the Civil Petitions Treatment Act, as specified in the passage."
+ },
+ {
+  "qid": "r0083",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "민원 처리에 관한 법률에 따른 처리기간",
+  "why": "The candidate answer correctly states that the deadline for the local government to decide and notify the applicant is the processing period under the '민원 처리에 관한 법률', as specified in the passage."
+ },
+ {
+  "qid": "r0083",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "민원 처리에 관한 법률에 따른 처리기간 내",
+  "why": "The candidate answer correctly states that the decision must be made and notified within the processing period specified by the 민원 처리에 관한 법률, which is the key fact from the passage."
+ },
+ {
+  "qid": "r0083",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "민원 처리에 관한 법률에 따른 처리기간 내에 허가 여부 결정 및 통지",
+  "why": "The candidate answer correctly states that the local government must decide and notify the applicant within the processing period under the Civil Petitions Treatment Act, as specified in the passage."
+ },
+ {
+  "qid": "r0127",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "Yes, unless impractical due to terrain or unusual site characteristics",
+  "why": "The candidate answer correctly states that covered multifamily dwellings for first occupancy after March 13, 1991, must have at least one building entrance on an accessible route, with the same exception as in the passage."
+ },
+ {
+  "qid": "r0127",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "Yes, unless impractical due to terrain or unusual site characteristics",
+  "why": "The candidate answer correctly states the requirement for at least one accessible entrance and includes the key exception as specified in the passage."
+ },
+ {
+  "qid": "r0127",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "partial",
+  "key_fact": "at least one building entrance on an accessible route, unless impractical due to terrain or unusual site characteristics",
+  "why": "The candidate correctly states the requirement and the exception, but incorrectly cites § 100.205(c)(1) for the building entrance requirement, which is actually in § 100.205(a)."
+ },
+ {
+  "qid": "r0127",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "Yes, unless impractical due to terrain or unusual site characteristics",
+  "why": "The candidate answer correctly states the requirement and the exception as specified in the passage."
+ },
+ {
+  "qid": "r0164",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "the most recent date the servicer received the complete loss mitigation application (e.g., March 21 in the example)",
+  "why": "The candidate answer correctly states that the servicer must list the date the complete application was received after resubmission, which matches the key fact from the passage."
+ },
+ {
+  "qid": "r0164",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "the most recent date the servicer received the complete loss mitigation application",
+  "why": "The candidate correctly states that the servicer must list the date the borrower subsequently completes the application, as shown in the passage's example where March 21 is disclosed after resubmission."
+ },
+ {
+  "qid": "r0164",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "the most recent date the servicer received the complete loss mitigation application",
+  "why": "The candidate answer correctly states that the servicer must list the most recent date the complete application was received, which matches the key fact from the passage."
+ },
+ {
+  "qid": "r0164",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": false,
+  "grade": "correct",
+  "key_fact": "the most recent date the servicer received the complete loss mitigation application (e.g., March 21)",
+  "why": "The candidate answer correctly states that the servicer must list the date the borrower subsequently completes the application as the receipt date, matching the passage's example and requirement."
+ },
+ {
+  "qid": "r0176",
+  "field": "real-estate",
+  "system": "ours",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "공무원증과 별지 제26호서식 증명서 (중개사무소), 공무원증과 별지 제27호서식 증명서 (협회)",
+  "why": "The candidate answer correctly states both required documents for each inspection scenario as specified in the passage."
+ },
+ {
+  "qid": "r0176",
+  "field": "real-estate",
+  "system": "claude",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "공무원증 및 별지 제26호서식의 중개사무소조사·검사증명서",
+  "why": "The candidate answer correctly states the two required documents (public official ID and the specified form) as stipulated in the passage for inspecting a brokerage office."
+ },
+ {
+  "qid": "r0176",
+  "field": "real-estate",
+  "system": "chatgpt",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "공무원증 및 별지 제26호서식의 중개사무소조사·검사증명서",
+  "why": "The candidate answer correctly states both required documents for inspecting a brokerage office as specified in the passage."
+ },
+ {
+  "qid": "r0176",
+  "field": "real-estate",
+  "system": "ours_now",
+  "fixed": true,
+  "grade": "correct",
+  "key_fact": "공무원증과 별지 제26호서식 중개사무소조사·검사증명서 (중개사무소), 공무원증과 별지 제27호서식 한국공인중개사협회조사·검사증명서 (협회)",
+  "why": "The candidate answer correctly states both required certificates for each inspection scenario as specified in the passage."
+ }
+]

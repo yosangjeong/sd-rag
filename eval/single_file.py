@@ -27,7 +27,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 from evalset import DATA, LLM_CACHE, doc_texts, load_items, overlaps
-from judges import correct_prompt, correct_user
+from judges import correct_prompt, correct_user, wide_passage
 
 from sdrag.agent.answer import answer
 from sdrag.common.config import settings
@@ -267,12 +267,15 @@ def grade_full() -> None:
     the references checked against the statutes (fixes20.json) and the whole articles
     as the passage instead of the gold sentence. Writes grades20.json.
     ``--skip-fix r0176 ...``: grade those rows with their original reference and passage
-    (a fix made after the answers were seen is shown both ways)."""
+    (a fix made after the answers were seen is shown both ways). ``--wide``: the passage
+    of judge v4 (judges.wide_passage), writes grades20-wide.json."""
     rows = {r["qid"]: r for r in csv.DictReader(CSV.open(encoding="utf-8"))}
     qids = json.loads((OUT / "subset20.json").read_text("utf-8"))["qids"]
     fixes = json.loads((OUT / "fixes20.json").read_text("utf-8"))["fixes"]
     skip = sys.argv[sys.argv.index("--skip-fix") + 1 :] if "--skip-fix" in sys.argv else []
+    skip = [q for q in skip if not q.startswith("--")]
     fixes = {q: f for q, f in fixes.items() if q not in skip}  # as graded before that fix
+    wide = "--wide" in sys.argv
     items = {
         i.qid: i for s in ("test.jsonl", "test_re.jsonl") for i in load_items(DATA / "eval" / s)
     }
@@ -287,7 +290,13 @@ def grade_full() -> None:
     for q in qids:
         r, fix = rows[q], fixes.get(q, {})
         reference = fix.get("reference", r["reference"])
-        passage = whole_passage(client, items[q], fix.get("extra_chunks", []))
+        if wide:  # judge v4's passage (judges.wide_passage)
+            it = items[q]
+            spans = [(g.start, g.end) for g in [*it.gold, *it.also] if g.doc_id == it.gold[0].doc_id]
+            passage = wide_passage(client, settings.index, it.gold[0].doc_id, spans,
+                                   fix.get("extra_chunks", []))  # fmt: skip
+        else:
+            passage = whole_passage(client, items[q], fix.get("extra_chunks", []))
         jobs += [(q, s, correct_user(r["question"], reference, passage, r[s])) for s in systems]
 
     def one(job):  # the judge is slow some days: a few calls at a time
@@ -301,7 +310,7 @@ def grade_full() -> None:
 
     with ThreadPoolExecutor(4) as ex:
         grades = list(ex.map(one, jobs))
-    name = "grades20" + "".join(f"-skip-{q}" for q in skip) + ".json"
+    name = "grades20" + "".join(f"-skip-{q}" for q in skip) + ("-wide" if wide else "") + ".json"
     (OUT / name).write_text(json.dumps(grades, ensure_ascii=False, indent=1), "utf-8")
     for field in ("labor", "real-estate", None):
         for system in systems:

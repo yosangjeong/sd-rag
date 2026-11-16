@@ -983,8 +983,18 @@ answer) on claude.ai (Sonnet 5.5) and chatgpt.com (GPT-6). Details and table:
   19/0/1. On one file the three are level; the brief's target (as good as Claude /
   ChatGPT on one file) is met, not exceeded.
 - What the judge taught: a whole article is not always enough; a table or a cross-reference
-  needs the neighbouring chunks. For the final re-measure the passage should be the gold
-  chunks plus the chunks of the same heading (one table) — not yet done.
+  needs the neighbouring chunks. Judge v4's passage (`eval/judges.wide_passage`): the gold
+  chunks, the run of chunks under the same heading, one chunk on each side, capped at
+  14,000 characters. Measured the same day: agreement with the hand-read grades on these
+  80, 65 -> 68 (7 fixed: split table, next-article exemption; 4 new errors: with the wider
+  fine table the judge called 30만원 and 300,000 won different, r0015 x3); with the human's
+  19 v8 grades 14 of 19, against 15 with passages picked by hand per item. So v4 gives the
+  hand-picked quality automatically, not more: the final re-measure uses it, and the
+  re-read of every non-correct grade stays a required step.
+- Yes/no openers: of the 47 stored answers that open with yes/no (v11-final, v14 dev, the
+  20 served answers), 5 (about 11%) open with the word their own body contradicts
+  (g0036 twice, r0082, r0178, g0143), mostly an English "Yes" before a negative
+  conclusion; the judge graded 2 of them correct.
 - Two real faults in our served answers, both noted in limitations: a yes/no question
   opened with the wrong word against its own body (g0143, like r0082), and 권리금 glossed as
   "Jeonsegeum" in an English answer (r0037).
