@@ -960,6 +960,35 @@ grading page showed the whole articles and the corrected references.
   articles, and the user hand-grades a new 20 from it, references checked against the
   articles first.
 
+## One file: Claude and ChatGPT compared (2026-11-16)
+
+The user ran the 20 chosen rows (`data/eval/single_file/subset20.json`, fixed before any
+answer) on claude.ai (Sonnet 5.5) and chatgpt.com (GPT-6). Details and table:
+`data/eval/single_file/README.md`.
+
+- References first, against whole articles (`fixes20.json`): 5 of 20 corrected. g0597's
+  sentence (a certification "shall be sufficient") governs premium recovery after a failure
+  to return, not approving leave, so the reference "yes" was wrong; r0176 was written from
+  the association-inspection article for a broker-inspection question. r0176 was found
+  after the answers came in (our served answer cited the other article), so the table shows
+  the grades both ways; it moved every system, not only ours.
+- Our system answered twice: the `ours` column (2026-11-13, an older retrieval path in the
+  eval script, `bilingual_union`) and the served code path (`RagService.ask`, wide pool,
+  statute terms), the code as committed before the other answers were seen. The served one
+  is the number reported; the old one stays as the pre-registered record.
+- Judge v2 with the whole articles still made 15 errors in 80 grades, all from what its
+  passage left out (a table split across chunks, a neighbouring article). Every
+  non-correct grade was re-read by hand (`regrade20.json`, each change with its rule,
+  applied to every system on the item). After that: ours 19/1/0, Claude 20/0/0, ChatGPT
+  19/0/1. On one file the three are level; the brief's target (as good as Claude /
+  ChatGPT on one file) is met, not exceeded.
+- What the judge taught: a whole article is not always enough; a table or a cross-reference
+  needs the neighbouring chunks. For the final re-measure the passage should be the gold
+  chunks plus the chunks of the same heading (one table) — not yet done.
+- Two real faults in our served answers, both noted in limitations: a yes/no question
+  opened with the wrong word against its own body (g0143, like r0082), and 권리금 glossed as
+  "Jeonsegeum" in an English answer (r0037).
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it

@@ -30,7 +30,12 @@ Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real esta
 which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
 passage; questions the corpus cannot answer declined 67% / 90%; the other country's law cited
 0 times. Every figure in an answer (period, ratio, amount) is checked against the cited sources
-before it is shown. How far the judge can be
+before it is shown.
+
+On one uploaded file, against Claude (Sonnet 5.5) and ChatGPT (GPT-6) on the same 20
+questions (2026-11-16, references checked against the statutes, non-correct grades re-read
+by hand): ours 19 correct and 1 partial (served code), Claude 20, ChatGPT 19 and 1 wrong;
+with 20 questions these are level (`data/eval/single_file/README.md`). How far the judge can be
 trusted, and every choice behind these numbers: `docs/decisions.md`.
 
 ### Ablations (the brief's comparisons)

@@ -24,6 +24,7 @@ import json
 import random
 import sys
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 
 from evalset import DATA, LLM_CACHE, doc_texts, load_items, overlaps
 from judges import correct_prompt, correct_user
@@ -186,5 +187,131 @@ def grade() -> None:
                       f"no answer {c['no_answer'] / n:.0%}")  # fmt: skip
 
 
+NOW = OUT / "ours20_now.json"
+
+
+def ours_now() -> None:
+    """The 20 compared rows answered by the served code path (service.RagService.ask,
+    wide pool, statute terms, reranker, answer step) with the search scoped to the file,
+    as when a user uploads it and asks. The ``ours`` column was made on 2026-11-13 by
+    the older retrieval path (bilingual_union); it stays as it was, fixed before the
+    Claude and ChatGPT answers were seen. This run uses the code as committed before
+    they were seen too (no change since)."""
+    import datetime as dt
+    import subprocess
+
+    from sdrag.service import RagService
+
+    rows = {r["qid"]: r for r in csv.DictReader(CSV.open(encoding="utf-8"))}
+    qids = json.loads((OUT / "subset20.json").read_text("utf-8"))["qids"]
+    items = {
+        i.qid: i for s in ("test.jsonl", "test_re.jsonl") for i in load_items(DATA / "eval" / s)
+    }
+    client = make_client(settings.opensearch_url, settings.aws_region)
+    emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
+    service = RagService(client, settings.index, emb,
+                         BedrockChat(settings.llm_model, settings.aws_region))  # fmt: skip
+    git = ["git", "rev-parse", "--short", "HEAD"]
+    commit = subprocess.run(git, check=False, capture_output=True, text=True).stdout.strip()
+
+    def one(q):
+        it = items[q]
+        reply = service.ask("eval", rows[q]["question"], scope=[it.gold[0].doc_id])
+        cited = [c.chunk_id for c in reply.answer.citations]
+        top = reply.retrieved[:6]
+        body = {"size": 6, "_source": ["doc_id", "start", "end"], "query": {"terms": {"chunk_id": top}}}
+        srcs = [h["_source"] for h in client.search(index=settings.index, body=body)["hits"]["hits"]]
+        found = any(s["doc_id"] == g.doc_id and s["start"] < g.end and s["end"] > g.start
+                    for s in srcs for g in [*it.gold, *it.also])  # fmt: skip
+        print(q, "gold in top 6:", found, reply.answer.text[:70].replace("\n", " "), flush=True)
+        return q, {"answer": reply.answer.text, "gold_in_sources": found, "cited": cited}
+
+    with ThreadPoolExecutor(4) as ex:
+        out = dict(ex.map(one, qids))
+    meta = {"date": dt.date.today().isoformat(), "commit": commit, "model": settings.llm_model}
+    NOW.write_text(json.dumps({"meta": meta, "answers": out}, ensure_ascii=False, indent=1), "utf-8")
+
+
+def whole_passage(client, it, extra: list[str]) -> str:
+    """The chunks (whole articles) that hold the item's gold spans in its file, plus
+    the extra chunks named in fixes20.json. A long chunk (a big table) is cut to the
+    part around the gold span."""
+    doc = it.gold[0].doc_id
+    seen, parts = set(), []
+    spans = [g for g in [*it.gold, *it.also] if g.doc_id == doc]
+    for g in spans:
+        body = {"size": 5, "_source": ["chunk_id", "heading", "start", "end", "text"],
+                "query": {"bool": {"filter": [{"term": {"doc_id": doc}},
+                                              {"range": {"start": {"lt": g.end}}},
+                                              {"range": {"end": {"gt": g.start}}}]}}}  # fmt: skip
+        for h in client.search(index=settings.index, body=body)["hits"]["hits"]:
+            c = h["_source"]
+            if c["chunk_id"] in seen:
+                continue
+            seen.add(c["chunk_id"])
+            text = c["text"]
+            if len(text) > 4000:
+                at = max(0, g.start - c["start"])
+                text = "…" + text[max(0, at - 1500) : at + 1500] + "…"
+            parts.append(f"[{c.get('heading') or ''}]\n{text}")
+    for cid in extra:
+        if cid not in seen:
+            body = {"size": 1, "_source": ["heading", "text"], "query": {"term": {"chunk_id": cid}}}
+            c = client.search(index=settings.index, body=body)["hits"]["hits"][0]["_source"]
+            parts.append(f"[{c.get('heading') or ''}]\n{c['text']}")
+    return "\n\n".join(parts)
+
+
+def grade_full() -> None:
+    """The 20 compared rows (subset20.json), all three systems, graded by judge v2 with
+    the references checked against the statutes (fixes20.json) and the whole articles
+    as the passage instead of the gold sentence. Writes grades20.json.
+    ``--skip-fix r0176 ...``: grade those rows with their original reference and passage
+    (a fix made after the answers were seen is shown both ways)."""
+    rows = {r["qid"]: r for r in csv.DictReader(CSV.open(encoding="utf-8"))}
+    qids = json.loads((OUT / "subset20.json").read_text("utf-8"))["qids"]
+    fixes = json.loads((OUT / "fixes20.json").read_text("utf-8"))["fixes"]
+    skip = sys.argv[sys.argv.index("--skip-fix") + 1 :] if "--skip-fix" in sys.argv else []
+    fixes = {q: f for q, f in fixes.items() if q not in skip}  # as graded before that fix
+    items = {
+        i.qid: i for s in ("test.jsonl", "test_re.jsonl") for i in load_items(DATA / "eval" / s)
+    }
+    client = make_client(settings.opensearch_url, settings.aws_region)
+    judge = CachedChat(BedrockChat(JUDGE_MODEL, settings.aws_region), LLM_CACHE)
+    systems = ("ours", "claude", "chatgpt")
+    if NOW.exists():  # the served code path, run later (ours_now)
+        systems += ("ours_now",)
+        for q, a in json.loads(NOW.read_text("utf-8"))["answers"].items():
+            rows[q]["ours_now"] = a["answer"]
+    jobs = []
+    for q in qids:
+        r, fix = rows[q], fixes.get(q, {})
+        reference = fix.get("reference", r["reference"])
+        passage = whole_passage(client, items[q], fix.get("extra_chunks", []))
+        jobs += [(q, s, correct_user(r["question"], reference, passage, r[s])) for s in systems]
+
+    def one(job):  # the judge is slow some days: a few calls at a time
+        q, system, user = job
+        field = "real-estate" if q.startswith("r") else "labor"
+        out = parse_json(judge.complete(correct_prompt(field, 2), user, max_tokens=400).text) or {}
+        print(q, system, out.get("grade"), flush=True)
+        return {"qid": q, "field": field, "system": system, "fixed": q in fixes,
+                "grade": out.get("grade", "unparsed"), "key_fact": out.get("key_fact", ""),
+                "why": out.get("why", "")}  # fmt: skip
+
+    with ThreadPoolExecutor(4) as ex:
+        grades = list(ex.map(one, jobs))
+    name = "grades20" + "".join(f"-skip-{q}" for q in skip) + ".json"
+    (OUT / name).write_text(json.dumps(grades, ensure_ascii=False, indent=1), "utf-8")
+    for field in ("labor", "real-estate", None):
+        for system in systems:
+            sel = [g for g in grades if g["system"] == system and field in (None, g["field"])]
+            c, n = Counter(g["grade"] for g in sel), len(sel)
+            print(f"{system:8} {field or 'all':12} n={n:3}  correct {c['correct']:2}  partial "
+                  f"{c['partial']:2}  wrong {c['wrong']:2}  no answer {c['no_answer']:2}")  # fmt: skip
+
+
 if __name__ == "__main__":
-    {"select": select, "select-re": select_re, "ours": ours, "grade": grade}[sys.argv[1]]()
+    cmds = {"select": select, "select-re": select_re, "ours": ours, "grade": grade,
+            "ours-now": ours_now, "grade-full": grade_full}  # fmt: skip
+    cmds[sys.argv[1]]()

@@ -1,0 +1,28 @@
+{
+ "note": "Judge grades of the 20 compared rows (grades20.json) re-read by hand on 2026-11-16 against the whole statute text: every item with a non-correct grade for any system, all four answers of that item read (28 answers, 7 items). The reader (Claude) knew which system wrote which answer; to keep it even, each change below states the rule it applies and the same rule was applied to every system on that item. Changed grades only; every other grade in grades20.json stands. Final = judge grade with these changes.",
+ "changes": [
+  {"qid": "g0233", "systems": ["ours", "ours_now", "chatgpt"], "judge": "partial", "final": "correct",
+   "why": "The judge saw only the first piece of 별표 3 (the table is split over four chunks) and called the circulatory and urogenital categories unsupported. They are items 2 and 3 of 별표 3 (kr-labor-standards-rul#33-#35), and the three answers also give the note that those need the pregnancy codes O10-O16/O20-O48. Claude's answer, graded correct, lists the same categories."},
+  {"qid": "g0396", "systems": ["ours", "ours_now"], "judge": "partial", "final": "correct",
+   "why": "The judge called the exemption for workers with experience of the work unsupported; it is Article 30(2) of the same Act (outside the passage). Claude's and ChatGPT's answers state the same exemption and were graded correct."},
+  {"qid": "g0143", "systems": ["claude"], "judge": "wrong", "final": "correct",
+   "why": "Claude opens with 'No. Meeting minimum wage and paying time-and-a-half isn't enough on its own' and then says pay structure is flexible as long as overtime is 1.5 x the regular rate, bonuses included. The conclusion and the body agree and state the key fact (forms of pay are unrestricted if the regular rate meets minimum wage and overtime is 1.5 x the regular rate); the 'No' answers whether 1.5 x a base rate is enough, which the passage supports."},
+  {"qid": "g0143", "systems": ["ours_now"], "judge": "wrong", "final": "partial",
+   "why": "Opens with 'No, the law does not allow any pay structure', then says the FLSA does not restrict the forms of remuneration: the conclusion contradicts its own body and the passage (judge v3's rule: a yes/no answered with a conclusion the rest contradicts is partial). The body is right, so not wrong."},
+  {"qid": "g0597", "systems": ["ours", "ours_now", "claude"], "judge": "wrong", "final": "correct",
+   "why": "The judge followed the bare sentence 'the certification shall be sufficient' and not the corrected reference (fixes20.json): that sentence only applies to an employee who did not return (premium recovery, 2614(c)(3)); approving the leave is 2613(b), which requires the start date, duration, medical facts and the need for care. All three say no and give the 2613(b) contents; Claude also places 2614(c)(3) correctly. This is the criterion written in fixes20.json before the grades were read."},
+  {"qid": "r0037", "systems": ["ours", "ours_now", "claude", "chatgpt"], "judge": "partial", "final": "correct",
+   "why": "All four give the key fact (the deposit threshold of Article 2(1)). The judge marked down true further cases outside its passage: the temporary-use lease (Article 16) and the premium-protection exclusion (Article 10-5), both in the Act, and for Claude not reading Article 2(3), which Claude in fact lists. Note: ours_now glosses 권리금 as 'Key money (Jeonsegeum)', a wrong term (전세금 is a different thing); the statement itself is right."},
+  {"qid": "r0176", "systems": ["chatgpt"], "judge": "partial", "final": "correct",
+   "why": "The judge required the association inspection (Article 27) because the corrected reference mentions it; the question asks about inspecting a broker, which ChatGPT answers exactly (Article 23, form No. 26). The reference's second sentence is context, not part of the key fact."}
+ ],
+ "kept": [
+  {"qid": "g0276", "systems": ["chatgpt"], "grade": "wrong", "why": "200만원 is the amount of row 파 (not cooperating with document checks); the asked row 카 is 300만원."}
+ ],
+ "final_counts": {
+  "ours (2026-11-13 answers, older retrieval path)": {"correct": 20, "partial": 0, "wrong": 0},
+  "ours_now (served code path, 2026-11-16)": {"correct": 19, "partial": 1, "wrong": 0},
+  "claude (Sonnet 5.5, 2026-11-16)": {"correct": 20, "partial": 0, "wrong": 0},
+  "chatgpt (GPT-6, 2026-11-16)": {"correct": 19, "partial": 0, "wrong": 1}
+ }
+}
