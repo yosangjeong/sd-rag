@@ -45,7 +45,11 @@ class BedrockChat:
         self._lock = threading.Lock()
 
     def complete(self, system: str, user: str, max_tokens: int = 1024,
-                 temperature: float = 0.0) -> Completion:  # fmt: skip
+                 temperature: float = 0.0, on_delta=None) -> Completion:  # fmt: skip
+        """on_delta(text): called with each piece of the reply as the model writes it
+        (Converse streaming); the full Completion is returned either way."""
+        if on_delta is not None:
+            return self._stream(system, user, max_tokens, temperature, on_delta)
         r = self.client.converse(
             modelId=self.model_id,
             system=[{"text": system}] if system else [],
@@ -58,6 +62,29 @@ class BedrockChat:
             self.input_tokens += u["inputTokens"]
             self.output_tokens += u["outputTokens"]
         return Completion(text, u["inputTokens"], u["outputTokens"], r["stopReason"])
+
+    def _stream(self, system, user, max_tokens, temperature, on_delta) -> Completion:
+        r = self.client.converse_stream(
+            modelId=self.model_id,
+            system=[{"text": system}] if system else [],
+            messages=[{"role": "user", "content": [{"text": user}]}],
+            inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
+        )
+        parts, stop, u = [], "", {"inputTokens": 0, "outputTokens": 0}
+        for event in r["stream"]:
+            if "contentBlockDelta" in event:
+                piece = event["contentBlockDelta"]["delta"].get("text", "")
+                if piece:
+                    parts.append(piece)
+                    on_delta(piece)
+            elif "messageStop" in event:
+                stop = event["messageStop"].get("stopReason", "")
+            elif "metadata" in event:
+                u = event["metadata"].get("usage", u)
+        with self._lock:
+            self.input_tokens += u["inputTokens"]
+            self.output_tokens += u["outputTokens"]
+        return Completion("".join(parts), u["inputTokens"], u["outputTokens"], stop)
 
 
 class CachedChat:

@@ -21,6 +21,9 @@ and source view also writes an audit record.
 """
 
 import hashlib
+import json
+import queue
+import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -30,6 +33,7 @@ from types import SimpleNamespace
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from sdrag.api import logs_api
@@ -120,18 +124,17 @@ class ChatIn(BaseModel):
     documents: list[str] = Field(default_factory=list, max_length=50)  # search only these
 
 
-@app.post("/api/chat")
-def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> dict:
-    d, rid = deps(), request.state.rid
-    history = []
-    if body.conversation_id:
-        conv = d.store.conversation(user, body.conversation_id)
-        if not conv:
-            raise HTTPException(404, "conversation not found")
-        history = [{"role": m["role"], "text": m["text"]} for m in conv["messages"]]
-    log("question", request_id=rid, user=user_hash(user), mode=body.mode, question=body.message,
-        scope=body.documents)  # fmt: skip
-    reply = d.service.ask(user, body.message, body.mode, rid, history, body.documents)
+def _history(d, user: str, body: ChatIn) -> list[dict]:
+    if not body.conversation_id:
+        return []
+    conv = d.store.conversation(user, body.conversation_id)
+    if not conv:
+        raise HTTPException(404, "conversation not found")
+    return [{"role": m["role"], "text": m["text"]} for m in conv["messages"]]
+
+
+def _finish(d, user: str, body: ChatIn, rid: str, reply) -> dict:
+    """Audit, store both turns, and the response body (both chat endpoints)."""
     citations = [vars(c) for c in reply.answer.citations]
     log("audit", action="search", request_id=rid, user=user_hash(user),
         documents=sorted({c["doc_id"] for c in citations}))  # fmt: skip
@@ -148,6 +151,66 @@ def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> d
             "mode": reply.mode, "latency_ms": round(reply.latency_ms), "steps": reply.steps,
             "searched": reply.question,
             "tokens": {"input": reply.input_tokens, "output": reply.output_tokens}}  # fmt: skip
+
+
+@app.post("/api/chat")
+def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> dict:
+    d, rid = deps(), request.state.rid
+    history = _history(d, user, body)
+    log("question", request_id=rid, user=user_hash(user), mode=body.mode, question=body.message,
+        scope=body.documents)  # fmt: skip
+    reply = d.service.ask(user, body.message, body.mode, rid, history, body.documents)
+    return _finish(d, user, body, rid, reply)
+
+
+@app.post("/api/chat/stream")
+def chat_stream(body: ChatIn, request: Request, user: str = Depends(current_user)):
+    """The same answer as /api/chat, sent as it is made: one JSON object per line
+    (NDJSON) - {"type": "stage", "stage": "searching" | "ranking" | "writing"}, the
+    answer's {"type": "delta", "text": ...} pieces as the model writes them (raw: source
+    numbers not yet renumbered), {"type": "rewrite"} if the figure check sends the draft
+    back, then {"type": "done", ...the /api/chat body} or {"type": "error", ...}. The
+    page shows the deltas, then replaces them with the final text. A line goes out at
+    least every few seconds, so CloudFront's 60 s wait between bytes is not reached by
+    the searches either."""
+    d, rid = deps(), request.state.rid
+    history = _history(d, user, body)  # a 404 here is still a plain HTTP error
+    log("question", request_id=rid, user=user_hash(user), mode=body.mode, question=body.message,
+        scope=body.documents, stream=True)  # fmt: skip
+    events: queue.Queue = queue.Queue()
+    done = object()
+
+    def run() -> None:
+        try:
+            reply = d.service.ask(user, body.message, body.mode, rid, history, body.documents,
+                                  on_event=events.put)  # fmt: skip
+            events.put({"type": "done"} | _finish(d, user, body, rid, reply))
+        except Exception as e:  # noqa: BLE001 - reported in the stream, logged here
+            log(
+                "error",
+                request_id=rid,
+                path="/api/chat/stream",
+                error=f"{type(e).__name__}: {e}"[:500],
+            )
+            events.put({"type": "error", "error": "답변을 만들지 못했습니다", "request_id": rid})
+        finally:
+            events.put(done)
+
+    threading.Thread(target=run, daemon=True).start()
+
+    def lines():
+        while True:
+            try:
+                e = events.get(timeout=10)
+            except queue.Empty:  # a keep-alive while the searches run
+                yield b'{"type": "ping"}\n'
+                continue
+            if e is done:
+                return
+            yield (json.dumps(e, ensure_ascii=False, default=str) + "\n").encode()
+
+    return StreamingResponse(lines(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})  # fmt: skip
 
 
 @app.get("/api/conversations")

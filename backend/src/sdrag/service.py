@@ -64,8 +64,11 @@ class RequestChat:
         self.input_tokens = self.output_tokens = 0
         self.lock = threading.Lock()  # two calls of one request may run at once
 
-    def complete(self, system, user, max_tokens=1024, temperature=0.0):
-        c = self.inner.complete(system, user, max_tokens, temperature)
+    def complete(self, system, user, max_tokens=1024, temperature=0.0, on_delta=None):
+        if on_delta is None:
+            c = self.inner.complete(system, user, max_tokens, temperature)
+        else:
+            c = self.inner.complete(system, user, max_tokens, temperature, on_delta=on_delta)
         with self.lock:
             self.input_tokens += c.input_tokens
             self.output_tokens += c.output_tokens
@@ -92,9 +95,14 @@ class RagService:
         self.answer_chat = answer_chat
 
     def ask(self, user_id: str, question: str, mode: str = "basic", request_id: str = "",
-            history: list[dict] | None = None, scope: list[str] | None = None) -> Reply:  # fmt: skip
+            history: list[dict] | None = None, scope: list[str] | None = None,
+            on_event=None) -> Reply:  # fmt: skip
         """history: the conversation so far (follow-ups are made standalone first);
-        scope: document ids to search in (none: everything the user can see)."""
+        scope: document ids to search in (none: everything the user can see);
+        on_event: the streaming endpoint's callback: {"type": "stage", "stage": ...} as
+        the steps start, then the answer's deltas (agent/answer.py)."""
+        emit = on_event or (lambda e: None)
+        emit({"type": "stage", "stage": "searching"})
         t0 = time.perf_counter()
         chat = RequestChat(self.chat)
         standalone = condense(chat, history or [], question)
@@ -138,6 +146,7 @@ class RagService:
             hits = s.wide(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA,
                           translation=translation, statute_terms=statute_terms)  # fmt: skip
         try:
+            emit({"type": "stage", "stage": "ranking"})
             hits = LlmReranker(chat).rerank(question, hits, s.last_queries or None)
         except Exception as e:  # noqa: BLE001 - the first-stage order is the fallback
             log(
@@ -149,7 +158,8 @@ class RagService:
         log("retrieval", request_id=request_id, mode=mode, country=country,
             results=[{"chunk_id": h.chunk_id, "doc_id": h.source.get("doc_id")} for h in hits[:10]])  # fmt: skip
         if self.answer_chat is None:
-            ans = answer(chat, question, hits[:ANSWER_SOURCES])
+            emit({"type": "stage", "stage": "writing"})
+            ans = answer(chat, question, hits[:ANSWER_SOURCES], on_event=on_event)
         else:
             ans = answer(self.answer_chat, question, hits[:ANSWER_SOURCES])
             chat.input_tokens += ans.input_tokens

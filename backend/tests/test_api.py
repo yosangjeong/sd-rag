@@ -14,9 +14,14 @@ class FakeService:
     def __init__(self):
         self.calls = []
 
-    def ask(self, user, question, mode="basic", request_id="", history=None, scope=None):
+    def ask(self, user, question, mode="basic", request_id="", history=None, scope=None,
+            on_event=None):  # fmt: skip
         self.calls.append((user, question, mode))
         self.history, self.scope = history, scope
+        if on_event:
+            on_event({"type": "stage", "stage": "writing"})
+            for piece in ("30일 ", "전 [1]"):
+                on_event({"type": "delta", "text": piece})
         cite = Citation(1, "kr-a-law#3", "kr-a-law", "법", "제26조", None, None, 0, 10)
         return Reply(Answer("30일 전 [1]", [cite], [cite]), mode, 12.0, 100, 20)
 
@@ -269,3 +274,19 @@ def test_dynamo_store_keeps_one_item_per_message_in_order():
 
     with pytest.raises(ClientError):
         store.add_message("v", conv, {"role": "user", "text": "x"})
+
+
+def test_chat_stream_sends_stages_deltas_then_the_stored_answer(api):
+    import json
+
+    c, _ = api
+    r = c.post("/api/chat/stream", json={"message": "해고 예고는?"}, headers=as_user("alice"))
+    events = [json.loads(x) for x in r.text.splitlines() if x]
+    kinds = [e["type"] for e in events]
+    assert kinds[0] == "stage" and kinds[-1] == "done" and kinds.count("delta") == 2
+    done = events[-1]
+    assert done["answer"] == "30일 전 [1]" and done["citations"][0]["chunk_id"] == "kr-a-law#3"
+    conv = c.get(f"/api/conversations/{done['conversation_id']}", headers=as_user("alice")).json()
+    assert [m["role"] for m in conv["messages"]] == ["user", "assistant"]
+    assert c.post("/api/chat/stream", json={"message": "x", "conversation_id": "nope"},
+                  headers=as_user("alice")).status_code == 404  # fmt: skip

@@ -1029,6 +1029,19 @@ contradicts (above). Two changes:
   the same measure moved 84% -> 92% on 11-15. Adopted; the served re-measure after the
   final deploy shows it on the full sets. Cost estimated under $2 (Bedrock usage shows a day late).
 
+## Streaming the answer (`/api/chat/stream`, 2026-11-16)
+
+The page now asks `/api/chat/stream`, which sends one JSON line per event: the stage
+(searching, ranking, writing), the answer's text as the model writes it (Converse
+streaming, answer step only), and at the end the same body as `/api/chat`, whose final
+text replaces the draft (citations renumbered from 1, the figure check's rewrite and the
+yes/no fix applied; a rewrite is announced and the draft cleared). A keep-alive line goes
+out every 10 s while nothing else does. `/api/chat` is unchanged (evaluation, tests, and
+the page's fallback). Measured locally on one question: first text at 5.1 s and 8.2 s, the
+end 1.8 s later; GLM-4.7 sends about ten pieces, so the gain is mostly the visible stages,
+not a word-by-word answer. To check on the deployment: CloudFront passes the lines through
+unbuffered (content type application/x-ndjson, not in its compression list).
+
 ## Where an answer's time goes (2026-11-16)
 
 The served basic path, each step timed on 10 real dev questions (local, median; total

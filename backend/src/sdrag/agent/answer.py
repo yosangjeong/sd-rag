@@ -147,7 +147,10 @@ RE_WIDE_CITE = re.compile(r"【(\d+)(?:†[^】]*)?】")
 
 
 def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
-           today: dt.date | None = None) -> Answer:  # fmt: skip
+           today: dt.date | None = None, on_event=None) -> Answer:  # fmt: skip
+    """on_event: for the streaming endpoint, called with {"type": "delta", "text": ...} as
+    the first draft is written, and {"type": "rewrite"} if the figure check sends it
+    back (the final text, renumbered, comes with the result)."""
     # the language is fixed here, not left to the model: with Korean sources it drifted
     # into Korean for English questions (eval/answers.py, first run)
     lang = "Korean" if is_korean(question) else "English"
@@ -158,7 +161,11 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
     today = today or dt.datetime.now(KST).date()
     user = (f"Today is {today.isoformat()}.\n\nSources:\n\n{source_block(hits, today, lang == "English")}\n\n"
             f"Question: {question}\n\nAnswer in {lang}.")  # fmt: skip
-    c = chat.complete(SYSTEM, user, max_tokens=max_tokens)
+    if on_event is None:
+        c = chat.complete(SYSTEM, user, max_tokens=max_tokens)
+    else:
+        c = chat.complete(SYSTEM, user, max_tokens=max_tokens,
+                          on_delta=lambda t: on_event({"type": "delta", "text": t}))  # fmt: skip
     text, citations = _cited(strip_think(c.text), hits)
     tokens = [c.input_tokens, c.output_tokens]
     bad = _unsupported(question, text, citations, hits)
@@ -170,6 +177,8 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
         again = (f"{user}\n\nYour previous answer:\n{text}\n\nThese figures in it are not in "
                  f"the sources it cites: {', '.join(bad)}. Check every figure against the sources "
                  "and write the whole answer again, giving each figure as the sources state it.")  # fmt: skip
+        if on_event is not None:
+            on_event({"type": "rewrite"})
         c = chat.complete(SYSTEM, again, max_tokens=max_tokens)
         text, citations = _cited(strip_think(c.text), hits)
         tokens = [tokens[0] + c.input_tokens, tokens[1] + c.output_tokens]

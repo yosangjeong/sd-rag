@@ -246,3 +246,35 @@ def test_an_unusable_ranking_keeps_the_first_stage_order_and_is_logged(capsys):
     hits = [Hit(f"c{i}", 1.0, {"text": f"t{i}", "title": "d"}) for i in range(3)]
     assert [h.chunk_id for h in LlmReranker(Cut()).rerank("q", hits)] == ["c0", "c1", "c2"]
     assert '"rerank_fallback"' in capsys.readouterr().out
+
+
+def test_answer_streams_the_draft_and_returns_the_final_text():
+    class Streaming:
+        name = "fake"
+
+        def complete(self, system, user, max_tokens=1024, temperature=0.0, on_delta=None):
+            text = "2년으로 봅니다 [2]."
+            if on_delta:
+                for piece in ("2년으로 ", "봅니다 [2]."):
+                    on_delta(piece)
+            return Completion(text, 10, 5, "end_turn")
+
+    hits = [
+        Hit(
+            f"c{i}",
+            1.0,
+            {
+                "text": "기간은 2년으로 본다",
+                "title": "법",
+                "heading": "제4조",
+                "doc_id": "kr-x",
+                "start": 0,
+                "end": 9,
+            },
+        )
+        for i in range(2)
+    ]
+    events = []
+    ans = answer(Streaming(), "계약 기간은?", hits, on_event=events.append)
+    assert "".join(e["text"] for e in events if e["type"] == "delta") == "2년으로 봅니다 [2]."
+    assert ans.text == "2년으로 봅니다 [1]."  # renumbered in the final text only

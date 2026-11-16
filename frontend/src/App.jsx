@@ -21,6 +21,14 @@ const EXAMPLES = [
   "미국에서 집주인이 아이가 있다는 이유로 임대를 거절해도 되나요?",
 ];
 
+// what the streaming answer is doing (api.chatStream stages)
+const STAGE = {
+  searching: (mode) => (mode === "agent" ? "에이전트가 검색하는 중" : "근거를 찾는 중"),
+  ranking: () => "찾은 근거를 고르는 중",
+  writing: () => "답을 쓰는 중",
+  rewriting: () => "숫자를 출처와 맞춰 다시 쓰는 중",
+};
+
 const STATUS = { queued: "대기", processing: "처리 중", retrying: "재시도 대기", done: "완료", failed: "실패" };
 
 function Uploads({ onAsk }) {
@@ -97,6 +105,7 @@ export default function App({ user }) {
   const [text, setText] = useState("");
   const [mode, setMode] = useState("basic");
   const [pending, setPending] = useState(false);
+  const [draft, setDraft] = useState(null); // {stage, text} while an answer streams in
   const [source, setSource] = useState(null);
   const [library, setLibrary] = useState([]);
   const [scope, setScope] = useState(""); // "": every document; otherwise one document id
@@ -131,8 +140,20 @@ export default function App({ user }) {
     setText("");
     setMessages((m) => [...m, { role: "user", text: q }]);
     setPending(true);
+    setDraft({ stage: "searching", text: "" });
+    const onEvent = (e) => {
+      if (e.type === "stage") setDraft((d) => ({ ...d, stage: e.stage }));
+      else if (e.type === "delta") setDraft((d) => ({ ...d, text: d.text + e.text }));
+      else if (e.type === "rewrite") setDraft({ stage: "rewriting", text: "" });
+    };
     try {
-      const r = await api.chat(q, convId, mode, scope ? [scope] : []);
+      let r;
+      try {
+        r = await api.chatStream(q, convId, mode, scope ? [scope] : [], onEvent);
+      } catch (err) {
+        if (!String(err.message).startsWith("404") && !String(err.message).startsWith("405")) throw err;
+        r = await api.chat(q, convId, mode, scope ? [scope] : []); // an API without streaming
+      }
       setConvId(r.conversation_id);
       setMessages((m) => [...m, { role: "assistant", text: r.answer, citations: r.citations, mode: r.mode,
                                   unchecked_figures: r.unchecked_figures,
@@ -143,6 +164,7 @@ export default function App({ user }) {
       setMessages((m) => [...m, { role: "assistant", text: `오류: ${err.message}`, citations: [] }]);
     } finally {
       setPending(false);
+      setDraft(null);
     }
   };
   const openSource = async (c) => {
@@ -223,9 +245,10 @@ export default function App({ user }) {
           ))}
           {pending && (
             <div className="msg assistant">
+              {draft?.text ? <p className="draft">{draft.text}</p> : null}
               <p className="thinking">
                 <span className="dots"><i /><i /><i /></span>
-                {mode === "agent" ? "에이전트가 검색 방법을 고르는 중" : "근거를 찾고 답을 쓰는 중"}
+                {STAGE[draft?.stage]?.(mode) || "근거를 찾고 답을 쓰는 중"}
               </p>
             </div>
           )}
