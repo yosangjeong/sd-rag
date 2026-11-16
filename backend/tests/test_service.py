@@ -90,3 +90,31 @@ def test_a_failing_optional_step_is_skipped_not_fatal():
         "user-1", "집주인이 계약기간을 1년으로 하재요"
     )
     assert reply.answer.text  # answered from the first-stage order
+
+
+def test_an_amended_article_comes_with_its_other_version():
+    from sdrag.retrieval.search import Hit
+    from sdrag.service import with_versions
+
+    def hit(cid, heading, text="휴가 15일"):
+        return Hit(cid, 1.0, {"doc_id": "kr-law", "heading": heading, "text": text})
+
+    new = hit("kr-law#98", "제60조(연차 유급휴가) [2027. 6. 10. 시행]")
+    old = hit("kr-law#96", "제60조(연차 유급휴가) [개정 전, 2027. 6. 10. 전까지]")
+    other = hit("kr-law#5", "제5조(근로조건의 준수)")
+    # the sibling is in the pool but not among the sources: it is put right after
+    out = with_versions(None, "i", ["public"], [new, other], [new, other, old])
+    assert [h.chunk_id for h in out] == ["kr-law#98", "kr-law#96", "kr-law#5"]
+    # both versions present, or no versions at all: unchanged
+    assert with_versions(None, "i", ["public"], [new, old], [new, old]) == [new, old]
+    assert with_versions(None, "i", ["public"], [other], [other]) == [other]
+
+    class Index:  # the sibling only in the index
+        def search(self, index, body):
+            assert {"term": {"doc_id": "kr-law"}} in body["query"]["bool"]["filter"]
+            return {"hits": {"hits": [{"_id": old.chunk_id, "_source": old.source}]}}
+
+    assert [h.chunk_id for h in with_versions(Index(), "i", ["public"], [new], [new])] == [
+        "kr-law#98",
+        "kr-law#96",
+    ]

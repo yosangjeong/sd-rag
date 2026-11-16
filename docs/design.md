@@ -47,10 +47,12 @@ from S3 inside the VPC.
    parallel with the translation) and the best definition articles: about 55
    candidates (`Searcher.wide`). BM25 also gets the statute's terms for everyday words
    (`retrieval/terms.py`)
-   agent mode: a tool-use loop (`agent/search.py`) chooses keyword / semantic /
-   hybrid searches, language and document filters, and picks the chunks
+   agent mode: the same wide pool, plus what a tool-use loop (`agent/search.py`)
+   finds with keyword / semantic / hybrid searches, language and document filters it
+   chooses itself (up to 20 more chunks, `with_pool`; 30 s of searching at most)
 2. rerank the candidates with GLM-4.7 (listwise)
-3. answer from the top 6, citing `[n]` (`agent/answer.py`); the reply carries each
+3. answer from the top 6 (with the other version of an amended article added next to it,
+   `service.with_versions`), citing `[n]` (`agent/answer.py`); the reply carries each
    cited chunk's document, heading, page and character range; the UI opens the
    chunk's text on click (`/api/source`)
 
@@ -150,7 +152,7 @@ trail of searches and source views (who, which document). Queries for evaluators
 | English tables | CFR tables without row rules are read again by text alignment (68% of cells exact vs the XML, from 5%) | a layout model for borderless tables |
 | Statute versions | amended articles not yet in force are labelled at parse time and the version in force is chosen by today's date when answering | a statute API with point-in-time versions (law.go.kr OpenAPI), so the corpus follows amendments without re-downloading |
 | Figures in answers | every quantity in an answer is matched by value against its cited sources; one rewrite, then a warning beside the answer (2 real errors corrected, 1 false alarm in 239 new answers) | compare each figure with its unit and the sentence it sits in |
-| Table chunks | within one table the header row is repeated in every chunk; a header the parser does not take for one (a title row, or one over half a chunk) is not, and a table continued on the next PDF page with another column count becomes a new table without it; the answer model then guesses the columns (labor dev g0224) | carry the header across page breaks; a layout model for table structure |
+| Table chunks | within one table the header row is repeated in every chunk; a header the parser does not take for one is not: a small table's own header row inside a large one (g0224: the "부당비율 / 월평균 부당금액" row of 별표 2 ended one chunk, its rows began the next), a title row, a header over half a chunk; the answer model then guesses the columns | a layout model that finds sub-tables, then a header per sub-table (no general rule found on 2026-11-16, one known case: not changed) |
 | Scan headings | an OCR page with no heading of its own takes the last heading seen; a scan mixing documents can cite the wrong section name (the page is right) | detect a new document or language on a page and reset the heading |
 | List chunks | a long article is split between its items; items in a later chunk lose the lead-in that carries the subject or amount ("…에게는 500만원 이하의 과태료를 부과한다") | repeat the article's lead-in in every chunk of it |
 | Yes/no answers | 5 of 47 stored yes/no answers opened with the word their body contradicts; a prompt rule fixed 2, a code rule turns "Yes, X do not ..." into "No, ..." (the other 2); a reversal in another form can remain | a structured answer (conclusion field + text) checked against the body |
@@ -159,5 +161,7 @@ trail of searches and source views (who, which document). Queries for evaluators
 | Statute versions in the answer | when only one version of an amended article ranks into the 6 answer sources, the other is not added (not measured) | add the sibling version from the pool |
 | Agent ablation | measured on the real-estate sets (82 + 83), not on the 338 labor questions | the same table for every set |
 | Rules from case law | the corpus is statute text; a rule set by courts or ministry guidance is not in it ("unused annual leave is paid" comes from case law; the Act only says the leave expires and when the employer owes nothing), so the answer follows the articles it has. A prompt rule "open with the general rule" was tried on 2026-11-16 and made it worse ("원칙적으로 받을 수 없습니다"): dropped | add guidance and case summaries as sources, labelled as such |
+| Counting from a rule | the answer step works a figure out from an article (a short step is asked for: 10만원 × 30일 = 300만원 is right), but misses where a rule starts and stops: first-year leave at most 11 days is answered 12, three years' service 16 days is answered 15 (depth questions, 2026-11-17) | compute such values in code from the article's parameters, or a checked worked example per rule |
+| Long lists over many documents | the answer sees the top 6 sources; a question over seven or more documents gets a shortened list (8 sources answered more unanswerable questions: 74% -> 59% declined) | a separate path for "list all ..." questions |
 | Live demo time | a request has 60 s at CloudFront; model calls get 30 s and 3 attempts, the agent 30 s of searching; the page streams the answer (`/api/chat/stream`: stages, then the text, a keep-alive line every 10 s), but the total time is the same | a faster reranker (it is half the time) |
 | Jurisdiction | an LLM label (KR / US / none) filters the public statutes by country; a country-less English question about Korean law is taken as US | ask the user's country once (profile), or show "answering under US law" with a switch |

@@ -24,17 +24,61 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from sdrag.agent.answer import Answer, answer
-from sdrag.agent.search import SearchAgent
+from sdrag.agent.search import SearchAgent, with_pool
+from sdrag.common import versions
 from sdrag.common.logs import log
 from sdrag.common.prices import cost_usd
 from sdrag.retrieval.index import PUBLIC, list_documents
 from sdrag.retrieval.jurisdiction import jurisdiction
 from sdrag.retrieval.rerank import LlmReranker, LlmTranslator, condense
-from sdrag.retrieval.search import COUNTRIES, Searcher
+from sdrag.retrieval.search import COUNTRIES, Hit, Searcher
 
-ANSWER_SOURCES = 6
+ANSWER_SOURCES = 6  # 8 tried on 2026-11-17: declined 74% -> 59% on unanswerable questions
 RERANK_DEPTH = 20
 TRANSLATION_EXTRA = 10
+
+
+def _overlap(a: str, b: str) -> int:
+    return len(set(a.split()) & set(b.split()))
+
+
+def with_versions(client, index: str, owners: list[str], sources: list[Hit],
+                  pool: list[Hit]) -> list[Hit]:  # fmt: skip
+    """The answer's sources, each amended article with its other version next to it.
+    The answer step must say which version is in force today and what changes when
+    (agent/answer.py SYSTEM); with only one version among the sources it cannot (two
+    versions share most words and compete for the same places). The sibling is taken
+    from the reranked pool, else from the index (same document, same heading); of a long
+    article's pieces, the one sharing most words with the source."""
+    out = list(sources)
+    for h in sources:
+        base, kind, _ = versions.parse(h.source.get("heading") or "")
+        if not kind:
+            continue
+        doc = h.source.get("doc_id")
+
+        def sibling(x, doc=doc, base=base, kind=kind) -> bool:
+            b, k, _ = versions.parse(x.source.get("heading") or "")
+            return bool(x.source.get("doc_id") == doc and b == base and k and k != kind)
+
+        if any(sibling(x) for x in out):
+            continue
+        cands = [x for x in pool if sibling(x)]
+        if not cands:
+            body = {"size": 20, "query": {"bool": {"filter": [
+                {"term": {"doc_id": doc}}, {"terms": {"owner": owners}},
+                {"prefix": {"heading": base + " ["}}]}}}  # fmt: skip
+            try:
+                found = client.search(index=index, body=body)["hits"]["hits"]
+            except Exception:  # noqa: BLE001 - the answer goes on without the sibling
+                found = []
+            cands = [x for x in (Hit(f["_id"], 0.0, f["_source"]) for f in found) if sibling(x)]
+        if cands:
+            best = max(
+                cands, key=lambda x: _overlap(x.source.get("text", ""), h.source.get("text", ""))
+            )
+            out.insert(out.index(h) + 1, best)
+    return out
 
 
 def _optional(future, step: str, request_id: str):
@@ -115,9 +159,10 @@ class RagService:
         translator = LlmTranslator(chat)
         with ThreadPoolExecutor(3) as pool:
             country_f = pool.submit(jurisdiction, chat, question) if not scope else None
-            basic = mode != "agent"
-            translation_f = pool.submit(translator.to_other_language, question) if basic else None
-            terms_f = pool.submit(translator.to_statute_terms, question) if basic else None
+            # both modes: the agent starts from the same wide pool (agent/search.with_pool)
+            basic = True
+            translation_f = pool.submit(translator.to_other_language, question)
+            terms_f = pool.submit(translator.to_statute_terms, question)
             # each of these only widens or narrows the search: if one fails, the request
             # goes on without it (no country filter, no translation, no terms query)
             country = _optional(country_f, "jurisdiction", request_id)
@@ -135,10 +180,14 @@ class RagService:
                 docs = [d for d in docs if d["id"] in scope]
             if country:  # the agent's document list matches what it can search
                 docs = [d for d in docs if not is_other_country(d, country)]
+            wide = s.wide(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA,
+                          translation=translation, statute_terms=statute_terms)  # fmt: skip
+            queries = list(s.last_queries)  # the reranker reads these; the agent adds its own
             res = SearchAgent(chat.client, chat.model_id, s, docs).run(question)
+            s.last_queries = queries + [q for q in s.last_queries if q not in queries]
             chat.input_tokens += res.input_tokens  # the agent calls Converse directly
             chat.output_tokens += res.output_tokens
-            hits, steps = res.hits[:RERANK_DEPTH], res.steps
+            hits, steps = with_pool(wide, res.hits[:RERANK_DEPTH]), res.steps
             for st in steps:
                 log("tool_call", request_id=request_id, tool=st["tool"], input=st["input"])
         else:
@@ -159,9 +208,15 @@ class RagService:
             results=[{"chunk_id": h.chunk_id, "doc_id": h.source.get("doc_id")} for h in hits[:10]])  # fmt: skip
         if self.answer_chat is None:
             emit({"type": "stage", "stage": "writing"})
-            ans = answer(chat, question, hits[:ANSWER_SOURCES], on_event=on_event)
+            sources = with_versions(self.client, self.index, [user_id, PUBLIC],
+                                    hits[:ANSWER_SOURCES], hits)  # fmt: skip
+            if len(sources) > ANSWER_SOURCES:
+                log("versions_added", request_id=request_id, n=len(sources) - ANSWER_SOURCES)
+            ans = answer(chat, question, sources, on_event=on_event)
         else:
-            ans = answer(self.answer_chat, question, hits[:ANSWER_SOURCES])
+            sources = with_versions(self.client, self.index, [user_id, PUBLIC],
+                                    hits[:ANSWER_SOURCES], hits)  # fmt: skip
+            ans = answer(self.answer_chat, question, sources)
             chat.input_tokens += ans.input_tokens
             chat.output_tokens += ans.output_tokens
         ms = 1000 * (time.perf_counter() - t0)

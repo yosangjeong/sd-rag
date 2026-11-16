@@ -162,3 +162,13 @@ class SearchAgent:
         rest = [h for cid, h in found.items() if cid not in res.picked]
         res.hits = [found[c] for c in res.picked] + rest
         return res
+
+
+def with_pool(pool: list[Hit], found: list[Hit], extra: int = 20) -> list[Hit]:
+    """The agent's candidates on top of the basic mode's wide pool: the pool in its own
+    order, then up to `extra` chunks the agent found that the pool lacks. Measured
+    2026-11-16: the agent alone ranked below the basic mode, which already does what the
+    agent was best at (searching again in the statute's terms); this way the agent can
+    only add to that pool."""
+    have = {h.chunk_id for h in pool}
+    return pool + [h for h in found if h.chunk_id not in have][:extra]

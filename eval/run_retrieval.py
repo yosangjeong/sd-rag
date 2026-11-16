@@ -37,7 +37,7 @@ from pathlib import Path
 from evalset import LLM_CACHE, doc_texts, load_items, score
 from opensearchpy import OpenSearch
 
-from sdrag.agent.search import SearchAgent
+from sdrag.agent.search import SearchAgent, with_pool
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat, CachedChat
 from sdrag.retrieval.embed import TitanEmbedder
@@ -108,8 +108,15 @@ def run_system(system: str, items, client, embedder, chat, rerank_chat=None,
         steps = None
         country = s.country = jurisdiction(aux, it.question) if by_country else None
         if agent:
+            pool = None
+            if "pool" in stages:  # agent+pool: on top of the basic mode's wide pool, as served
+                pool = s.wide(it.question, size=DEPTH)
+                queries = list(s.last_queries)
             res = agent.run(it.question)
             hits, steps = res.hits[:DEPTH], res.steps
+            if pool is not None:
+                hits = with_pool(pool, hits)
+                s.last_queries = queries + [q for q in s.last_queries if q not in queries]
             chat.input_tokens += res.input_tokens  # the agent calls Converse itself
             chat.output_tokens += res.output_tokens
         elif mode[9:10].isdigit():  # bilingual0.5: translation weight 0.5

@@ -36,7 +36,7 @@ system's top 5, TREC-style, `eval/repool.py`):
 | Labor, generated (test) | 338 | **0.97 / 0.90** | 0.78 / 0.54 |
 | Labor, real user questions (government FAQs) | 137 | **0.98 / 0.91** | 0.89 / 0.60 |
 | Real estate, generated (test) | 82 | **0.99 / 0.94** | 0.85 / 0.58 |
-| Real estate, real user questions | 83 | **0.96 / 0.94** (agent mode 0.95 / 0.88) | 0.76 / 0.52 |
+| Real estate, real user questions | 83 | **0.96 / 0.94** (agent mode 0.99 / 0.93) | 0.76 / 0.52 |
 
 On documents it was never built or tuned on (press releases incl. HWPX and a scan, a NIST
 framework, an IRS guide; uploaded as a user, 35 questions): hit@5 1.00, MRR 0.87, against
@@ -88,11 +88,17 @@ Agent against the basic (served) search, real-estate sets (the agent was measure
 | Set | System | hit@1 | hit@10 | MRR | p50 | $/query |
 |---|---|---|---|---|---|---|
 | test_re (82) | basic | 0.91 | 0.99 | 0.94 | 5.6 s | 0.012 |
-| | agent + reranker | 0.87 | 0.99 | 0.92 | 5.0 s | 0.016 |
+| | agent + reranker (until 2026-11-16) | 0.87 | 0.99 | 0.92 | 5.0 s | 0.016 |
+| | **agent on the wide pool** (served agent mode) | 0.90 | 0.99 | 0.94 | 8.8 s | 0.026 |
 | real_re (83 real questions) | basic | 0.93 | 0.96 | 0.94 | 5.7 s | 0.012 |
-| | agent + reranker | 0.86 | 0.95 | 0.88 | 9.6 s | 0.023 |
+| | agent + reranker (until 2026-11-16) | 0.86 | 0.95 | 0.88 | 9.6 s | 0.023 |
+| | **agent on the wide pool** (served agent mode) | 0.90 | **0.99** | 0.93 | 12.4 s | 0.032 |
 
-The agent is kept as a mode, not the default: it costs more and is not more accurate.
+The agent mode now starts from the basic mode's candidate pool and adds what its own
+searches find (`agent/search.with_pool`): it finds more on real questions, ranks about the
+same, at twice the time, so the basic mode is the default (`docs/decisions.md`, Overnight 2026-11-16).
+
+The agent is kept as a mode, not the default: it costs more and ranks no better.
 
 ### By language and file type (labor test set, hit@10 / MRR)
 

@@ -1029,6 +1029,69 @@ contradicts (above). Two changes:
   the same measure moved 84% -> 92% on 11-15. Adopted; the served re-measure after the
   final deploy shows it on the full sets. Cost estimated under $2 (Bedrock usage shows a day late).
 
+## Overnight 2026-11-16: live-test rehearsal, depth questions, agent on the wide pool
+
+**Live-test rehearsal** (the interviewer brings unseen files): the eight unseen documents
+of `eval/unseen.py` (press releases in HWPX and PDF, a scan, IRS Pub 15, NIST CSF), uploaded
+as a user; 19 questions written by hand from the documents (not generated), expected
+answers noted first; answers read by hand (`data/raw/scratch/live18/`, local). 16 of 19
+right: HWPX figures, a scanned page, an English table, a list, both cross-lingual
+directions, a follow-up ("그럼 등유는요?"), a question the documents do not answer
+(declined). Three issues: a scanned table's figure given without a unit (the table has
+none; its total matches the text's 1,007억 원, so 백만 원); a list over all six press
+releases cut to five (the answer saw six sources); a ministry named by its former name
+(산업통상자원부 for the document's 산업통상부), the model's knowledge over the source.
+
+**Depth questions** (22, written by hand: calculations, rule and exception, multi-step,
+Korea-US comparison, two follow-up chains, uploads with statutes), basic and agent mode,
+graded by hand against the statute text (`data/raw/scratch/depth17/`, local): 17 right,
+2 partial, 3 wrong, the two modes alike. The wrong ones show where the answer step is
+weak: counting from a rule (first-year leave at most 11 days, answered 12; 3 years of
+service 16 days, answered 15) and a provision cited down to its paragraph (the decree's
+annex applies only 제23조제2항 to workplaces of four or fewer; both modes said the
+just-cause rule of 제23조제1항 applies). One expected answer of mine was wrong: the act
+amended on 2026-02-19 gives six months of wages in a bankruptcy, as the system said.
+
+**Agent on the wide pool** (`agent/search.with_pool`, served agent mode and
+`run_retrieval.py agent+pool`): the agent mode first builds the basic mode's wide pool and
+adds up to 20 chunks its own searches found that the pool lacks; the reranker orders the
+union. hit@1 / hit@10 / MRR, p50, $/query:
+
+| Set | basic | agent before | agent on the pool |
+|---|---|---|---|
+| test_re (82) | 0.915 / 0.988 / 0.945, 5.6 s, 0.012 | 0.866 / 0.988 / 0.921, 5.0 s, 0.016 | 0.902 / 0.988 / 0.939, 8.8 s, 0.026 |
+| real_re (83) | 0.928 / 0.964 / 0.941, 5.7 s, 0.012 | 0.855 / 0.952 / 0.884, 9.6 s, 0.023 | 0.904 / **0.988** / 0.931, 12.4 s, 0.032 |
+
+Better than the agent before on every measure, so the agent mode now works this way; it
+finds more than the basic mode on real questions (hit@10) and ranks a little lower (MRR
+-0.006 / -0.010) at twice the time, so the basic mode stays the default.
+
+**Answer step** (#13 sources 6 -> 8, #23 the other version of an amended article, prompt
+rules from the depth questions), quick checks on the same 50 + 27 items as `v15-yesno-dev`
+(correct / supported / declined): v15 90 / 86 / 74%. With five rules and 8 sources
+(`v16-review-dev`) 86 / 88 / 74%: three answers newly said the documents did not answer
+(a rule "say plainly the documents do not cover the rest" made the model too cautious);
+rules "give the unit" and "write names as the sources do" changed nothing in the
+rehearsal; dropped. Two rules and 8 sources (`v17-two-rules-dev`) 90 / 78 / **59%**: more
+sources let more unanswerable questions be answered; #13 dropped (a list over seven or more
+documents stays cut: limitations). Kept (`v18-six-sources-dev`): six sources, the sibling
+version (`service.with_versions`, added in 2 of 50 answers) and two rules: a provision
+cited to its paragraph means only that part; a number that follows from a rule is worked
+out in a short step. 84 / **90** / **81%**: the three correct answers lost are a question
+that names no law ("이 법은 ...", g0437: re-asked with and without the rules it declines
+half the time, the gold ranked first either way) and two partial grades for wording. On
+the depth questions the calculation rule fixed the dismissal-notice amount (c1, 300만원,
+both modes) and the agent got the 제23조제2항 case right; the leave-day counts (c2, c3)
+stay wrong and the basic mode still misreads the annex: counting across a rule's limits
+is a limitation. The judge graded the infertility-leave answer wrongly both ways (2 days
+before 2026-11-27 is right). Cost of the night about $11 (CloudWatch token metrics, `eval/spend.py`).
+
+**Not done**: #25 (a table's header across page breaks): g0224's cause turned out to be a
+small table's header row inside a large HWPX table, not a page break; no general rule,
+one known case, a re-index to verify: the limitation now says so. #14 (another embedding
+model): the Region's on-demand text embeddings are still Titan v2 and Cohere v3, compared on
+2026-11-12; Cohere v4 is offered only through a cross-Region profile.
+
 ## Streaming the answer (`/api/chat/stream`, 2026-11-16)
 
 The page now asks `/api/chat/stream`, which sends one JSON line per event: the stage
