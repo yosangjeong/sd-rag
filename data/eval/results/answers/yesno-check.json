@@ -1,0 +1,202 @@
+{
+ "g0036": {
+  "question": "in Korea, do employers owe compensation for unused annual leave they encouraged?",
+  "before": "Yes, in Korea, employers do not owe compensation for unused annual leave if they have taken the required measures to encourage its use and the leave expires [1].\n\nFor workers with less than one year of service, the employer must notify the worker of unused days within 10 days of the 3-month mark before the first year ends and request in writing that they designate a time to use it [2]. If the worker does not respond within 10 days, the employer must designate the usage time and notify the worker in writing by 1 month before the end of the period (or 10 days before for leave accrued after the initial notice) [2][3].\n\nFor other workers, the employer must notify the worker of unused days within 10 days of the 6-month mark before the leave expires and request in writing that they designate a time to use it [1]. If the worker does not respond within 10 days, the employer must designate the usage time and notify the worker in writing by 2 months before the leave expires [4].\n\nAn amended version of Article 61, which takes effect on June 10, 2027, changes the referenced provisions regarding the expiration of leave from Article 60(7) to Article 60(8) [5][6].",
+  "after": "Yes, in Korea employers do not owe compensation for unused annual leave if they have taken the required measures to encourage its use and the leave expires [1].\n\nFor workers with less than one year of continuous service, the employer must notify the worker of unused days and request in writing that they designate a usage time within 10 days of the date 3 months before the end of the first year; if the worker does not respond, the employer must designate the usage time and notify the worker in writing by 1 month before the end of the first year [2]. For other workers, the employer must provide similar notification and request within 10 days of the date 6 months before the leave expires [1].\n\nAn amended version of Article 61 will take effect on June 10, 2027, which changes the referenced provisions regarding the expiration of leave from Article 60(7) to Article 60(8) [3][4]."
+ },
+ "g0135": {
+  "question": "직원이 신체적 또는 정신적 문제로 더 이상 현재 업무를 할 수 없고, 회사가 다른 업무로 전환하거나 휴직을 허용하지 않아 그만두었을 때, 고용보험 급여를 받을 수 있나요?",
+  "before": "네, 고용보험 급여를 받을 수 있습니다. 체력의 부족, 심신장애, 질병, 부상 등으로 인해 업무 수행이 곤란한 상태에서 회사의 사정상 업무종류의 전환이나 휴직이 허용되지 않아 이직한 경우, 의사의 소견서나 사업주 의견 등에 근거하여 객관적으로 인정되면 정당한 이직 사유로 봅니다 [1].",
+  "after": "네, 받을 수 있습니다. 체력의 부족, 심신장애, 질병, 부상 등으로 피보험자가 주어진 업무를 수행하는 것이 곤란하고, 기업의 사정상 업무종류의 전환이나 휴직이 허용되지 않아 이직한 것이 의사의 소견서, 사업주 의견 등에 근거하여 객관적으로 인정되는 경우 정당한 이직 사유로 봅니다[1]."
+ },
+ "g0136": {
+  "question": "In Korea, can an employer ask an employee for documentation to prove their child's birth when they apply for reduced working hours during childcare leave?",
+  "before": "Yes, an employer can require an employee applying for reduced working hours to submit documentation proving the child's birth [1].\n\nThis rule remains the same in the amended version of the Enforcement Decree, which takes effect on November 27, 2026 [2].",
+  "after": "Yes, an employer may require an employee applying for reduced working hours to submit documentation proving the child's birth [1]. This rule remains in effect until November 26, 2026 [1]. From November 27, 2026, the amended version of the Enforcement Decree will also allow employers to request such documentation [2]."
+ },
+ "g0143@file": {
+  "question": "My company pays me a salary plus bonuses—does the law let them use any kind of pay structure as long as I get paid minimum wage and time-and-a-half for overtime?",
+  "before": "No, the law does not allow any pay structure. While the FLSA does not restrict the forms of remuneration (such as salary, commission, or piece rate) as long as the regular rate is at least the minimum wage and overtime is paid at one and one-half times that rate [1], specific rules govern how the regular rate must be calculated.\n\nFor example, if you receive a salary plus a bonus, the bonus must generally be included in the calculation of your regular rate of pay unless it qualifies as an excludable type (such as a discretionary bonus) [2]. Bonuses promised to induce you to work more steadily, rapidly, or efficiently, or to remain with the firm, must be included in the regular rate [3]. Consequently, your overtime pay must be based on this adjusted regular rate, not just your base salary [4].",
+  "after": "No, the law does not allow any pay structure simply because minimum wage and time-and-a-half are met. While the FLSA does not restrict the forms of remuneration (such as salary, commission, or piece rate) as long as the regular rate is at least the minimum wage and overtime is paid at one and one-half times that rate, the Department of Labor recognizes that not all compensation practices are permissible [1]. Employers cannot artificially label part of regular wages as a \"bonus\" to avoid proper overtime calculations; if an employee is guaranteed a fixed or determinable sum each week, no part of that sum is a true bonus, and the regular rate must be determined by dividing that sum by the hours worked [2][3]. Similarly, schemes that pay a fixed weekly amount regardless of hours worked, while purporting to pay hourly wages and a percentage bonus, are invalid because they result in the employee receiving no actual overtime compensation [4]."
+ },
+ "g0196": {
+  "question": "In Korea, can an employer fire a part-time or temporary worker for refusing unreasonable overtime demands?",
+  "before": "No, an employer cannot fire a part-time or temporary worker for refusing unreasonable overtime demands. Under the Act on the Protection, etc. of Fixed-Term and Part-Time Workers, an employer is prohibited from dismissal or other unfavorable treatment for a worker's refusal of an employer's unreasonable request for overtime work [1].",
+  "after": "No, an employer cannot fire a part-time or temporary worker for refusing unreasonable overtime demands. Under the Act on the Protection, etc. of Fixed-Term and Part-Time Workers, an employer is prohibited from dismissal or other unfavorable treatment of a fixed-term or part-time worker for refusing an employer's unreasonable request for overtime work [1]."
+ },
+ "g0239": {
+  "question": "제가 일하던 사업장에서 다치고 나서 더 이상 그곳에서 일할 수 없게 됐는데, 다른 사업장에서 계속 일할 수 있을까요?",
+  "before": "네, 다른 사업장으로 변경하여 계속 일할 수 있습니다. 상해 등으로 인해 해당 사업 또는 사업장에서 계속 근무하기는 부적합하나 다른 사업 또는 사업장에서 근무하는 것은 가능하다고 인정되는 경우에는 사업장 변경 신청 사유에 해당합니다[1][2].\n\n이 경우 직업안정기관의 장에게 사업장 변경신청서와 여권 사본 등을 제출하여야 합니다[3]. 다만, 업무상 재해로 인해 근무처 변경허가를 받을 수 없는 경우에는 그 사유가 없어진 날부터 기간을 계산하므로, 사업장 변경 신청기간 연장신청을 할 수 있습니다[4][3].",
+  "after": "네, 업무상 재해로 인해 현재 사업장에서 계속 근무하기는 부적합하나 다른 사업 또는 사업장에서 근무하는 것은 가능하다고 인정되는 경우에는 다른 사업장으로의 변경을 신청할 수 있습니다 [1][2].\n\n이 경우 직업안정기관의 장에게 사업장 변경신청서를 제출해야 하며, 업무상 재해로 인해 근무처 변경허가를 받을 수 없는 때에는 그 사유가 없어진 날부터 기간을 계산합니다 [3][4].\n\n참고로, 2027년 6월 10일 시행 예정인 개정법령에서는 '기숙사의 제공'이라는 표현이 '주거시설의 제공'으로 변경됩니다 [5]."
+ },
+ "g0309": {
+  "question": "I need to take time off to care for my seriously ill parent—am I legally entitled to this leave even if I’m not the primary caregiver, and does the law treat men and women the same for this kind of family leave?",
+  "before": "Yes, you are legally entitled to take leave to care for your seriously ill parent even if you are not the primary caregiver, and the law treats men and women the same for this type of leave.\n\nUnder the Family and Medical Leave Act (FMLA), an eligible employee is entitled to leave if needed to care for the employee’s parent with a serious health condition [1][2]. The definition of \"needed to care\" encompasses situations where you may be needed to substitute for others who normally care for the family member or to make arrangements for changes in care; you need not be the only individual or family member available to provide care [3]. Additionally, the right to take leave under the FMLA applies equally to male and female employees [2].",
+  "after": "Yes, you are legally entitled to take leave to care for your seriously ill parent even if you are not the primary caregiver, and the law treats men and women the same for this type of family leave.\n\nUnder the Family and Medical Leave Act (FMLA), an eligible employee is entitled to leave if needed to care for their parent with a serious health condition [1][2]. The law explicitly states that the employee need not be the only individual or family member available to provide care; this includes situations where the employee may be needed to substitute for others who normally care for the family member or where care responsibilities are shared [3]. Furthermore, the right to take leave applies equally to male and female employees, meaning a father may take family leave just as a mother can [2]."
+ },
+ "g0386": {
+  "question": "My state has a law that gives nursing mothers more break time and a private space than federal law requires—can my employer still follow only the federal rules?",
+  "before": "No, your employer cannot follow only the federal rules if your state law provides greater protections. The federal Fair Labor Standards Act states that it does not preempt a State law or municipal ordinance that provides greater protections to employees than the federal provisions [1].",
+  "after": "No, your employer cannot follow only the federal rules if your state law provides greater protections. The federal Fair Labor Standards Act states that nothing in its breastfeeding accommodations section shall preempt a state law or municipal ordinance that provides greater protections to employees than the federal law [1]."
+ },
+ "g0396@file": {
+  "question": "유해작업 배치 시 교육 필요?",
+  "before": "네, 유해하거나 위험한 작업에 근로자를 채용하거나 작업내용을 변경할 때에는 일반적인 안전보건교육 외에 해당 작업에 필요한 안전보건교육을 추가로 실시해야 합니다[1]. 다만, 해당 근로자가 채용 또는 변경된 작업에 경험이 있는 등 고용노동부령으로 정하는 경우에는 교육의 전부 또는 일부를 하지 아니할 수 있습니다[2].",
+  "after": "네, 사업주는 근로자를 유해하거나 위험한 작업에 채용하거나 그 작업으로 작업내용을 변경할 때에는 해당 작업에 필요한 안전보건교육 외에 유해하거나 위험한 작업에 필요한 안전보건교육을 추가로 실시하여야 합니다[1]. 다만, 해당 근로자가 채용 또는 변경된 작업에 경험이 있는 등 고용노동부령으로 정하는 경우에는 교육의 전부 또는 일부를 하지 아니할 수 있습니다[2]."
+ },
+ "g0478": {
+  "question": "내가 다녔던 회사가 상시 직원이 25명이고, 퇴직 전 월평균 임금이 정해진 기준 이하였는데, 임금 채권 보장 제도 대상이 되나요?",
+  "before": "네, 임금채권보장 제도의 대상이 될 수 있습니다. 질문하신 조건(상시 직원 25명, 퇴직 전 월평균 임금 기준 이하)은 대지급금 관련업무 지원 대상 기준에 해당합니다[1].\n\n다만, 이 제도의 지원을 받기 위해서는 해당 사업장이 도산등사실인정의 요건(상시근로자수 300명 이하 등)을 갖추어야 하며[2], 사업주로부터 임금등을 지급받지 못하고 퇴직한 근로자가 신청을 해야 합니다[3].",
+  "after": "네, 임금채권보장법에 따른 대지급금 관련업무 지원 대상이 될 수 있습니다. 다만, 이는 귀하가 해당 사업장에서 퇴직했거나 도산등사실인정을 신청하였고, 사업장이 법 제7조제1항제2호 및 제3호에 모두 해당하는 경우에 한합니다 [1].\n\n조건은 다음과 같습니다:\n1.  퇴직한 사업장의 상시근로자수가 30명 미만이어야 합니다 [1].\n2.  퇴직 전 월평균보수가 고용노동부장관이 고시하는 금액 이하여야 합니다 [1]."
+ },
+ "g0489": {
+  "question": "In Korea, if an employee harms themselves due to a mental health condition caused by work stress, can they still qualify for workers' compensation?",
+  "before": "Yes, an employee may qualify for workers' compensation if they harm themselves due to a mental health condition caused by work stress. Under the Enforcement Decree of the Industrial Accident Compensation Insurance Act, self-harm is recognized as a work-related injury if the person was in a state of mental abnormality caused by work-related reasons, such as a mental illness being treated or a mental abnormality resulting from a work-related injury [1]. Additionally, the Act defines work-related diseases to include those caused by work-related mental stress, such as workplace harassment or verbal abuse from customers [2].",
+  "after": "Yes, an employee may qualify for workers' compensation if they harm themselves due to a mental health condition caused by work stress. Under the Industrial Accident Compensation Insurance Act, self-harm is recognized as a work-related injury if it is committed while in a state of mental abnormality caused by work-related reasons [1]. This includes cases where the employee has a mental disorder caused by work-related factors or is undergoing treatment for such a disorder [1]. Additionally, diseases caused by work-related mental stress, such as workplace harassment or verbal abuse from customers, are classified as work-related diseases [2]."
+ },
+ "g0524": {
+  "question": "I run a small business and want to make sure I'm following the law—do I have to post a notice about family and medical leave for my employees, and what happens if I don't?",
+  "before": "Yes, if you are a covered employer, you must post a general notice explaining the Family and Medical Leave Act (FMLA) provisions and complaint procedures in a conspicuous place on your premises where it can be readily seen by employees and applicants [1]. You must post this notice even if no employees are currently eligible for FMLA leave [1]. Additionally, if you have eligible employees, you must provide the general notice to each employee, either by including it in an employee handbook (if one exists) or by distributing a copy to new employees upon hiring; electronic distribution is acceptable [1].\n\nIf you do not post the notice, you may face the following consequences:\n*   **Civil Money Penalty:** If the violation is willful, the Wage and Hour Division may assess a civil money penalty not to exceed $211 for each separate offense [1].\n*   **Liability for Damages:** Failure to follow the notice requirements may constitute an interference with, restraint, or denial of the exercise of an employee's FMLA rights. You may be liable for compensation and benefits lost by reason of the violation, other actual monetary losses sustained as a direct result of the violation, and appropriate equitable relief (such as employment, reinstatement, or promotion) [2].",
+  "after": "Yes, if you are a covered employer, you must post a general notice explaining the Family and Medical Leave Act’s provisions in a conspicuous place where it can be readily seen by employees and applicants for employment [1]. You must post this notice even if no employees are currently eligible for FMLA leave [1].\n\nIf you willfully violate the posting requirement, you may be assessed a civil money penalty not to exceed $211 for each separate offense [1]. Additionally, failure to follow the notice requirements may constitute an interference with, restraint, or denial of the exercise of an employee’s FMLA rights, which may make you liable for compensation and benefits lost by reason of the violation, other actual monetary losses sustained as a direct result of the violation, and appropriate equitable or other relief [2]."
+ },
+ "g0542": {
+  "question": "In Korea, can a foreign manufacturer appoint someone to submit safety data sheets and chemical composition details on their behalf when importing chemicals?",
+  "before": "Yes, a foreign manufacturer may appoint a qualified person to submit safety data sheets and chemical composition details on behalf of the importer [1].\n\nThe appointed person must meet specific requirements, such as being a citizen of the Republic of Korea or having a residence (or location, if a corporation) within the Republic of Korea [2]. This person is responsible for tasks including the preparation and submission of Material Safety Data Sheets (MSDS) and the submission of chemical names and content amounts or confirmation documents [1].",
+  "after": "Yes, a foreign manufacturer may appoint a qualified person to submit material safety data sheets and chemical composition details on behalf of the importer [1]. The appointed person may perform tasks such as preparing and submitting the material safety data sheet, submitting the chemical names and content amounts, and handling approval requests for alternative data or objections [1]. When submitting the material safety data sheet to the Minister of Employment and Labor, the appointed person must provide it to the importer [1]. Additionally, the appointed person must report their appointment or dismissal to the Minister of Employment and Labor [2]."
+ },
+ "g0550": {
+  "question": "이행강제금 환불 시 이자 붙나요",
+  "before": "네, 붙습니다. 노동위원회는 이행강제금을 반환할 때 납부한 날부터 반환하는 날까지의 기간에 대하여 정해진 이율을 곱한 금액을 가산하여 반환해야 합니다 [1]. 이때 적용되는 이율은 「국세기본법 시행규칙」 제19조의3에 따른 국세환급가산금의 이율입니다 [2].",
+  "after": "네, 이행강제금을 반환할 때에는 이자를 가산하여 반환합니다. 노동위원회는 이행강제금을 납부한 날부터 반환하는 날까지의 기간에 대하여 고용노동부령으로 정하는 이율을 곱한 금액을 가산하여 반환하여야 합니다 [1]. 이 이율은 「국세기본법 시행규칙」 제19조의3에 따른 국세환급가산금의 이율을 말합니다 [2]."
+ },
+ "g0558": {
+  "question": "In Korea, if a labor committee member's term ends but no successor has been elected yet, can they keep doing their job?",
+  "before": "Yes, in Korea, if a labor committee member's term ends but no successor has been elected or appointed yet, they continue to perform their duties until the successor is appointed or elected [1][2][3][4][5][6].",
+  "after": "Yes, in Korea, a labor committee member may continue to perform their duties after their term ends if no successor has been elected or appointed yet [1][2][3][4][5][6]."
+ },
+ "g0558@file": {
+  "question": "In Korea, if a labor committee member's term ends but no successor has been elected yet, can they keep doing their job?",
+  "before": "Yes, if a committee member's term ends but no successor has been elected yet, they continue to perform their duties until the successor is elected [1].",
+  "after": "Yes, the member may continue to perform their duties until a successor is elected [1]."
+ },
+ "g0597@file": {
+  "question": "미국에서 제가 가족 중 한 명이 중병에 걸려 휴가를 써야 하는데, 휴가 종료일 기준으로 그 가족이 실제로 중병 상태였다는 증명서만 있으면 휴가가 인정되나요?",
+  "before": "아니요, 휴가 종료일 기준으로 가족이 중병 상태였다는 증명서만으로는 충분하지 않습니다. 휴가가 인정되기 위해서는 의료 제공자가 발급한 증명서에 중병의 발생일, 예상 기간, 적절한 의학적 사실, 그리고 직원이 그 가족(자녀, 배우자, 부모)을 돌봐야 한다는 내용과 필요한 시간이 포함되어야 합니다 [1][2].",
+  "after": "아니요, 휴가가 인정되기 위해서는 휴가 종료일 기준으로 가족이 중병 상태였다는 증명서만으로는 충분하지 않습니다. 고용주는 휴가 요청 시 의료 제공자가 발행한 증명서를 적시에 제공하도록 요구할 수 있으며, 이 증명서는 중병의 발생일, 예상 기간, 적절한 의학적 사실, 직원이 가족을 돌봐야 한다는 진술 및 필요한 시간 등을 포함해야 합니다 [1][2]."
+ },
+ "g0629": {
+  "question": "Can workers report labor law violations in Korea?",
+  "before": "Yes, workers can report labor law violations in Korea.\n\nUnder the Labor Standards Act, if there is a violation of the Act or its Presidential Decree at a workplace, a worker may report it to the Minister of Employment and Labor or a labor supervisor [1]. Employers are prohibited from dismissing workers or subjecting them to other unfavorable treatment for such reporting [1].\n\nSimilarly, under the Occupational Safety and Health Act, if there is a violation of that Act or its orders at a workplace, a worker may report it to the Minister of Employment and Labor or a labor supervisor [2]. Business owners are prohibited from dismissing workers or subjecting them to other unfavorable treatment for such reporting [2].\n\nUnder the Wage Claim Guarantee Act, if there is a violation of the Act or its orders by a business owner, a worker may report it to a labor supervisor and request measures for correction [3].\n\n**Note on amended versions:** Amended versions of these provisions take effect on December 8, 2026. These versions change the term \"labor supervisor\" (근로감독관) to \"labor supervisor\" (노동감독관) in the Labor Standards Act [4], the Occupational Safety and Health Act [5], and the Wage Claim Guarantee Act [6].",
+  "after": "Yes, workers can report labor law violations in Korea. Under the Labor Standards Act, workers may notify the Minister of Employment and Labor or a labor inspector of violations of the Act or its presidential decrees [1]. Similarly, under the Wage Claim Guarantee Act, workers may report violations of the Act or its orders to a labor inspector and request corrective measures [2]. Under the Occupational Safety and Health Act, workers may report violations of the Act or its orders to the Minister of Employment and Labor or a labor inspector [3].\n\nEmployers are prohibited from dismissing workers or subjecting them to other unfavorable treatment for making such reports under the Labor Standards Act [1] and the Occupational Safety and Health Act [3].\n\nNote: Amended versions of these laws that change the term \"labor inspector\" (근로감독관) to \"labor supervisor\" (노동감독관) take effect on December 8, 2026 [4][5][6]."
+ },
+ "r0003": {
+  "question": "중개사무소를 폐업하고 다시 개설한 경우, 이전에 받은 행정처분은 새로 등록한 사람에게도 적용되나요?",
+  "before": "네, 적용됩니다. 폐업 신고 전의 개업공인중개사에 대하여 행한 행정처분의 효과는 그 처분일부터 1년간 다시 중개사무소의 개설등록을 한 자에게 승계됩니다 [1].\n\n다만, 폐업 신고를 한 날부터 다시 개설등록을 한 날까지의 기간이 3년을 초과한 경우에는 이전의 위반행위에 대한 행정처분을 할 수 없습니다 [2].",
+  "after": "네, 적용됩니다. 폐업 전의 개업공인중개사에 대하여 행한 행정처분의 효과는 그 처분일부터 1년간 다시 중개사무소의 개설등록을 한 자에게 승계됩니다 [1]. 다만, 폐업신고를 한 날부터 다시 개설등록을 한 날까지의 기간이 3년을 초과한 경우 등에는 폐업 전의 위반행위에 대한 행정처분을 할 수 없습니다 [2]."
+ },
+ "r0020": {
+  "question": "자진 신고하면 과태료 줄어들까",
+  "before": "네, 자진 신고하면 과태료를 감경받거나 면제받을 수 있습니다 [1].\n\n조사가 시작되기 전에 자진 신고하고 요건을 모두 충족하면 과태료가 면제되며 [2], 조사가 시작된 후에 자진 신고하고 요건을 모두 충족하면 과태료의 100분의 50이 감경됩니다 [3]. 다만, 관련 세법을 위반한 사실이 통보된 경우나 최근 1년 이내에 3회 이상 감면받은 경우 등에는 감면되지 않습니다 [4].",
+  "after": "네, 조사 시작 전에 자진 신고하면 과태료가 면제되고, 조사 시작 후에 자진 신고하면 100분의 50 감경될 수 있습니다 [1][2][3].\n\n다만, 다음의 경우에는 과태료가 감경 또는 면제되지 않습니다 [4].\n- 관련 세법을 위반한 사실이 관계기관으로부터 통보된 경우\n- 과거 1년 이내에 같은 신고관청에서 3회 이상 감경 또는 면제를 받은 경우"
+ },
+ "r0023": {
+  "question": "In Korea, if I report someone for operating as a real estate agent without proper registration, am I eligible for a reward?",
+  "before": "Yes, you are eligible for a reward if you report someone for operating as a real estate agent without proper registration to the registration authority, an investigative agency, or the Real Estate Transaction Disruption Act Reporting Center [1].\n\nThe reward is 500,000 won per case [2]. It is paid only if the report is made before the person is discovered by an administrative agency and the prosecutor decides to prosecute or suspend prosecution [2]. If multiple people report the same case, the reward is paid only to the first reporter [3].",
+  "after": "Yes, you are eligible for a reward if you report a person operating as a real estate agent without proper registration to the registration authority, an investigative agency, or the Real Estate Transaction Disruption Act Reporting Center before they are discovered by administrative authorities, and the prosecutor indicts or suspends prosecution against them [1][2]. The reward amount is 500,000 won per case [2]."
+ },
+ "r0029": {
+  "question": "Can a landlord be held responsible for housing discrimination committed by their property manager, even if they didn't know about it?",
+  "before": "Yes, a landlord is vicariously liable for a discriminatory housing practice committed by their property manager (agent), regardless of whether the landlord knew or should have known of the conduct [1].",
+  "after": "Yes, a landlord is vicariously liable for a discriminatory housing practice by their agent or employee, regardless of whether the landlord knew or should have known of the conduct [1]."
+ },
+ "r0031": {
+  "question": "I helped a neighbor file a complaint about housing discrimination—now my landlord is threatening to evict me. Is that legal?",
+  "before": "No, that is not legal. It is unlawful to retaliate against any person because that person has made a complaint, testified, assisted, or participated in any manner in a proceeding under the Fair Housing Act [1]. Additionally, it is unlawful to coerce, intimidate, threaten, or interfere with any person on account of having aided or encouraged any other person in the exercise of rights granted or protected by the Act [2]. Evicting a tenant because they engaged in protected activity is also prohibited [3].",
+  "after": "No, it is not legal. It is unlawful to retaliate against any person because that person has made a complaint, testified, assisted, or participated in any manner in a proceeding under the Fair Housing Act [1]. Additionally, it is unlawful to coerce, intimidate, threaten, or interfere with any person on account of that person having aided or encouraged any other person in the exercise or enjoyment of any right granted or protected by the Act [2]. Evicting a tenant because they have engaged in such protected activity is specifically prohibited [3]. Furthermore, taking an adverse employment action (such as dismissal) against an employee or agent for assisting a person seeking access to housing is also unlawful [1]."
+ },
+ "r0031@file": {
+  "question": "I helped a neighbor file a complaint about housing discrimination—now my landlord is threatening to evict me. Is that legal?",
+  "before": "No, that is not legal. It is unlawful to coerce, intimidate, threaten, or interfere with any person on account of their having aided or encouraged another person in the exercise of rights granted or protected by the Fair Housing Act [1]. Additionally, retaliating against a person because they have made a complaint, testified, assisted, or participated in a proceeding under the Act is prohibited [2]. Furthermore, when a landlord takes prompt action to correct a discriminatory housing practice, that action may not include evicting the aggrieved person [3].",
+  "after": "No, it is not legal. It is unlawful to retaliate against any person because that person has made a complaint, testified, assisted, or participated in any manner in a proceeding under the Fair Housing Act [1]. Additionally, it is unlawful to coerce, intimidate, threaten, or interfere with any person on account of that person having aided or encouraged any other person in the exercise or enjoyment of any right granted or protected by the Act [2]. Furthermore, prompt action to correct and end a discriminatory housing practice may not include any action that penalizes or harms the aggrieved person, such as eviction [3]."
+ },
+ "r0038": {
+  "question": "I'm a small business owner offering home improvement loans—can I set different interest rates or repayment terms for borrowers based on their national origin?",
+  "before": "No, you cannot set different interest rates or repayment terms for borrowers based on their national origin. It is unlawful for any person or entity engaged in making loans or providing financial assistance relating to dwellings to impose different terms or conditions because of national origin [1]. Unlawful conduct specifically includes determining the interest rate, duration, or other terms or conditions of a loan because of national origin [2].",
+  "after": "No, you may not set different interest rates or repayment terms for borrowers based on their national origin. It is unlawful for any person or entity engaged in making loans relating to the improvement of dwellings to impose different terms or conditions, such as interest rates or duration, because of national origin [1][2]."
+ },
+ "r0044": {
+  "question": "Is it illegal for a landlord to tell a potential renter that a unit is no longer available because of their race or family status?",
+  "before": "Yes, it is illegal. It is unlawful to indicate through words or conduct that a dwelling which is available for inspection, sale, or rental has been sold or rented because of race or familial status [1]. It is also unlawful to represent to any person because of race or familial status that a dwelling is not available for sale or rental when such dwelling is in fact available [2][3].",
+  "after": "Yes, it is illegal for a landlord to tell a potential renter that a unit is no longer available because of their race or family status. The Fair Housing Act prohibits representing that a dwelling is not available for inspection, sale, or rental when it is in fact available, because of race, color, religion, sex, handicap, familial status, or national origin [1][2]. This includes indicating through words or conduct that a dwelling has been sold or rented for these discriminatory reasons [1]."
+ },
+ "r0045": {
+  "question": "서울에 사는 임차인으로서 보증금 1억5천만원을 주고 계약했고, 집주인이 빚을 내서 집이 경매에 넘어갈 위기에 처했는데, 이 보증금 중 일부라도 우선적으로 돌려받을 수 있나요?",
+  "before": "네, 우선적으로 돌려받을 수 있습니다. 서울특별시에 거주하는 임차인은 보증금이 1억6천500만원 이하인 경우 우선변제를 받을 수 있는데[1], 질문자의 보증금 1억5천만원은 이 기준에 해당합니다. 이 경우 임차인은 보증금 중 5천500만원 한도에서 다른 담보물권자보다 우선하여 변제받을 권리가 있습니다[2][3]. 다만 이 권리를行使하려면 주택에 대한 경매신청의 등기 전에 주택의 인도와 주민등록(대항요건)을 갖추어야 합니다[2][4]. 또한 우선변제받을 금액은 주택가액의 2분의 1을 초과할 수 없으므로, 만약 주택가액의 2분의 1이 5천500만원보다 적다면 그 적은 금액까지만 우선변제됩니다[2][3].",
+  "after": "네, 서울에 거주하는 임차인은 보증금 1억5천만원 중 일부를 우선적으로 변제받을 수 있습니다.\n\n서울특별시 지역의 임차인은 보증금이 1억6천500만원 이하인 경우 우선변제를 받을 수 있는 자격이 있으므로, 질문하신 경우 해당 자격 요건을 충족합니다 [1]. 이 경우 임차인은 보증금 중 일정액을 다른 담보물권자보다 우선하여 변제받을 권리가 있으며, 서울특별시에 해당하는 우선변제 금액은 5천500만원입니다 [2][3]. 다만 이 우선변제권을 행사하려면 임차인은 주택에 대한 경매신청의 등기 전에 대항 요건(주택인도 및 전입신고)을 갖추어야 합니다 [3]. 또한 우선변제를 받으려면 임차주택을 양수인에게 인도해야 합니다 [4]."
+ },
+ "r0053": {
+  "question": "Can a landlord charge higher rent or provide fewer services to tenants because of their race or family status?",
+  "before": "No, it is unlawful to impose different rental charges or deny or limit services or facilities because of race or familial status [1][2][3][4].",
+  "after": "No, a landlord may not charge higher rent or provide fewer services to tenants because of their race or family status. It is unlawful to discriminate in the terms, conditions, or privileges of sale or rental of a dwelling, or in the provision of services or facilities in connection therewith, because of race, color, religion, sex, handicap, familial status, or national origin [1][2][3]. Prohibited actions specifically include using different provisions in leases relating to rental charges because of race or familial status [4], imposing different rental charges because of race or familial status [5], and limiting the use of privileges, services, or facilities associated with a dwelling because of race or familial status [4]."
+ },
+ "r0054": {
+  "question": "임대차 계약 후 보증금을 올리고 싶은데, 계약을 맺고 얼마 지나지 않아서는 올릴 수 없나요?",
+  "before": "네, 임대차계약 또는 약정한 차임이나 보증금의 증액이 있은 후 1년 이내에는 보증금 증액을 청구할 수 없습니다[1][2][3].\n\n다만, 주택과 상가건물에 따라 증액 청구의 상한 비율은 다릅니다.\n*   **주택**: 약정한 차임이나 보증금의 20분의 1의 금액을 초과하지 못합니다[1][2].\n*   **상가건물**: 청구 당시의 차임 또는 보증금의 100분의 5의 금액을 초과하지 못합니다[4].",
+  "after": "네, 임대차계약 또는 약정한 차임이나 보증금의 증액이 있은 후 1년 이내에는 보증금을 올릴 수 없습니다[1][2][3]."
+ },
+ "r0082": {
+  "question": "can a landlord say a unit is unavailable due to harassment",
+  "before": "Yes, a landlord may not represent that a unit is unavailable because of the applicant’s response to a request for a sexual favor or other harassment based on protected characteristics [1]. Such a representation is considered a prohibited discriminatory action under the Fair Housing Act [1].",
+  "after": "Yes, a landlord may not say a unit is unavailable due to harassment. Representing to an applicant that a unit is unavailable because of the applicant’s response to a request for a sexual favor or other harassment because of race, color, religion, sex, handicap, familial status, or national origin is a prohibited action [1]."
+ },
+ "r0098": {
+  "question": "임차권 등기를 마친 건물에 이후에 입주한 임차인은 우선변제권을 받을 수 있나요?",
+  "before": "아니요, 임차권등기명령의 집행에 따른 임차권등기를 마친 건물을 그 이후에 임차한 임차인은 우선변제를 받을 권리가 없습니다[1]. 이는 주택의 경우에도 동일하게 적용됩니다[2].",
+  "after": "아니요, 임차권등기명령의 집행에 따른 임차권등기를 마친 건물을 그 이후에 임차한 임차인은 우선변제를 받을 권리가 없습니다[1][2]."
+ },
+ "r0112": {
+  "question": "Can a landlord require a tenant to remove wall reinforcement installed to support grab bars for a disability, even if the tenant pays for it?",
+  "before": "No, it is unreasonable for a landlord to require a tenant to remove wall reinforcement (blocking) installed to support grab bars, because the reinforced walls will not interfere with the landlord’s or next tenant’s use and enjoyment of the premises and may be needed by a future tenant [1].",
+  "after": "No, a landlord may not require a tenant to remove wall reinforcement (blocking) installed to support grab bars, because the reinforced walls will not interfere with the landlord’s or the next tenant’s use and enjoyment of the premises and may be needed by a future tenant [1]."
+ },
+ "r0120": {
+  "question": "주택임대차 조정위원회가 임대료를 결정할 때 필요한 자료를 지자체에 요청할 수 있나요?",
+  "before": "네, 조정위원회위원장은 특별시장, 광역시장, 특별자치시장, 도지사 및 특별자치도지사에게 인근지역의 확정일자 자료, 보증금의 월차임 전환율 등 적정 수준의 임대료 산정을 위한 자료를 요청할 수 있습니다. 이 경우 시·도지사는 정당한 사유가 없으면 요청에 따라야 합니다 [1].",
+  "after": "네, 조정위원회위원장은 특별시장, 광역시장, 특별자치시장, 도지사 및 특별자치도지사에게 인근지역의 확정일자 자료, 보증금의 월차임 전환율 등 적정 수준의 임대료 산정을 위한 자료를 요청할 수 있습니다. 이 경우 시ㆍ도지사는 정당한 사유가 없으면 요청에 따라야 합니다 [1]."
+ },
+ "r0127": {
+  "question": "미국에서 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설을 건설할 때, 접근 가능한 출입구를 최소 한 개 이상 설치해야 하는가?",
+  "before": "네, 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설은 부지의 지형이나 특이한 특성으로 인해 불가능한 경우를 제외하고, 접근 가능한 경로에 있는 건물 출입구를 최소 한 개 이상 갖도록 설계 및 시공해야 합니다 [1].",
+  "after": "네, 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설은 부지의 지형이나 특이한 특성으로 인해 실현 불가능한 경우를 제외하고, 접근 가능한 경로에 있는 건물 출입구를 최소 한 개 이상 갖도록 설계 및 시공해야 합니다 [1]."
+ },
+ "r0127@file": {
+  "question": "미국에서 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설을 건설할 때, 접근 가능한 출입구를 최소 한 개 이상 설치해야 하는가?",
+  "before": "네, 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설은 지형이나 부지의 특이한 특성으로 인해 실현 불가능한 경우를 제외하고, 접근 가능한 경로에 최소 한 개 이상의 건물 출입구를 갖도록 설계 및 시공해야 합니다 [1].",
+  "after": "네, 1991년 3월 13일 이후에 처음 입주하는 다세대 주거시설은 부지의 지형이나 특이한 특성으로 인해 실현 불가능한 경우를 제외하고, 접근 가능한 경로에 있는 건물 출입구를 최소 한 개 이상 갖도록 설계 및 시공해야 합니다 [1]."
+ },
+ "r0140": {
+  "question": "상가건물 임대차위원회 위원이 부정한 행위를 했을 때, 형법상 공무원의 범죄에 해당하는 처벌을 받을 수 있나요?",
+  "before": "네, 상가건물 임대차위원회의 위원 중 공무원이 아닌 위원은 형법 제127조, 제129조부터 제132조까지의 규정을 적용할 때에는 공무원으로 봅니다[1]. 따라서 해당 위원이 부정한 행위를 했을 때 형법상 공무원의 범죄에 해당하는 처벌을 받을 수 있습니다.",
+  "after": "네, 상가건물임대차위원회의 위원 중 공무원이 아닌 위원은 형법 제127조, 제129조부터 제132조까지의 규정을 적용할 때에는 공무원으로 봅니다 [1]."
+ },
+ "r0147": {
+  "question": "Can a committee member be removed in Korea?",
+  "before": "Yes, a committee member can be removed in Korea under specific conditions listed in various statutes. The grounds for removal include:\n\n1.  **Mental or physical incapacity:** If the member is unable to perform their duties due to a mental or physical disorder [1][2][3][4][5][6].\n2.  **Misconduct:** If there are facts regarding misconduct related to their duties [1][2][3][4][5] or if they are indicted on a criminal case related to their duties [6].\n3.  **Unsuitability:** If the member is deemed unsuitable due to negligence, damage to dignity, or other reasons [1][2][3][4][5][6].\n4.  **Self-request:** If the member expresses that it is difficult for them to perform their duties [1][2][3][4][5][6].\n5.  **Failure to recuse:** If the member fails to recuse themselves from a case despite falling under conflict-of-interest provisions [2][3].\n\nThe authority to remove the member typically lies with the head of the relevant ministry (e.g., the President, the Minister of Land, Infrastructure and Transport, or the Minister of Employment and Labor) or the chairperson of the committee, depending on the specific law [1][2][3][4][5][6].",
+  "after": "Yes, a committee member can be removed in Korea under specific circumstances listed in various enforcement decrees and rules. These grounds generally include:\n\n1.  Mental or physical impairment that makes it impossible to perform duties [1][2][3][4][5][6].\n2.  Facts of misconduct related to duties [1][2][3][4][5].\n3.  Negligence of duty, damage to dignity, or other reasons making the member unfit [1][2][3][4][5][6].\n4.  The member expressing an intention that it is difficult to perform duties [1][2][3][4][5][6].\n\nAdditionally, some regulations allow removal if a member fails to recuse themselves from a case despite a conflict of interest [2][3], or if they have been indicted on criminal charges related to their duties [6]."
+ },
+ "r0175": {
+  "question": "Can a loan servicer refuse to look into my complaint about a past payment unless I pay my next month's bill first?",
+  "before": "No, a servicer is prohibited from requiring you to make a payment as a condition for investigating or responding to a notice of error [1][2]. However, this does not remove your obligation to make payments that are owed under the terms of your mortgage loan [2].",
+  "after": "No, a servicer shall not require a borrower to make any payment that may be owed on the borrower’s account as a condition of responding to a notice of error [1][2]. This prohibition applies even if the payment is for a different month than the one involved in the error [2]."
+ },
+ "r0178": {
+  "question": "미국에서 주택담보대출 서비스가 다른 회사로 이전될 때, 대출자가 대출자에게 서면 통지를 제공한 경우, 이전에 대해 사전 통지가 필요 없나요?",
+  "before": "아니요, 대출자가 대출자에게 서면 통지를 제공한 경우에도 일반적으로 이전에 대해 사전 통지가 필요합니다.\n\n대출 서비스 이전 시 양도인 서비스 제공자(transferor servicer)는 원칙적으로 유효일로부터 **15일 이전**에 대출자에게 서면 통지를 제공해야 합니다 [1].\n\n다만, 대출을 실행하는 사람이 **결제 시점(settlement)**에 대출자에게 해당 이전에 대한 서면 통지를 제공한 경우에는 통지 시간 요건이 적용되지 않습니다 [2][3][1].",
+  "after": "네, 대출자가 대출자에게 서면 통지를 제공한 경우에는 이전에 대한 사전 통지가 필요하지 않습니다. 대출을 제공하는 사람이 정산 시점에 대출자에게 서면으로 이전에 대한 통지를 제공하면, 이전의 유효일 이전에 제공해야 하는 통지 요건이 적용되지 않습니다 [1][2][3]."
+ },
+ "r0180": {
+  "question": "Do I have to give the seller the part of the settlement form that only includes details about my loan as the borrower?",
+  "before": "No, you do not have to give the seller the part of the settlement form that only includes details about your loan as the borrower. The instructions state that lines and columns in Section K, which relate to the Seller’s transaction, may be left blank on the copy of the HUD-1 furnished to the Borrower [1]. Conversely, lines and columns in Section J, which relate to the Borrower’s transaction, may be left blank on the copy of the HUD-1 furnished to the Seller [1]. Additionally, the settlement agent is permitted to omit items related only to the seller’s transaction from the HUD-1 when the borrower inspects it [2].",
+  "after": "No, you do not have to give the seller the part of the settlement form that relates to the borrower's transaction. The law states that nothing in it may be construed to require that the part of the standard forms which relates to the borrower be furnished to the seller [1]. Additionally, the instructions for the HUD-1 form specify that lines and columns relating to the borrower’s transaction may be left blank on the copy furnished to the seller [2]."
+ }
+}

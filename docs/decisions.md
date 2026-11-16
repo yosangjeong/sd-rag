@@ -999,6 +999,29 @@ answer) on claude.ai (Sonnet 5.5) and chatgpt.com (GPT-6). Details and table:
   opened with the wrong word against its own body (g0143, like r0082), and 권리금 glossed as
   "Jeonsegeum" in an English answer (r0037).
 
+## Yes/no openers (`agent/answer.py`, 2026-11-16)
+
+Of the 47 stored answers that open with yes/no, 5 open with the word their own body
+contradicts (above). Two changes:
+
+- Prompt rule: open with Yes/No only when that word and the rest of the first sentence
+  agree; a Korean question asked in the negative is answered by agreeing with its wording
+  ("올릴 수 없나요?" → "네, ... 올릴 수 없습니다"). Re-asking the 40 yes/no questions
+  (`eval/yesno.py`, read by hand: the judge had missed these): r0178 and g0143 now agree,
+  no new reversal among the other 38, Korean negative questions still right. g0036 and
+  r0082 kept "Yes, employers do not owe ..." / "Yes, a landlord may not ...", also with a
+  second prompt sentence giving exactly those examples (tried twice each, dropped).
+- So a code fix: `yes_not_to_no` turns an English opener "Yes, <1-4 words> <verb> not"
+  (or cannot, never, ...) into "No, ..."; the sentence reads the same with "No". Run over
+  all 2,645 stored answers it changes g0036 and r0082 only (every version since v2), and
+  leaves "Yes, you are entitled ... even if you are not ..." alone (unit test).
+- Dev measure with the prompt rule (`v15-yesno-dev` vs `v14-dates-digits-dev`, same 50 + 27
+  items): correct 90% -> 90% (5 up, 1 down), declined 74% -> 74%, gold cited 96% -> 96%,
+  supported 92% -> 86% (1 up, 4 down: g0136's wording of the amendment date, g0201, g0395,
+  and g0036, the reversal itself). The answers' wording changes with any prompt change;
+  the same measure moved 84% -> 92% on 11-15. Adopted; the served re-measure after the
+  final deploy shows it on the full sets. Cost estimated under $2 (Bedrock usage shows a day late).
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it

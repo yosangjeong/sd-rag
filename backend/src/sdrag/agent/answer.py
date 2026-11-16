@@ -43,6 +43,7 @@ Rules:
 - If the sources do not answer the question, say so plainly (in Korean: "제공된 문서에서 답을 찾을 수 없습니다.") and do not answer from your own knowledge.
 - Scope. Check that the sources answer the question as asked, not a narrower one. If they cover only a narrower case than the question (one group, such as foreign, dispatched or part-time workers, or one law or benefit, such as FMLA leave, when the question is general), say first that the documents do not answer the question in general, and only then, labelled with its scope, what the narrower provision says.
 - Answer in the language the user message names, concisely: the direct answer first, then the conditions or exceptions that matter.
+- Yes/no questions. Decide the conclusion before you write the first word. Open with "Yes"/"네" or "No"/"아니요" only when that word and the rest of the first sentence say the same thing: "Yes, X may ..." or "No, X may not ...", never "Yes, X may not ..." or "No, ... is allowed". A Korean question asked in the negative is answered by agreeing with its wording ("올릴 수 없나요?" → "네, 1년 이내에는 올릴 수 없습니다"). If the answer depends on a condition, open with the conclusion for the case asked, then the condition.
 - Jurisdiction. A question is legal when it asks what a law, rule or regulation requires or allows (rights, duties, wages, leave, dismissal, contracts, leases, permits, penalties), even if it does not mention a law. For a legal question: if it names a country, answer for that country; if not, it is about the country of its language (Korean question: Korean law; English question: US law). Never present the other country's law as the answer. If the sources hold only the other country's law, say first that the documents do not answer it for that country, and only then, labelled with the country, what the other country's law says. When sources from both countries are given, say which country each statement comes from. Questions about other documents (reports, papers, manuals, forms) have no jurisdiction rule.
 - Versions of a statute. An article can appear in two versions; their sources carry status="in force today" or status="not in force today" with the dates. Answer with the version in force today, then add one sentence on the other version and the date it takes (or took) effect. Never present both as applying at once, and never treat a version that is not in force today as the current law. A date in <개정 ...> or <신설 ...> is when the text was enacted, not when it takes effect.
 - Dates in the text. When a source says a rate, amount or rule applies from a date after today (a notice announcing next year's rate, "beginning January 6, 2027"), say that date with it ("from January 6, 2027") and do not present it as what applies today; if the sources also give the one that applies today, give that first."""
@@ -169,8 +170,27 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
         tokens = [tokens[0] + c.input_tokens, tokens[1] + c.output_tokens]
         bad = _unsupported(question, text, citations, hits)
     text, citations = renumber(text, citations)
+    text = yes_not_to_no(text)
     sources = [_citation(n, h) for n, h in enumerate(hits, 1)]
     return Answer(text, citations, sources, tokens[0], tokens[1], bad, first)
+
+
+# "Yes, employers do not owe ..." for "Do employers owe ...?": the answer model opens a
+# negative conclusion with "Yes" (g0036 and r0082 in every answer run since v2); the
+# prompt rule did not stop it. Of 2,645 stored answers this matches those two only.
+RE_YES_NOT = re.compile(
+    r"^(\s*(?:\*\*)?)Yes((?:\*\*)?,\s+(?:in (?:Korea|the US|the United States),?\s+)?"
+    r"(?:[A-Za-z’'-]+\s+){1,4}(?:(?:do|does|did|may|can|must|is|are|was|were|will|shall|need"
+    r"|should|could|would|have|has)\s+not|cannot|can't|don't|doesn't|isn't|aren't|won't"
+    r"|mustn't|shouldn't|never)\b)"
+)
+
+
+def yes_not_to_no(text: str) -> str:
+    """An English answer opening "Yes, <subject> <verb> not ..." says no: open it with
+    "No". Only a negation within the first few words after "Yes," counts, so "Yes, you
+    are entitled ... even if you are not ..." stays."""
+    return RE_YES_NOT.sub(r"\1No\2", text, count=1)
 
 
 def renumber(text: str, citations: list[Citation]) -> tuple[str, list[Citation]]:

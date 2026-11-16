@@ -161,3 +161,22 @@ def test_korean_amounts_get_digits_for_english_answers_only():
     ko = FakeChat("150만원입니다 [1].")
     answer(ko, "기준 금액은?", hits)
     assert "(=" not in ko.prompts[0]
+
+
+def test_yes_before_a_negative_conclusion_becomes_no():
+    from sdrag.agent.answer import yes_not_to_no
+
+    assert yes_not_to_no("Yes, in Korea, employers do not owe pay [1].").startswith(
+        "No, in Korea, employers do not"
+    )
+    assert yes_not_to_no("Yes, a landlord may not say so [1].").startswith("No, a landlord may not")
+    assert yes_not_to_no("**Yes**, a landlord cannot say so.").startswith(
+        "**No**, a landlord cannot"
+    )
+    keep = [
+        "Yes, you are legally entitled to leave even if you are not the primary caregiver.",
+        "Yes, it is illegal for a landlord to tell a renter a unit is no longer available.",
+        "No, your employer may not follow only the federal rules.",
+        "네, 1년 이내에는 올릴 수 없습니다.",
+    ]
+    assert [yes_not_to_no(t) for t in keep] == keep
