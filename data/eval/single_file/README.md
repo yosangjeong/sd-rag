@@ -14,6 +14,8 @@ copy in `data/corpus/` (scans there are image-only PDFs).
 
 ## Filling in Claude and ChatGPT
 
+Fill the 20 rows listed in `subset20.json` (chosen on 2026-11-16 before any Claude or ChatGPT answer was seen: one per field x file type x question language, plus one labor row per file type; flagged items left out). The other 30 can stay empty.
+
 For each row: open a new chat (claude.ai and chatgpt.com, default model), attach the
 file in `file` (paths are relative to the repository root), paste `question`
 exactly, and copy the reply into the `claude` / `chatgpt` column. One chat per row,

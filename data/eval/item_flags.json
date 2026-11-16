@@ -23,7 +23,7 @@
   },
   "r0178": {
    "part": "question",
-   "reason": "garbled: 'the lender gives the lender written notice' (대출자가 대출자에게)"
+   "reason": "garbled: 'the lender gives the lender written notice' (대출자가 대출자에게); it also drops the exception's condition 'at settlement', and its negative form ('필요 없나요?') leaves yes/no ambiguous (user, hand grading 2026-11-16)"
   },
   "r0111": {
    "part": "reference",

@@ -1,0 +1,25 @@
+{
+ "note": "The 20 rows to fill for Claude and ChatGPT (of the 50 in compare.csv), chosen on 2026-11-16 before any of their answers were seen: one per (field, file type, question language) cell, plus one more labor row per file type; flagged items (item_flags.json) left out. Seed 20261116.",
+ "qids": [
+  "g0029",
+  "g0143",
+  "g0233",
+  "g0266",
+  "g0274",
+  "g0276",
+  "g0327",
+  "g0396",
+  "g0399",
+  "g0412",
+  "g0558",
+  "g0597",
+  "r0015",
+  "r0031",
+  "r0037",
+  "r0051",
+  "r0083",
+  "r0127",
+  "r0164",
+  "r0176"
+ ]
+}

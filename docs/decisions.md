@@ -931,6 +931,35 @@ under a hand's shadow, one in a dark room. Results: `data/eval/results/ocr-real-
 
 Cost under $0.1.
 
+## Human grading: faulty references, a stricter judge (2026-11-16)
+
+The user graded 20 v8 answers by hand (`data/eval/results/answers/judge-agreement.md`,
+second table). The first item showed the problem: its gold quote was a bare list item
+("1. ... 이행상황의 제출 요구") without the article's sentence that says who holds the
+power. Every item was then read against its whole article: 9 of 20 had a faulty
+reference answer or gold (a list item without its lead-in, 4 of 6 grounds, "what" for a
+"when" question, an unrelated article, an amendment not yet in force, two different
+reasons in reference and gold), and one question was garbled (r0178, already flagged;
+the user added its missing "at settlement" condition and ambiguous negative form). The
+grading page showed the whole articles and the corrected references.
+
+- Agreement with the human (19 graded): judge v2 11, the same judge given the corrected
+  reference and the whole article 15, Claude Code 15. The judge is stricter than the
+  human (10 vs 15 correct, 12 after the corrections); half of its disagreements came from
+  the references.
+- Across the sets about 15% of gold quotes are a bare list item (test 51 of 338, real
+  estate 9 of 82, dev 15 of 85). Retrieval scores are unaffected (chunks are whole
+  articles); the judge reads the quote. Next judge version: the whole gold article as the
+  passage (no new prompt), applied with the final re-measure.
+- The user's notes found real errors: a retrieval miss (g0274, found since by the wider
+  pool), next year's rate first (g0279, fixed on 11-15 by the future-date rule), a
+  deadline given only by name (g0364: the 15th of the next month), a yes/no answer
+  reversed against its own content (r0082), and a list chunk whose amount sits in its
+  lead-in in another chunk (g0395, limitations).
+- Plan: the final served re-measure after the deploy is graded by the judge with whole
+  articles, and the user hand-grades a new 20 from it, references checked against the
+  articles first.
+
 ## Deployment rehearsal (2026-11-12)
 
 The whole stack was deployed once to AWS, checked, measured and torn down. What it
