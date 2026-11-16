@@ -119,7 +119,7 @@ question -> which country's law (KR / US / none): the other country's statutes a
 | Part | Choice | Why (details in `docs/decisions.md`) |
 |---|---|---|
 | Parsing | pypdf + pdfplumber (tables, columns), HWPX/DOCX XML | measured against HWPX ground truth |
-| OCR | Qwen3-VL 235B on Bedrock | CER 0.4-2.3% Korean on synthetic scans |
+| OCR | Qwen3-VL 235B on Bedrock | CER 0.4-2.3% Korean on synthetic scans; 2.8% on a real iPhone scan |
 | Chunks | one per article / section, split at paragraph > item > line | beats fixed windows on every slice |
 | Embeddings | Titan Text Embeddings v2 | far ahead across languages |
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |

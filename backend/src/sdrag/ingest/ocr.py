@@ -44,6 +44,10 @@ PROMPT = (
 )
 PROMPT_VERSION = "1"  # bump when PROMPT changes: cached results are keyed on it
 RENDER_DPI = 200  # what the bench used; scans are 150-300 dpi
+# the longest side of a rendered page: A4 at RENDER_DPI (842 pt). An iPhone scan's PDF
+# page is about 1815 x 2633 pt; at 200 dpi its image was over Bedrock's request limit
+# ("length limit exceeded", eval/real_scan.py). A4 and Letter pages render as before.
+MAX_SIDE = round(842 * RENDER_DPI / 72)
 MAX_TOKENS = 6000  # a dense page needs ~2,000; more only feeds a repetition loop
 
 
@@ -162,7 +166,9 @@ def render_page(pdf: Path, page: int, dpi: int = RENDER_DPI) -> Image.Image:
     with _PDFIUM:
         doc = pdfium.PdfDocument(pdf)
         try:
-            return doc[page - 1].render(scale=dpi / 72).to_pil().convert("L")
+            p = doc[page - 1]
+            scale = min(dpi / 72, MAX_SIDE / max(p.get_size()))
+            return p.render(scale=scale).to_pil().convert("L")
         finally:
             doc.close()
 

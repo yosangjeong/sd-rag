@@ -37,8 +37,8 @@ are served only as image-only scans made
 by `data/scripts/make_scans.py` (skew, blur, noise, JPEG), so the source text is the
 OCR ground truth and no statute is indexed twice. One real English scan
 (Federal Register 1938) is kept. A real Korean scan (the 1953 gazette) was dropped:
-not required, and an extreme case (vertical text, hanja). Limitation: no real Korean
-scan.
+not required, and an extreme case (vertical text, hanja). A real phone scan of printed
+corpus pages was measured later (below, 2026-11-16); it is not in the corpus.
 
 ## Parsing (`backend/src/sdrag/ingest/parse.py`)
 
@@ -904,6 +904,32 @@ moved, none on an English answer with a Korean amount or a future date: the word
 the answers changes with the prompt). Adopted: both target errors are gone, nothing got
 worse beyond noise. The README's final numbers (v11-final) are from before this; a
 re-measure belongs with the served re-measure after the final deploy. Cost about $1.3.
+
+## A real phone scan (`eval/real_scan.py`, 2026-11-16)
+
+Nine corpus pages (Korean articles, Korean tables, an English two-column CFR page and a
+USC page) printed at 100% on A4 and scanned with an iPhone (Notes, document scan, its
+automatic crop and deskew left on), some on purpose badly: two a little skewed, one
+under a hand's shadow, one in a dark room. Results: `data/eval/results/ocr-real-scan.md`.
+
+- The first run failed: the iPhone's PDF pages are about 1815 x 2633 pt (A4 is 595 x
+  842), so at 200 dpi the image was over Bedrock's request limit ("length limit
+  exceeded"). A user's phone scan would have failed to upload. `ingest/ocr.py` now
+  caps a rendered page's longest side at A4's (2,339 px); A4 and Letter pages render as
+  before (the corpus scans' 78 cached pages all hit the cache, same CER).
+- CER 2.8% over the 9 pages (synthetic corpus scans: labor 4.8%, real estate 2.4%),
+  recall 99.4%. The two highest are not misreadings: sheet 5 (15.6%) is the table
+  markup the engine writes (`<br>`, `---`; 0.4% without it), sheet 7 (recall 96.6%)
+  misses only the GPO's tiny print-job line (`VerDate ... Jkt ...`). Shadow 0.0%, dark
+  0.7%, skewed 0.2-2.6%.
+- Uploaded to the local service as a user: indexed in 41 s (9 OCR pages, 27 chunks).
+  Three questions scoped to it were answered right with the right page cited: 30 days'
+  notice of dismissal (p.1), disability grade 5 = 790 days (p.9, a table), FLSA overtime
+  after 40 hours (p.8). The last citation's heading is the previous Korean page's
+  `[별표 4]`: in a scan mixing documents, a page with no heading of its own inherits
+  the last one (rare in a real document; limitations).
+
+Cost under $0.1.
 
 ## Deployment rehearsal (2026-11-12)
 
