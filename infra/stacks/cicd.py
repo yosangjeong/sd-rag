@@ -3,9 +3,9 @@
 GitHub's token for a workflow run is exchanged for short-lived credentials of these
 roles; the trust policy accepts only this repository:
 
-- DeployRole (main branch only): assumes the CDK bootstrap roles, which do the actual
+- DeployRole (the `aws` environment, main branch only): assumes the CDK bootstrap roles, which do the actual
   deployment (cdk deploy), so this role itself holds no broad permissions.
-- EvalRole (any branch or pull request of the repository): invokes the Bedrock models
+- EvalRole (pull requests and main of the repository): invokes the Bedrock models
   the retrieval uses and reads the corpus from S3, for the evaluation gate
   (.github/workflows/eval.yml). Read-only plus model calls: a pull request cannot
   change anything in the project.
@@ -31,7 +31,7 @@ class CiCdStack(Stack):
             client_ids=["sts.amazonaws.com"],
         )
 
-        def principal(sub: str) -> iam.WebIdentityPrincipal:
+        def principal(sub: list[str]) -> iam.WebIdentityPrincipal:
             return iam.WebIdentityPrincipal(
                 provider.open_id_connect_provider_arn,
                 conditions={
@@ -45,7 +45,10 @@ class CiCdStack(Stack):
         deploy = iam.Role(
             self,
             "DeployRole",
-            assumed_by=principal(f"repo:{REPO}:ref:refs/heads/main"),
+            # a job with `environment: aws` (deploy.yml) gets the subject
+            # "repo:<repo>:environment:aws", not ":ref:refs/heads/main"; the environment
+            # allows the main branch only (repository settings)
+            assumed_by=principal([f"repo:{REPO}:environment:aws", f"repo:{REPO}:ref:refs/heads/main"]),
             max_session_duration=Duration.hours(1),
         )
         deploy.add_to_policy(
@@ -58,7 +61,7 @@ class CiCdStack(Stack):
         evaluate = iam.Role(
             self,
             "EvalRole",
-            assumed_by=principal(f"repo:{REPO}:*"),
+            assumed_by=principal([f"repo:{REPO}:pull_request", f"repo:{REPO}:ref:refs/heads/main"]),
             max_session_duration=Duration.hours(1),
         )
         evaluate.add_to_policy(

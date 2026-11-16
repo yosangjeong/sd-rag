@@ -50,12 +50,14 @@ class NetworkStack(Stack):
 
         # Security groups are defined here (not in each stack) so the rules
         # between layers are visible in one place:
-        #   internet --443/80--> ALB --8000--> app tasks --443--> OpenSearch
+        #   CloudFront --80--> ALB --8000--> app tasks --443--> OpenSearch
         self.alb_sg = ec2.SecurityGroup(
             self, "AlbSg", vpc=self.vpc, description="ALB: public HTTP/HTTPS"
         )
-        self.alb_sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443), "HTTPS from internet")
-        self.alb_sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "HTTP (redirect)")
+        # CloudFront reaches the ALB over HTTP on 80 (the only listener); requests without
+        # CloudFront's secret header are refused by the listener (app.py). Limiting the
+        # rule to CloudFront's prefix list needs a lookup at synth time: limitations.
+        self.alb_sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "HTTP from CloudFront")
 
         self.app_sg = ec2.SecurityGroup(
             self, "AppSg", vpc=self.vpc, description="ECS tasks (API and worker)"

@@ -255,7 +255,7 @@ def test_format_is_sniffed_not_taken_from_extension(tmp_path):
     assert parse(p_).format == "docx"
     hwp = tmp_path / "annex.hwpx"
     hwp.write_bytes(b"\xd0\xcf\x11\xe0" + b"\0" * 100)  # HWP 5.x (OLE) named .hwpx
-    with pytest.raises(ValueError, match="unsupported"):
+    with pytest.raises(ValueError, match="HWP"):  # UnreadableFile, a ValueError
         parse(hwp)
 
 
@@ -383,3 +383,67 @@ def test_version_labels_round_trip_and_status_follows_the_date():
     assert version_status(old, dt.date(2026, 11, 13))[1].startswith("in force today")
     assert version_status(new, dt.date(2026, 12, 1))[1].startswith("in force today")
     assert version_status(old, dt.date(2026, 12, 1))[1].startswith("not in force today")
+
+
+def test_docx_reads_content_controls_and_tracked_insertions(tmp_path):
+    import copy
+
+    from docx import Document as NewDocument
+    from lxml import etree
+
+    from sdrag.ingest.parse import W, parse_docx
+
+    d = NewDocument()
+    d.add_paragraph("before")
+    p = d.add_paragraph("inside a control")
+    sdt = etree.SubElement(d.element.body, f"{W}sdt")
+    etree.SubElement(sdt, f"{W}sdtContent").append(copy.deepcopy(p._p))
+    d.element.body.remove(p._p)
+    q = d.add_paragraph("kept ")
+    ins = etree.SubElement(q._p, f"{W}ins")
+    ins.append(copy.deepcopy(q.runs[0]._r))
+    ins[0].find(f"{W}t").text = "inserted"
+    path = tmp_path / "t.docx"
+    d.save(path)
+    texts = [b.text for b in parse_docx(path).blocks]
+    assert "inside a control" in texts and "kept inserted" in texts
+
+
+def test_sniff_format_explains_files_it_cannot_read(tmp_path):
+    import zipfile
+
+    import pytest
+
+    from sdrag.ingest.parse import UnreadableFile, sniff_format
+
+    old = tmp_path / "old.hwpx"
+    old.write_bytes(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\0" * 100)
+    with pytest.raises(UnreadableFile, match="HWP"):
+        sniff_format(old)
+    broken = tmp_path / "broken.docx"
+    broken.write_bytes(b"PK\x03\x04 not really a zip")
+    with pytest.raises(UnreadableFile, match="손상"):
+        sniff_format(broken)
+    junk = tmp_path / "junk.pdf"
+    junk.write_bytes(b"\n\n%PDF-1.4 ...")
+    assert sniff_format(junk) == "pdf"
+    epub = tmp_path / "book.hwpx"
+    with zipfile.ZipFile(epub, "w") as z:
+        z.writestr("mimetype", "application/epub+zip")
+    with pytest.raises(UnreadableFile):
+        sniff_format(epub)
+
+
+def test_a_scan_stamped_with_a_little_text_is_ocrd():
+    from types import SimpleNamespace
+
+    from sdrag.ingest.parse import _stamped_scan
+
+    page = SimpleNamespace(
+        width=600, height=800, images=[{"x0": 0, "x1": 600, "top": 0, "bottom": 780}]
+    )
+    assert _stamped_scan("Scanned with CamScanner", page)
+    assert not _stamped_scan("본문 " * 30, page)  # a real text layer
+    assert not _stamped_scan(
+        "3", SimpleNamespace(width=600, height=800, images=[])
+    )  # a blank-ish page

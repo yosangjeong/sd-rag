@@ -13,16 +13,21 @@ with plain retrieval. The agent is a Converse tool-use loop:
   retrieval result, scored like any other system's; chunks it saw but did not pick
   follow in the order they were found.
 
-Limits: at most MAX_STEPS tool calls; then the loop stops and returns what it found.
+Limits: at most MAX_STEPS tool calls, and TIME_BUDGET_S seconds; then the loop stops and
+returns what it found. A failed search is returned to the model as an error result.
 Tools are read-only, and search results go back to the model as tool results (data),
 under the same rule as the answer step: text in documents is never an instruction.
 """
 
+import time
 from dataclasses import dataclass, field
 
 from sdrag.retrieval.search import Hit, Searcher
 
 MAX_STEPS = 6
+# the agent's searches stop after this; the reranker and the answer (about 15 s) must
+# still fit in the 60 s CloudFront gives a request (the longest agent run took 38 s)
+TIME_BUDGET_S = 30
 RESULTS_PER_SEARCH = 8
 SNIPPET_CHARS = 700
 
@@ -90,6 +95,8 @@ class SearchAgent:
         self.documents = documents  # [{"id", "lang", "title", "file_type"}]
 
     def _search(self, args: dict, found: dict[str, Hit]) -> list[dict]:
+        if not str(args.get("query", "")).strip():
+            raise ValueError("query is empty")
         method = METHODS.get(args.get("method"), "hybrid")
         lang = args.get("language")
         langs = [lang] if lang in ("ko", "en") else None
@@ -109,7 +116,11 @@ class SearchAgent:
         messages = [{"role": "user", "content": [{"text": f"Question: {question}"}]}]
         found: dict[str, Hit] = {}  # chunk id -> hit, in order first seen
         res = AgentResult([], [])
+        t0 = time.monotonic()
         for _ in range(MAX_STEPS + 1):
+            if time.monotonic() - t0 > TIME_BUDGET_S:  # leave the answer step its time
+                res.steps.append({"tool": "time_limit", "input": {}})
+                break
             r = self.client.converse(
                 modelId=self.model_id,
                 system=[{"text": SYSTEM}],
@@ -135,7 +146,10 @@ class SearchAgent:
                 if len(res.steps) > MAX_STEPS:
                     content = {"error": "step limit reached; call finish now"}
                 elif name == "search":
-                    content = {"results": self._search(args, found)}
+                    try:
+                        content = {"results": self._search(args, found)}
+                    except Exception as e:  # noqa: BLE001 - the model can try another search
+                        content = {"error": f"search failed: {type(e).__name__}: {e}"[:300]}
                 elif name == "list_documents":
                     content = {"documents": self.documents}
                 else:

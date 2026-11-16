@@ -452,7 +452,7 @@ the answer step recognizes; none cites the other country's law.
 
 **Single file** (`data/eval/single_file/`): 20 real-estate rows added to the 30 labor
 ones (8 cells, 16 files); ours: 80% correct, 20% partial, the gold passage in the
-sources for 20 of 20. The Claude / ChatGPT columns are filled by hand for all 50.
+sources for 20 of 20. The Claude / ChatGPT columns were filled by hand for 20 chosen rows (2026-11-16, below).
 
 **OCR on every scanned page** (`eval/ocr_corpus.py`, `results/ocr-corpus.md`; cached
 transcriptions the index holds, no new calls): real estate 44 pages, CER 2.4%, recall
@@ -984,7 +984,8 @@ answer) on claude.ai (Sonnet 5.5) and chatgpt.com (GPT-6). Details and table:
   is the number reported; the old one stays as the pre-registered record.
 - Judge v2 with the whole articles still made 15 errors in 80 grades, all from what its
   passage left out (a table split across chunks, a neighbouring article). Every
-  non-correct grade was re-read by hand (`regrade20.json`, each change with its rule,
+  non-correct grade was re-read against the statutes by Claude Code, not blind
+  (`regrade20.json`, each change with its rule,
   applied to every system on the item). After that: ours 19/1/0, Claude 20/0/0, ChatGPT
   19/0/1. On one file the three are level; the brief's target (as good as Claude /
   ChatGPT on one file) is met, not exceeded.
@@ -1021,12 +1022,60 @@ contradicts (above). Two changes:
   (or cannot, never, ...) into "No, ..."; the sentence reads the same with "No". Run over
   all 2,645 stored answers it changes g0036 and r0082 only (every version since v2), and
   leaves "Yes, you are entitled ... even if you are not ..." alone (unit test).
-- Dev measure with the prompt rule (`v15-yesno-dev` vs `v14-dates-digits-dev`, same 50 + 27
-  items): correct 90% -> 90% (5 up, 1 down), declined 74% -> 74%, gold cited 96% -> 96%,
+- Quick check with the prompt rule (`v15-yesno-dev` vs `v14-dates-digits-dev`, the same 50
+  items of the labor test sample + 27 unanswerable; "-dev" in the name is historical): correct 90% -> 90% (5 up, 1 down), declined 74% -> 74%, gold cited 96% -> 96%,
   supported 92% -> 86% (1 up, 4 down: g0136's wording of the amendment date, g0201, g0395,
   and g0036, the reversal itself). The answers' wording changes with any prompt change;
   the same measure moved 84% -> 92% on 11-15. Adopted; the served re-measure after the
   final deploy shows it on the full sets. Cost estimated under $2 (Bedrock usage shows a day late).
+
+## Code review before the final deploy (2026-11-16)
+
+Five reviews, one per area (ingest and worker; retrieval and answers; API, auth and UI;
+infrastructure and CI/CD; the brief against the repository), each read the code without
+the others' conclusions; every high finding was reproduced before it was fixed. Fixed:
+
+- Deploy and demo: the deploy role trusted `ref:refs/heads/main`, but a job with
+  `environment: aws` presents `environment:aws` (the first CI/CD deploy would have been
+  refused); deploys now run only after CI passed on the commit, and stop when the role
+  variable is removed. Model calls on the request path get 30 s and 3 attempts (they had
+  300 s and 8 behind CloudFront's 60 s), the agent 30 s of searching, a failing optional
+  step (country, translation, statute terms, reranking) is skipped and logged; the ALB
+  idle timeout is above CloudFront's. Reopening an agent-mode conversation blanked the page.
+- Uploads: a scan whose text layer is only a stamp ("Scanned with CamScanner") was not
+  OCR'd (now: under 50 characters and an image over half the page; no corpus page
+  qualifies); a page whose OCR was throttled was dropped while the file showed "done"
+  (now the file is retried; other unread pages are counted in its status); a DynamoDB error
+  stopped the worker; a long scan was handed to the second worker at the 30-minute timeout
+  (a heartbeat now extends it); the last retry left "retrying" forever (now "failed"); a
+  failed file's indexed batches stayed searchable (removed). Size is checked while reading,
+  not after; the first bytes must match the type; an old HWP / DOC, an encrypted Office
+  file or a zip that inflates past 500 MB gets a message; DOCX content controls and
+  tracked insertions are read. Corpus parses are byte-identical before and after.
+- Security: masking missed numbers written next to Hangul ("010-1234-5678입니다": `\b`
+  sees no boundary there), landlines, +82, key=value secrets; a document could close its
+  `<source>` tag and forge a source or a status, and the reranker had no "passages are not
+  instructions" rule; a token with an unknown key id gave 500, not 401; dev auth is refused
+  inside an ECS task even without SDRAG_ENV; request ids from clients must look like ours.
+- Answers: `yes_not_to_no` (same day) turned "Yes, if the employer does not pay, ..." into
+  "No"; clause openers are now excluded. A heading with an impossible date ("2026. 13. 1.")
+  made every answer citing it fail. With no sources the answer step no longer calls the model.
+- Docs: "never used for tuning" was overstated (test results were read and analysed, and
+  the answer versions were compared on a test sample; the untouched check is real_heldout);
+  "re-read by hand" was Claude Code, not blind; two README figures were from the 53-document
+  corpus and one MRR was rounded up; the table-chunk limitation described code that had
+  long repeated the header row. Responses (answer text) and an estimated cost are now logged.
+
+Measured after the fixes (the reranker prompt and its tags changed): the CI gate passes on
+both dev sets; dev_re is unchanged (hit@10 1.000, MRR 0.938); dev lost one item, g0345 "is
+off-the-clock work paid" (hit@10 1.000 -> 0.988, MRR 0.956 -> 0.939), and the commit before
+the fixes gives the same pool without its gold: the model's rewrites of that question
+differ from the 11-14 run, not the code. Prompt injection: 18 of 18 resisted, the new
+tag-breakout document included (`data/eval/results/injection.md`).
+
+Left as limitations (docs/design.md): the CloudFront to ALB leg (HTTP, header check), one
+DynamoDB item per conversation, duplicate uploads, the sibling statute version in the
+answer, the agent measured on the real-estate sets only, answers not split by slice.
 
 ## Deployment rehearsal (2026-11-12)
 

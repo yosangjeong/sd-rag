@@ -1,9 +1,14 @@
-# main only: build the frontend, then cdk deploy (CDK builds the backend image).
-# AWS credentials come from GitHub OIDC (infra/stacks/cicd.py, DeployRole); no keys
-# are stored in the repository or its secrets.
+# main only, after CI passed on that commit: build the frontend, then cdk deploy (CDK
+# builds the backend image). AWS credentials come from GitHub OIDC (infra/stacks/cicd.py,
+# DeployRole); no keys are stored in the repository or its secrets.
+# To freeze the live service (evaluation and interview week), delete the repository
+# variable DEPLOY_ROLE_ARN: every run is then skipped; workflow_dispatch still deploys
+# by hand once it is set again.
 name: deploy
 on:
-  push:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 permissions:
@@ -14,11 +19,15 @@ jobs:
   deploy:
     # off until the deploy role exists (infra/stacks/cicd.py) and its ARN is set as the
     # repository variable DEPLOY_ROLE_ARN
-    if: ${{ vars.DEPLOY_ROLE_ARN != '' }}
+    if: >-
+      ${{ vars.DEPLOY_ROLE_ARN != '' && (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')) }}
     runs-on: ubuntu-24.04
     environment: aws
     steps:
       - uses: actions/checkout@v4
+        with:  # the commit CI tested, not whatever main points to now
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-node@v4
         with: { node-version: 22 }

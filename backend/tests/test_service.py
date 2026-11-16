@@ -76,3 +76,17 @@ def test_basic_question_runs_every_step_and_numbers_citations_from_one():
     assert all("owner" in str(b) and "user-1" in str(b) for b in client.bodies)
     # BM25 got the statute's term for the everyday word (집주인 -> 임대인)
     assert any("임대인" in str(b) for b in client.bodies)
+
+
+def test_a_failing_optional_step_is_skipped_not_fatal():
+    class Flaky(FakeChat):
+        def complete(self, system, user, max_tokens=1024, temperature=0.0):
+            if system == RERANK_SYSTEM or "Translate" in system or system == STATUTE_TERMS_SYSTEM:
+                self.systems.append(system)
+                raise TimeoutError("model busy")
+            return super().complete(system, user, max_tokens, temperature)
+
+    reply = RagService(FakeOpenSearch(), "chunks-structure", FakeEmbedder(), Flaky()).ask(
+        "user-1", "집주인이 계약기간을 1년으로 하재요"
+    )
+    assert reply.answer.text  # answered from the first-stage order

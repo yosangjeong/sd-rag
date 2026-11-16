@@ -160,3 +160,48 @@ def test_dynamo_store_reads_every_page_and_lists_without_messages():
     assert [c["id"] for c in store.conversations("u")] == ["c1", "c2"]
     first = store.table.calls[0]
     assert set(first["ExpressionAttributeNames"].values()) == {"id", "title", "ts"}  # no messages
+
+
+def test_a_token_with_an_unknown_key_id_is_401_not_500(monkeypatch):
+    import jwt
+    import pytest
+    from fastapi import HTTPException
+
+    from sdrag.api import auth
+
+    monkeypatch.setattr(auth.settings, "auth_mode", "cognito")
+
+    def unknown_kid(token):
+        raise jwt.PyJWKClientError('Unable to find a signing key that matches: "x"')
+
+    monkeypatch.setattr(auth, "claims_of", unknown_kid)
+    with pytest.raises(HTTPException) as e:
+        auth._claims("Bearer abc.def.ghi", None, None)
+    assert e.value.status_code == 401
+
+
+def test_dev_auth_is_refused_inside_an_ecs_task(monkeypatch):
+    import pytest
+
+    from sdrag.common.config import Settings
+
+    monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", "http://169.254.170.2/v4/x")
+    with pytest.raises(ValueError):
+        Settings(auth_mode="dev")
+
+
+def test_upload_refuses_a_renamed_file_and_one_over_the_limit(api, monkeypatch):
+    c, _ = api
+    monkeypatch.setattr(main, "MAX_FILE_MB", 1)
+    files = [("files", ("old.hwpx", b"\xd0\xcf\x11\xe0 binary hwp", "application/octet-stream")),
+             ("files", ("fake.pdf", b"hello", "application/pdf")),
+             ("files", ("big.pdf", b"%PDF-1.4" + b"0" * (2**20 + 10), "application/pdf")),
+             ("files", ("ok.docx", b"PK\x03\x04 rest", "application/octet-stream"))]  # fmt: skip
+    r = c.post("/api/documents", files=files, headers=as_user("alice")).json()
+    assert [a["file"] for a in r["accepted"]] == ["ok.docx"]
+    reasons = {x["file"]: x["reason"] for x in r["rejected"]}
+    assert (
+        "HWPX" in reasons["old.hwpx"]
+        and "PDF" in reasons["fake.pdf"]
+        and "MB" in reasons["big.pdf"]
+    )

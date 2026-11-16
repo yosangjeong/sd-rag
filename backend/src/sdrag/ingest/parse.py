@@ -212,13 +212,23 @@ def _hwpx_cell_text(tc) -> str:
 
 
 def _hwpx_table(tbl) -> list[list[str]]:
-    rows = [[""] * int(tbl.get("colCnt")) for _ in range(int(tbl.get("rowCnt")))]
-    for tr in tbl.findall(f"{HP}tr"):
-        for tc in tr.findall(f"{HP}tc"):
+    """The grid by each cell's address. rowCnt / colCnt are a starting size only: files
+    from other converters put cells past them (the grid grows) or leave addresses out
+    (the cell takes the next place in its row)."""
+    ncol = int(tbl.get("colCnt") or 0)
+    rows = [[""] * ncol for _ in range(int(tbl.get("rowCnt") or 0))]
+    for i, tr in enumerate(tbl.findall(f"{HP}tr")):
+        for j, tc in enumerate(tr.findall(f"{HP}tc")):
             addr = tc.find(f"{HP}cellAddr")
-            r, c = int(addr.get("rowAddr")), int(addr.get("colAddr"))
+            r = int(addr.get("rowAddr", i)) if addr is not None else i
+            c = int(addr.get("colAddr", j)) if addr is not None else j
+            while len(rows) <= r:
+                rows.append([""] * ncol)
+            if len(rows[r]) <= c:
+                rows[r] += [""] * (c + 1 - len(rows[r]))
             rows[r][c] = _hwpx_cell_text(tc)  # merged cells: text sits in the anchor cell
-    return rows
+    width = max((len(r) for r in rows), default=0)
+    return [r + [""] * (width - len(r)) for r in rows]
 
 
 def parse_hwpx(path: Path) -> ParsedDocument:
@@ -256,7 +266,8 @@ def parse_hwpx(path: Path) -> ParsedDocument:
                                 walk(tc.findall(f"{HP}subList/{HP}p"))
                         else:
                             rows = _hwpx_table(child)
-                            add("table", table_text(rows), rows)
+                            if rows and any(any(r) for r in rows):  # an empty table: nothing
+                                add("table", table_text(rows), rows)
                     # ctrl (header/footer, page numbers), secPr, pictures: skipped
             if "".join(buf).strip():
                 add("text", "".join(buf).strip())
@@ -299,6 +310,19 @@ def _docx_cell_text(cell) -> str:
     return "\n".join(p for p in parts if p.strip()).strip()
 
 
+def _docx_para_text(p) -> str:
+    """A paragraph's text as Word shows it with changes accepted: runs inside tracked
+    insertions (w:ins), content controls and smart tags count (python-docx's
+    Paragraph.text skips them); deleted text (w:delText) does not."""
+    out = []
+    for node in p.iter(f"{W}t", f"{W}tab", f"{W}br", f"{W}cr"):
+        if node.tag == f"{W}t":
+            out.append(node.text or "")
+        else:
+            out.append("\t" if node.tag == f"{W}tab" else "\n")
+    return "".join(out)
+
+
 def parse_docx(path: Path) -> ParsedDocument:
     doc = ParsedDocument(str(path), "docx")
     d = Document(str(path))
@@ -306,9 +330,13 @@ def parse_docx(path: Path) -> ParsedDocument:
 
     def walk(container_el, parent):
         for el in container_el.iterchildren():
-            if el.tag == f"{W}p":
+            if el.tag in (f"{W}sdt", f"{W}customXml"):  # content controls (forms, cover pages)
+                content = el.find(f"{W}sdtContent") if el.tag == f"{W}sdt" else el
+                if content is not None:
+                    walk(content, parent)
+            elif el.tag == f"{W}p":
                 para = Paragraph(el, parent)
-                text = para.text.strip()
+                text = _docx_para_text(el).strip()
                 if text:
                     heads.update(text)
                     if (level := _docx_heading_level(para)) is not None and heads.annex is None:
@@ -693,6 +721,22 @@ class KoreanSpacing:
         return "\n".join(out)
 
 
+# a scan longer than this would run past the upload queue's 30-minute visibility
+# timeout (about 14 s a page on 4 threads): refused with a message instead
+MAX_OCR_PAGES = 300
+
+
+def _stamped_scan(text: str, page) -> bool:
+    """A page with under 50 characters of text and an image over half of it: a scan
+    whose text layer is only a stamp or a page number."""
+    if len("".join(text.split())) >= 50:
+        return False
+    w, h = float(page.width), float(page.height)
+    covered = sum(max(0.0, min(im["x1"], w) - max(im["x0"], 0.0))
+                  * max(0.0, min(im["bottom"], h) - max(im["top"], 0.0)) for im in page.images)  # fmt: skip
+    return covered >= 0.5 * w * h
+
+
 class UnreadableFile(ValueError):
     """A file that cannot be read at all; the message is shown to the user as is."""
 
@@ -723,6 +767,17 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     raw = [page.extract_text() or "" for page in reader.pages]
     rotated = {i for i, page in enumerate(reader.pages, start=1) if page.rotation % 360}
     blank = [i for i, t in enumerate(raw, start=1) if not t.strip()]
+    if ocr is not None:
+        # a scan stamped with a little text ("Scanned with CamScanner", a page number,
+        # a fax header) is a scan too: OCR it (no corpus page qualifies, 2026-11-16)
+        with pdfplumber.open(path, password="") as plumber:
+            blank = sorted(set(blank) | {i for i, (t, page) in enumerate(zip(raw, plumber.pages), 1)
+                                         if t.strip() and _stamped_scan(t, page)})  # fmt: skip
+        if len(blank) > MAX_OCR_PAGES:
+            raise UnreadableFile(
+                f"스캔 쪽이 {len(blank)}쪽으로 한 번에 처리할 수 있는 {MAX_OCR_PAGES}쪽을 넘습니다 "
+                "(나눠서 올려 주세요)"
+            )
     if ocr is not None and blank:
         for i, res in ocr_pages(path, blank, ocr, progress=progress).items():
             raw[i - 1] = res.text
@@ -732,8 +787,8 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     pages: list[tuple[int, list[tuple[str, object]]]] = []
     with pdfplumber.open(path, password="") as plumber:
         for i, (orig, text, page) in enumerate(zip(raw, kept, plumber.pages), start=1):
-            if not orig.strip():
-                doc.needs_ocr_pages.append(i)
+            if not orig.strip() or (i in blank and i not in doc.ocr_pages):
+                doc.needs_ocr_pages.append(i)  # no text, or OCR failed on it
                 continue
             if i in doc.ocr_pages:
                 pages.append((i, split_markdown(text)))
@@ -798,17 +853,36 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     return doc
 
 
+OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"  # old binary HWP / DOC, and encrypted DOCX
+MAX_UNZIPPED = 500 * 2**20  # a 50 MB upload that inflates past this is refused (zip bomb)
+
+
 def sniff_format(path: Path) -> str:
-    head = path.read_bytes()[:4]
-    if head.startswith(b"%PDF"):
+    """The format by content, not extension. A file that is not one of the three gets
+    an UnreadableFile with a message for the user (an old .hwp renamed .hwpx, a
+    password-protected .docx, a damaged zip)."""
+    with path.open("rb") as f:
+        head = f.read(1024)
+    if b"%PDF" in head:  # the header may follow some junk bytes (PDF spec: first 1 KB)
         return "pdf"
-    if head == b"PK\x03\x04":
-        names = zipfile.ZipFile(path).namelist()
-        if "word/document.xml" in names:
-            return "docx"
-        if "Contents/header.xml" in names or "mimetype" in names:
-            return "hwpx"
-    raise ValueError(f"{path.name}: unsupported format (PDF, DOCX, HWPX only)")
+    if head.startswith(OLE[:4]):
+        raise UnreadableFile("한글 구버전(HWP)·DOC 파일이거나 암호가 걸린 문서입니다. "
+                             "HWPX, DOCX 또는 PDF로 저장해 올려 주세요")  # fmt: skip
+    if head.startswith(b"PK\x03\x04"):
+        try:
+            with zipfile.ZipFile(path) as z:
+                infos = z.infolist()
+                names = {i.filename for i in infos}
+                if sum(i.file_size for i in infos) > MAX_UNZIPPED:
+                    raise UnreadableFile("압축을 푼 크기가 너무 큰 파일입니다")
+                if "word/document.xml" in names:
+                    return "docx"
+                mimetype = z.read("mimetype")[:64] if "mimetype" in names else b""
+                if "Contents/header.xml" in names or mimetype.startswith(b"application/hwp"):
+                    return "hwpx"
+        except zipfile.BadZipFile as e:
+            raise UnreadableFile("파일이 손상되어 열 수 없습니다") from e
+    raise UnreadableFile(f"{path.name}: PDF, DOCX, HWPX만 읽을 수 있습니다")
 
 
 def parse(path: str | Path, ocr: OcrEngine | None = None, progress=None) -> ParsedDocument:

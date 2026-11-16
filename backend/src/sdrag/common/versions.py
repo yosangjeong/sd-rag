@@ -32,5 +32,8 @@ def parse(heading: str) -> tuple[str, str | None, dt.date | None]:
     for rx, kind in ((RE_AMENDED, "amended"), (RE_BEFORE, "before")):
         m = rx.search(heading or "")
         if m:
-            return heading[: m.start()], kind, dt.date(*map(int, m.groups()))
+            try:
+                return heading[: m.start()], kind, dt.date(*map(int, m.groups()))
+            except ValueError:  # "2026. 13. 1." (a typo or an OCR misread in an upload)
+                break  # not a version label: the heading stays as it is
     return heading or "", None, None

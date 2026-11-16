@@ -32,7 +32,7 @@ import re
 from dataclasses import dataclass, field, replace
 
 from sdrag.common import numbers, versions
-from sdrag.common.text import is_korean, strip_think
+from sdrag.common.text import attr, is_korean, neutralize_tags, strip_think
 from sdrag.retrieval.search import Hit
 
 SYSTEM = """You answer questions using only the numbered sources the user provides. They come from a collection of Korean and US statutes (labor, real estate) and documents users upload (reports, manuals, papers, forms, any topic), in Korean or English.
@@ -123,12 +123,14 @@ def source_block(hits: list[Hit], today: dt.date | None = None, english: bool = 
             where += f", p.{s['page_start']}" + (
                 f"-{s['page_end']}" if s.get("page_end") not in (None, s["page_start"]) else ""
             )
-        text = s.get("text", "")[:MAX_SOURCE_CHARS]
+        # a document's own text cannot close the tag or forge a source or a status
+        text = neutralize_tags(s.get("text", "")[:MAX_SOURCE_CHARS])
         if english:
             text = with_digits(text)
-        attr = f' status="{status}"' if status else ""
+        st = f' status="{status}"' if status else ""
         out.append(
-            f'<source n="{n}" title="{s.get("title", "")}" where="{where}"{attr}>\n{text}\n</source>'
+            f'<source n="{n}" title="{attr(s.get("title", ""))}" where="{attr(where)}"{st}>'
+            f"\n{text}\n</source>"
         )
     return "\n\n".join(out)
 
@@ -149,6 +151,9 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
     # the language is fixed here, not left to the model: with Korean sources it drifted
     # into Korean for English questions (eval/answers.py, first run)
     lang = "Korean" if is_korean(question) else "English"
+    if not hits:  # nothing to answer from: say so without a model call (and no figure check)
+        return Answer("제공된 문서에서 답을 찾을 수 없습니다." if lang == "Korean"
+                      else "The provided documents do not answer this question.")  # fmt: skip
     # today in Korea: which version of an amended article is in force (SYSTEM, versions)
     today = today or dt.datetime.now(KST).date()
     user = (f"Today is {today.isoformat()}.\n\nSources:\n\n{source_block(hits, today, lang == "English")}\n\n"
@@ -178,9 +183,17 @@ def answer(chat, question: str, hits: list[Hit], max_tokens: int = 1200,
 # "Yes, employers do not owe ..." for "Do employers owe ...?": the answer model opens a
 # negative conclusion with "Yes" (g0036 and r0082 in every answer run since v2); the
 # prompt rule did not stop it. Of 2,645 stored answers this matches those two only.
+# words that start a condition or a clause: "Yes, if the employer does not pay, you can
+# ..." is a yes; a negation after one of them is not the conclusion
+_CLAUSE = (
+    r"(?i:if|unless|as|so|provided|providing|when|whenever|where|even|although|though"
+    r"|only|except|while|because|since|once|before|after|until|who|whom|whose|that"
+    r"|which|whether|regardless)"
+)
 RE_YES_NOT = re.compile(
     r"^(\s*(?:\*\*)?)Yes((?:\*\*)?,\s+(?:in (?:Korea|the US|the United States),?\s+)?"
-    r"(?:[A-Za-z’'-]+\s+){1,4}(?:(?:do|does|did|may|can|must|is|are|was|were|will|shall|need"
+    rf"(?:(?!{_CLAUSE}\b)[A-Za-z’'-]+\s+){{1,4}}"
+    r"(?:(?:do|does|did|may|can|must|is|are|was|were|will|shall|need"
     r"|should|could|would|have|has)\s+not|cannot|can't|don't|doesn't|isn't|aren't|won't"
     r"|mustn't|shouldn't|never)\b)"
 )
@@ -188,8 +201,9 @@ RE_YES_NOT = re.compile(
 
 def yes_not_to_no(text: str) -> str:
     """An English answer opening "Yes, <subject> <verb> not ..." says no: open it with
-    "No". Only a negation within the first few words after "Yes," counts, so "Yes, you
-    are entitled ... even if you are not ..." stays."""
+    "No". Only a negation within the first few words after "Yes," counts, and not one
+    inside a condition or clause ("Yes, if the employer does not pay ...", "Yes, even
+    workers who are not citizens ..."), so those stay."""
     return RE_YES_NOT.sub(r"\1No\2", text, count=1)
 
 

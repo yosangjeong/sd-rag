@@ -7,9 +7,9 @@ chunking strategy: a retrieved chunk is relevant when its range overlaps a gold 
 
 | File | Items | Use |
 |---|---|---|
-| `test.jsonl` | generated, 80% | reported once per system; never used for tuning |
+| `test.jsonl` | generated, 80% | reported per system; choices are made on dev, but results here were read and analysed, and the answer versions were compared on a fixed sample of it (not untouched) |
 | `dev.jsonl` | generated, 20% | tuning (prompts, weights, thresholds) |
-| `real.jsonl` | real user questions | reported next to `test`; never used for tuning |
+| `real.jsonl` | real user questions | reported next to `test`; read and analysed like `test` (the untouched check is `real_heldout`) |
 | `real_unanswerable.jsonl` | real questions the corpus does not answer | the agent should say it does not know |
 | `real_questions_candidates.csv` | the real questions as collected | input of `real.jsonl` |
 | `test_re.jsonl`, `dev_re.jsonl` | generated from the real-estate documents added later, 80% / 20% | same rules as test / dev |

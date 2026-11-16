@@ -34,7 +34,8 @@ def _jwks() -> jwt.PyJWKClient:
 
 
 def claims_of(token: str) -> dict:
-    """The claims of a valid ID token; raises jwt.InvalidTokenError otherwise."""
+    """The claims of a valid ID token; raises jwt.PyJWTError otherwise (an unknown key id
+    or a failed key fetch is a PyJWKClientError, which is not an InvalidTokenError)."""
     key = _jwks().get_signing_key_from_jwt(token).key
     issuer = (
         f"https://cognito-idp.{settings.aws_region}.amazonaws.com/{settings.cognito_user_pool_id}"
@@ -54,7 +55,7 @@ def _claims(authorization: str | None, x_dev_user: str | None, x_dev_groups: str
         raise HTTPException(401, "sign-in required")
     try:
         return claims_of(authorization.split(" ", 1)[1])
-    except jwt.InvalidTokenError as e:
+    except jwt.PyJWTError as e:  # a forged key id too: 401, not 500
         raise HTTPException(401, "invalid or expired token") from e
 
 

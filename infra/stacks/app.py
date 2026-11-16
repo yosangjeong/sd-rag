@@ -107,6 +107,9 @@ class AppStack(Stack):
             internet_facing=True,
             security_group=network.alb_sg,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            # above CloudFront's 60 s origin read timeout: the edge, not the ALB, ends a
+            # slow request, so the user gets CloudFront's error instead of a cut connection
+            idle_timeout=Duration.seconds(65),
         )
         api = patterns.ApplicationLoadBalancedFargateService(
             self,
@@ -175,6 +178,9 @@ class AppStack(Stack):
             queue=data.queue,
             environment=env,
             min_scaling_capacity=0,
+            # scale on the queue only: OCR mostly waits on Bedrock, so CPU stays low and a
+            # CPU target would keep scaling in while files are still queued
+            disable_cpu_based_scaling=True,
             min_healthy_percent=0,
             circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
             max_scaling_capacity=2,  # a t3.small search node takes two bulk writers
@@ -253,8 +259,9 @@ class AppStack(Stack):
         )
         for role in roles:
             role.add_to_principal_policy(bedrock)
-            data.table.grant_read_write_data(role)
             data.search.grant_read_write(role)
+        for role in roles[:2]:  # the corpus ingest task keeps no per-user records
+            data.table.grant_read_write_data(role)
         data.bucket.grant_put(api.task_definition.task_role, "uploads/*")
         data.queue.grant_send_messages(api.task_definition.task_role)
         data.bucket.grant_read(worker.task_definition.task_role, "uploads/*")

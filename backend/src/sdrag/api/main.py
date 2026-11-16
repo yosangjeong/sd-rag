@@ -52,7 +52,8 @@ def deps() -> SimpleNamespace:
     """Clients built once per process (they are thread-safe and keep connections)."""
     client = make_client(settings.opensearch_url, settings.aws_region, 60)
     embedder = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    chat = BedrockChat(settings.llm_model, settings.aws_region)
+    # a request has 60 s at CloudFront: one model call gets 30 s and 3 attempts
+    chat = BedrockChat(settings.llm_model, settings.aws_region, read_timeout=30, attempts=3)
     store = DynamoStore(settings.table, settings.aws_region) if settings.table else MemoryStore()
     d = SimpleNamespace(client=client, embedder=embedder, chat=chat, store=store,
                         index=settings.index, ocr=BedrockVisionOcr(settings.ocr_model, settings.aws_region),
@@ -79,13 +80,18 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="SD RAG API", version="0.2.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
-                   allow_headers=["Authorization", "Content-Type", "X-Dev-User", "X-Dev-Groups"])  # fmt: skip
+if settings.env == "local":  # the Vite dev server; in AWS the page and /api/* share one origin
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
+                       allow_headers=["Authorization", "Content-Type", "X-Dev-User", "X-Dev-Groups"])  # fmt: skip
 
 
 @app.middleware("http")
 async def request_log(request: Request, call_next):
-    rid = request.headers.get("x-request-id") or uuid.uuid4().hex[:12]
+    # a client's id is kept only if it looks like ours: free text in it could otherwise
+    # join another request's trail in the logs
+    rid = request.headers.get("x-request-id") or ""
+    if not logs_api.RE_RID.match(rid):
+        rid = uuid.uuid4().hex[:12]
     request.state.rid = rid
     t = time.perf_counter()
     try:
@@ -134,7 +140,7 @@ def chat(body: ChatIn, request: Request, user: str = Depends(current_user)) -> d
     )
     msg = {"role": "assistant", "text": reply.answer.text, "citations": citations,
            "unchecked_figures": reply.answer.unchecked_figures, "mode": reply.mode,
-           "ts": time.time()}  # fmt: skip
+           "steps": [{"tool": s.get("tool")} for s in reply.steps], "ts": time.time()}  # fmt: skip
     d.store.add_message(user, conv, msg)
     return {"conversation_id": conv, "answer": reply.answer.text, "citations": citations,
             "unchecked_figures": reply.answer.unchecked_figures,
@@ -156,10 +162,35 @@ def conversation(conv_id: str, user: str = Depends(current_user)) -> dict:
     return c
 
 
+def _save_capped(f: UploadFile, local: Path, limit: int) -> int | None:
+    """Copy the upload to disk in pieces, stopping at `limit` bytes: the size of the
+    file, or None when it is larger (nothing is held whole in memory)."""
+    local.parent.mkdir(parents=True, exist_ok=True)
+    n = 0
+    with local.open("wb") as out:
+        while piece := f.file.read(2**20):
+            n += len(piece)
+            if n > limit:
+                break
+            out.write(piece)
+    if n > limit:
+        local.unlink(missing_ok=True)
+        return None
+    return n
+
+
+def _looks_like(path: Path, suffix: str) -> bool:
+    """The file's first bytes match its extension: "%PDF" within the first 1 KB for a
+    PDF, a zip ("PK") for DOCX and HWPX (an old binary HWP renamed .hwpx is refused here,
+    with a message, instead of failing in the worker)."""
+    head = path.open("rb").read(1024)
+    return b"%PDF" in head if suffix == ".pdf" else head.startswith(b"PK")
+
+
+# a plain def: FastAPI runs it in its thread pool, so the blocking S3 / SQS / DynamoDB
+# calls of a large batch do not stall other requests and the health check
 @app.post("/api/documents")
-async def upload(
-    files: list[UploadFile], request: Request, user: str = Depends(current_user)
-) -> dict:
+def upload(files: list[UploadFile], request: Request, user: str = Depends(current_user)) -> dict:
     if not files or len(files) > MAX_FILES:
         raise HTTPException(400, f"send 1 to {MAX_FILES} files")
     d, accepted, rejected = deps(), [], []
@@ -168,15 +199,19 @@ async def upload(
         if Path(name).suffix.lower() not in ALLOWED:
             rejected.append({"file": name, "reason": "only PDF, DOCX and HWPX"})
             continue
-        data = await f.read()
-        if len(data) > MAX_FILE_MB * 2**20:
-            rejected.append({"file": name, "reason": f"over {MAX_FILE_MB} MB"})
-            continue
         doc_id = new_id()
         local = Path(settings.upload_dir) / user_hash(user) / doc_id / name
-        local.parent.mkdir(parents=True, exist_ok=True)
-        local.write_bytes(data)
-        d.store.put_document(user, {"id": doc_id, "file": name, "bytes": len(data),
+        size = _save_capped(f, local, MAX_FILE_MB * 2**20)
+        if size is None:
+            rejected.append({"file": name, "reason": f"over {MAX_FILE_MB} MB"})
+            continue
+        if not _looks_like(local, Path(name).suffix.lower()):
+            local.unlink(missing_ok=True)
+            reason = ("not a PDF file" if name.lower().endswith(".pdf")
+                      else "not a DOCX/HWPX file (an old .hwp/.doc renamed? save it as HWPX, DOCX or PDF)")  # fmt: skip
+            rejected.append({"file": name, "reason": reason})
+            continue
+        d.store.put_document(user, {"id": doc_id, "file": name, "bytes": size,
                                     "status": "queued", "queued": time.time()})  # fmt: skip
         d.queue.send(user, doc_id, local, name)
         accepted.append({"id": doc_id, "file": name})
@@ -205,6 +240,8 @@ def logs(preset: str, request: Request, minutes: int = 60, request_id: str = "",
         rows = logs_api.query(preset, minutes, request_id)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
+    except RuntimeError as e:  # the query failed or timed out: shown as an error, not "none"
+        raise HTTPException(502, str(e)) from e
     log("audit", action="logs", request_id=request.state.rid, user=user_hash(user), preset=preset)
     return rows
 

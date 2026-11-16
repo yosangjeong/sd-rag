@@ -51,12 +51,12 @@ Steps, all reproducible from the files here:
 3. `grade-full`: judge v2 with the corrected reference and the whole articles as the
    passage (`grades20.json`; `--skip-fix r0176` gives the grades before that fix,
    `grades20-skip-r0176.json`).
-4. Every item with a non-correct grade re-read by hand against the statutes, all four
-   answers of it (`regrade20.json`: 15 of 80 grades changed, each with its reason).
+4. Every item with a non-correct grade re-read against the statutes by Claude Code (not
+   blind: it knew which system wrote which answer), all four answers of it (`regrade20.json`: 15 of 80 grades changed, each with its reason).
 
 correct / partial / wrong of 20:
 
-| System | judge, r0176 as first written | judge | after the hand re-read |
+| System | judge, r0176 as first written | judge | after the re-read |
 |---|---|---|---|
 | ours, 2026-11-13 run | 15 / 4 / 1 | 16 / 3 / 1 | **20 / 0 / 0** |
 | ours, served code (2026-11-16) | 14 / 4 / 2 | 15 / 3 / 2 | **19 / 1 / 0** |

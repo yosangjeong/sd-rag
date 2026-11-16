@@ -14,6 +14,8 @@ permissions:
   id-token: write
 jobs:
   retrieval:
+    # off until the eval role exists (infra/stacks/cicd.py) and its ARN is set
+    if: ${{ vars.EVAL_ROLE_ARN != '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

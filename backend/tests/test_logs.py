@@ -18,3 +18,37 @@ def test_log_writes_masked_json(capsys):
     rec = json.loads(capsys.readouterr().out)
     assert rec["event"] == "request" and rec["n"] == 3
     assert rec["question"] == "제 번호는 <phone> 이에요" and len(rec["user"]) == 12
+
+
+def test_mask_numbers_next_to_hangul_and_other_forms():
+    cases = {
+        "전화는 010-1234-5678입니다": "전화는 <phone>입니다",
+        "연락처010-1234-5678": "연락처<phone>",
+        "900101-1234567번": "<rrn>번",
+        "+82 10-1234-5678": "<phone>",
+        "사무실 02-123-4567로": "사무실 <phone>로",
+        "031-123-4567": "<phone>",
+        "010.1234.5678": "<phone>",
+        "password=hunter2 다음": "password=<secret> 다음",
+        "aws_secret_access_key = abcDEF123/xyz": "aws_secret_access_key = <secret>",
+        "key sk-abcdefghijklmnopqrstu": "key <api-key>",
+        "카드 4111 1111 1111 1111로": "카드 <card>로",
+        "4111-1111-1111-1111": "<card>",
+    }
+    assert {k: mask(k) for k in cases} == cases
+
+
+def test_mask_keeps_statute_and_document_numbers():
+    for s in [
+        "2026-20646",
+        "제12조의3제2항",
+        "29 U.S.C. 2614(c)(3)",
+        "O10-O16, O20-O48",
+        "1억6천500만원",
+        "2025. 2. 21.",
+        "| 0 0 0 0 0 0 0 0 0 0 0 0 0 0 |",
+        "별지 제26호서식",
+        "I00-I02",
+        "법률 제20520호",
+    ]:
+        assert mask(s) == s

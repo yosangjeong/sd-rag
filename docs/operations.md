@@ -29,16 +29,20 @@ the `x-request-id` header).
 | `question` | user (hash), mode, question (masked) |
 | `tool_call` | tool, input (agent mode: each search the agent ran) |
 | `retrieval` | mode, results (top 10 chunk and document ids) |
-| `answer` | mode, latency_ms, llm_input_tokens, llm_output_tokens, cited |
+| `answer` | mode, latency_ms, answer (text, first 2,000 characters), cost_usd_est (list prices, `common/prices.py`), llm_input_tokens, llm_output_tokens, cited |
+| `degraded` | step (jurisdiction, translation, statute_terms, rerank), error: an optional step failed and the request went on without it |
 | `error` | path, error |
 | `upload`, `ingest` | accepted / rejected counts; per file: status, chunks, parse_s, embed_s, index_s |
 | `audit` | action (search: documents an answer cited; view: a source opened), user, document |
 
 **Masking.** Every string field is passed through `mask()` before it is written:
-e-mail addresses, Korean resident registration numbers, phone numbers, card-like
-digit runs, AWS access keys, bearer tokens and JWTs become tags (`<email>`, ...).
-Users appear only as a 12-character hash of their Cognito id. Tokens, passwords and
-document text are never logged.
+e-mail addresses, Korean resident registration numbers, mobile and landline phone
+numbers (also +82 and written next to Hangul, "010-1234-5678입니다"), card numbers,
+AWS access keys, API keys, bearer tokens, JWTs and key=value secrets (`password=...`)
+become tags (`<email>`, ...). Users appear only as a 12-character hash of their
+Cognito id. Tokens and document text are never logged; the answer text is (masked),
+since the brief asks for responses. Request ids are made by the server (a client's
+`x-request-id` is kept only if it has the same form).
 
 ## Logs Insights queries
 

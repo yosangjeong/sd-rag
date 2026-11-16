@@ -51,8 +51,15 @@ MAX_SIDE = round(842 * RENDER_DPI / 72)
 MAX_TOKENS = 6000  # a dense page needs ~2,000; more only feeds a repetition loop
 
 
+# Bedrock answers that mean "busy, try later", not "this page cannot be read"
+TRANSIENT_CODES = ("ThrottlingException", "ServiceUnavailableException", "ModelNotReadyException",
+                   "InternalServerException", "ModelTimeoutException", "ServiceUnavailable")  # fmt: skip
+
+
 class OcrError(Exception):
-    pass
+    def __init__(self, message: str, transient: bool = False) -> None:
+        super().__init__(message)
+        self.transient = transient  # the document is worth another try later
 
 
 @dataclass
@@ -115,8 +122,11 @@ class BedrockVisionOcr:
                 ],
                 inferenceConfig={"maxTokens": MAX_TOKENS, "temperature": 0},
             )
-        except (ClientError, BotoCoreError) as e:
-            raise OcrError(f"{self.model_id}: {e}") from e
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "")
+            raise OcrError(f"{self.model_id}: {e}", code in TRANSIENT_CODES) from e
+        except BotoCoreError as e:  # connection or read timeout: the service, not the page
+            raise OcrError(f"{self.model_id}: {e}", True) from e
         text = "".join(b.get("text", "") for b in r["output"]["message"]["content"])
         return text, r["usage"], r["stopReason"]
 
@@ -177,8 +187,11 @@ def ocr_pages(
     pdf: Path, pages: list[int], engine: OcrEngine, workers: int = 4, progress=None
 ) -> dict[int, OcrResult]:
     """Transcribe pages (1-based) in parallel; a page that fails is left out and logged,
-    so one bad page does not stop the document. progress(done, total) is called as
-    pages finish (the upload status shows it: a 50-page scan takes minutes)."""
+    so one bad page does not stop the document (the caller lists it as unread). A busy
+    service (throttling after the retries) is not a bad page: it is raised, so the whole
+    upload is retried later instead of being indexed with pages missing. progress(done,
+    total) is called as pages finish (the upload status shows it: a 50-page scan takes
+    minutes); an error in it does not stop the OCR."""
     done = [0]
     lock = threading.Lock()
 
@@ -186,13 +199,21 @@ def ocr_pages(
         try:
             return page, engine.transcribe(render_page(pdf, page))
         except OcrError as e:
+            if e.transient:
+                raise
             log.warning("OCR failed on %s page %d: %s", pdf.name, page, e)
+            return page, None
+        except Exception as e:  # noqa: BLE001 - a page that cannot be rendered
+            log.warning("OCR failed on %s page %d: %s: %s", pdf.name, page, type(e).__name__, e)
             return page, None
         finally:
             if progress:
                 with lock:
                     done[0] += 1
-                    progress(done[0], len(pages))
+                    try:
+                        progress(done[0], len(pages))
+                    except Exception as e:  # noqa: BLE001 - a status write is not the OCR
+                        log.warning("OCR progress update failed: %s", e)
 
     with ThreadPoolExecutor(workers) as pool:
         return {p: r for p, r in pool.map(one, pages) if r is not None}

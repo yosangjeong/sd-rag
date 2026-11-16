@@ -36,8 +36,16 @@ export async function initAuth() {
 
 export async function idToken() {
   if (!manager) return null;
-  const user = await manager.getUser();
-  return user ? user.id_token : null;
+  let user = await manager.getUser();
+  if (!user || user.expired) {
+    // the tab slept past the token's hour: renew quietly, else sign in again
+    user = await manager.signinSilent().catch(() => null);
+    if (!user) {
+      await manager.signinRedirect();
+      return new Promise(() => {}); // the page is leaving
+    }
+  }
+  return user.id_token;
 }
 
 export async function signOut() {

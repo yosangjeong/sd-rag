@@ -200,7 +200,7 @@ def main() -> None:
 
     lines = [
         (
-            "# Answer quality (served pipeline: translation union + rerank + "
+            "# Answer quality (served pipeline: wide pool + rerank + "
             f"{a.answer_model or 'GLM-4.7'} answers)"
         ),
         "",

@@ -38,11 +38,18 @@ function Uploads({ onAsk }) {
   }, [working]);
   const send = async (files) => {
     if (!files.length) return;
+    // the API refuses files over 50 MB; say so before sending them
+    const big = files.filter((f) => f.size > 50 * 2 ** 20);
+    files = files.filter((f) => f.size <= 50 * 2 ** 20);
+    if (big.length) alert(big.map((f) => `${f.name}: 50 MB 초과`).join("\n"));
+    if (!files.length) { input.current.value = ""; return; }
     setBusy(true);
     try {
       const r = await api.upload(files);
       if (r.rejected.length) alert(r.rejected.map((x) => `${x.file}: ${x.reason}`).join("\n"));
       setOpen(true); // show the list so the progress is visible
+    } catch (err) {
+      alert(`업로드 실패: ${err.message}`);
     } finally {
       setBusy(false);
       input.current.value = "";
@@ -105,11 +112,17 @@ export default function App({ user }) {
     return () => clearInterval(t);
   }, []);
 
+  const latest = useRef(null); // the conversation clicked last: a slower earlier load is dropped
   const open = async (id) => {
+    latest.current = id;
     setConvId(id);
     setSource(null);
-    const c = await api.conversation(id);
-    setMessages(c.messages);
+    try {
+      const c = await api.conversation(id);
+      if (latest.current === id) setMessages(c.messages);
+    } catch (err) {
+      if (latest.current === id) setMessages([{ role: "assistant", text: `오류: ${err.message}`, citations: [] }]);
+    }
   };
   const ask = async (e, preset) => {
     e?.preventDefault();
@@ -132,7 +145,13 @@ export default function App({ user }) {
       setPending(false);
     }
   };
-  const openSource = async (c) => setSource({ ...c, ...(await api.source(c.chunk_id)) });
+  const openSource = async (c) => {
+    try {
+      setSource({ ...c, ...(await api.source(c.chunk_id)) });
+    } catch (err) {
+      alert(`원문을 열지 못했습니다: ${err.message}`);
+    }
+  };
 
   return (
     <div className="layout">
@@ -192,7 +211,7 @@ export default function App({ user }) {
                     <Sources citations={m.citations} onOpen={openSource} label={where} />
                   )}
                   <div className="meta">
-                    {m.mode === "agent" && <span className="chip">에이전트 · 검색 {m.steps.filter((s) => s.tool === "search").length}회</span>}
+                    {m.mode === "agent" && <span className="chip">에이전트 · 검색 {(m.steps || []).filter((s) => s.tool === "search").length}회</span>}
                     {m.latency_ms && <span className="chip">{(m.latency_ms / 1000).toFixed(1)}초</span>}
                     {m.searched && <span className="chip wide" title="앞 대화를 반영해 고친 질문">검색한 질문: {m.searched}</span>}
                   </div>

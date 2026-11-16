@@ -57,6 +57,8 @@ def query(preset: str, minutes: int = 60, rid: str = "") -> list[dict]:
         if r["status"] in ("Complete", "Failed", "Cancelled", "Timeout"):
             break
         time.sleep(0.5)
+    if r["status"] != "Complete":  # an error, not "no results"
+        raise RuntimeError(f"log query {r['status'].lower()}")
     return [
         {f["field"]: f["value"] for f in row if f["field"] != "@ptr"}
         for row in r.get("results", [])

@@ -9,7 +9,8 @@ or opened which document.
 Masking: free text a user writes (questions, file names) can carry personal data
 and secrets. Before a record is written, every string value is passed through
 ``mask``: e-mail addresses, Korean resident registration numbers, phone numbers,
-card-like digit runs, AWS access keys and bearer tokens are replaced by a tag.
+card-like digit runs, AWS access keys, API keys, bearer tokens and key=value secrets
+(password=..., api_key: ...) are replaced by a tag.
 User ids are logged as a short hash, not as the Cognito id itself.
 """
 
@@ -20,14 +21,35 @@ import sys
 import time
 from typing import Any
 
+# Digit runs are bounded by "not a digit" rather than \b: Hangul counts as a word
+# character, so "010-1234-5678입니다" has no word boundary after the 8.
+_ND, _NA = r"(?<!\d)", r"(?!\d)"
 PATTERNS = [
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "<email>"),
-    (re.compile(r"\b\d{6}\s*-\s*[1-8]\d{6}\b"), "<rrn>"),  # 주민등록번호
-    (re.compile(r"\b01[016789][-\s]?\d{3,4}[-\s]?\d{4}\b"), "<phone>"),
-    (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "<card>"),
+    (re.compile(_ND + r"\d{6}\s*-\s*[1-8]\d{6}" + _NA), "<rrn>"),  # 주민등록번호
+    (
+        re.compile(r"(?:\+82[-\s.]?|" + _ND + r"0)1[016789][-\s.]?\d{3,4}[-\s.]?\d{4}" + _NA),
+        "<phone>",
+    ),
+    # landlines: 02-123-4567, 031-123-4567 (separators required: statute numbers are not)
+    (
+        re.compile(r"(?:\+82[-\s.]?|" + _ND + r"0)(?:2|[3-6][1-5])[-.)]\s?\d{3,4}[-.]\d{4}" + _NA),
+        "<phone>",
+    ),
+    # cards: 4-digit groups with one separator style (a table row of single digits is not)
+    (re.compile(_ND + r"\d{4}([ -]?)\d{4}\1\d{4}\1\d{1,7}" + _NA), "<card>"),
     (re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"), "<aws-key>"),
     (re.compile(r"(?i)bearer\s+[\w\-.~+/]+=*"), "Bearer <token>"),
     (re.compile(r"\beyJ[\w-]+\.[\w-]+\.[\w-]+"), "<jwt>"),
+    (re.compile(r"\bsk-[A-Za-z0-9_-]{16,}"), "<api-key>"),
+    # key=value secrets: password=..., "secret": "...", aws_secret_access_key = ...
+    (
+        re.compile(
+            r"(?i)(?<![a-z])(password|passwd|pwd|secret|api[_-]?key|access[_-]?key|token|비밀번호)"
+            r"(\w*[\"']?\s*[:=]\s*[\"']?)[^\s\"',}]+"
+        ),
+        r"\1\2<secret>",
+    ),
 ]
 
 

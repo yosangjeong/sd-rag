@@ -6,9 +6,14 @@ questions in Korean or English and get answers that cite the document and the pl
 regulations (Korean labor and real-estate acts with their decrees and rules; US Code,
 CFR, Federal Register), and each user's uploads are searched only for that user.
 
-The focus is retrieval accuracy, measured on held-out sets that were never used for
-tuning (`data/eval/`). hit@10 / MRR of the served system against plain hybrid search
-(gold spans pooled from every reported system's top 5, TREC-style, `eval/repool.py`):
+The focus is retrieval accuracy (`data/eval/`). Choices were made on the dev sets; the
+test sets below were kept apart from them, but they are not untouched: their results were
+read and their errors analysed after each measurement, a few decisions were checked on
+them too, and the answer versions were compared on a fixed sample of the labor test set
+(`docs/decisions.md`). The strictly held-out check is the set of real questions collected
+after the last change and measured once (below: hit@10 0.91, MRR 0.82). hit@10 / MRR of
+the served system against plain hybrid search (gold spans pooled from every reported
+system's top 5, TREC-style, `eval/repool.py`):
 
 | Set | Questions | Served | Hybrid (BM25 + vectors) |
 |---|---|---|---|
@@ -29,18 +34,23 @@ MRR 0.82, against hybrid 0.73 / 0.53; the 64 it cannot answer declined 78%.
 Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real estate (judge v3,
 which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
 passage; questions the corpus cannot answer declined 67% / 90%; the other country's law cited
-0 times. Every figure in an answer (period, ratio, amount) is checked against the cited sources
-before it is shown.
+0 times. Every period, ratio and amount with a unit in an answer is checked against the cited
+sources before it is shown (bare numbers and dates are not).
+
+Uploads (`data/eval/results/upload/upload.md`): 53 files in one request were done in 154 s
+locally (20.7 files/min) and 429 s on AWS (7.4 files/min, the worker starting from zero);
+the last AWS run with 70 files finished 63, the other 7 failed on a busy search node, which
+led to retries and two workers at most. It is measured again on the final deployment.
 
 On one uploaded file, against Claude (Sonnet 5.5) and ChatGPT (GPT-6) on the same 20
-questions (2026-11-16, references checked against the statutes, non-correct grades re-read
-by hand): ours 19 correct and 1 partial (served code), Claude 20, ChatGPT 19 and 1 wrong;
+questions (2026-11-16, references checked against the statutes, every non-correct grade
+re-read against the statutes by Claude Code, not blind, each change with its rule): ours 19 correct and 1 partial (served code), Claude 20, ChatGPT 19 and 1 wrong;
 with 20 questions these are level (`data/eval/single_file/README.md`). How far the judge can be
 trusted, and every choice behind these numbers: `docs/decisions.md`.
 
 ### Ablations (the brief's comparisons)
 
-Labor test set (338 generated questions, not used for tuning; pooled gold), retrieval only.
+Labor test set (338 generated questions, choices made on dev; pooled gold), retrieval only.
 Latency p50 and LLM cost per query (query embeddings, about $0.00001, not counted):
 
 | Chunking | Search | hit@1 | hit@10 | MRR | nDCG@10 | p50 | $/query |
@@ -128,8 +138,8 @@ question -> which country's law (KR / US / none): the other country's statutes a
 | Chunks | one per article / section, split at paragraph > item > line | beats fixed windows on every slice |
 | Embeddings | Titan Text Embeddings v2 | far ahead across languages |
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |
-| Cross-lingual | query translation, candidates added | test ko->en hit@10 0.47 -> 0.90 |
-| Reranker | GLM-4.7 listwise | test MRR 0.53 -> 0.80 on hybrid |
+| Cross-lingual | query translation, candidates added | test ko->en hit@10 0.47 (hybrid) -> 0.94 (served) |
+| Reranker | GLM-4.7 listwise | test MRR 0.54 -> 0.81 on hybrid |
 | Answers / agent | GLM-4.7 (in-Region, tool use) | fast; 6 other in-Region models no clearly better (decisions.md) |
 
 ## Repository

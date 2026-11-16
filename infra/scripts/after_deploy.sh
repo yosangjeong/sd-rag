@@ -10,15 +10,24 @@ REGION=ap-southeast-2
 
 case "$1" in
 corpus)
+  # nori is attached to the search domain after `cdk deploy` returns (10-20 min, blue/green);
+  # indexing before it is active fails with "Unknown tokenizer"
+  domain=$(aws opensearch list-domain-names --region $REGION --query 'DomainNames[0].DomainName' --output text)
+  until [ "$(aws opensearch list-packages-for-domain --region $REGION --domain-name "$domain" \
+            --query 'DomainPackageDetailsList[0].DomainPackageStatus' --output text)" = "ACTIVE" ]; do
+    echo "waiting for nori on $domain ..."; sleep 30
+  done
+  vpc=$(aws opensearch describe-domain --region $REGION --domain-name "$domain" \
+        --query 'DomainStatus.VPCOptions.VPCId' --output text)
   bucket=$(out Bucket)
   infra/scripts/upload_corpus.sh "$bucket"
   cluster=$(out ClusterName)
   taskdef=$(out IngestTaskDef)
   # the task runs in a public subnet with a public IP (no NAT), in the app security group
-  subnet=$(aws ec2 describe-subnets --region $REGION --filters "Name=tag:aws-cdk:subnet-type,Values=Public" \
+  subnet=$(aws ec2 describe-subnets --region $REGION --filters "Name=vpc-id,Values=$vpc" "Name=tag:aws-cdk:subnet-type,Values=Public" \
            --query 'Subnets[0].SubnetId' --output text)
   sg=$(aws ec2 describe-security-groups --region $REGION \
-       --filters "Name=description,Values=ECS tasks (API and worker)" --query 'SecurityGroups[0].GroupId' --output text)
+       --filters "Name=vpc-id,Values=$vpc" "Name=description,Values=ECS tasks (API and worker)" --query 'SecurityGroups[0].GroupId' --output text)
   aws ecs run-task --region $REGION --cluster "$cluster" --task-definition "$taskdef" --launch-type FARGATE \
     --network-configuration "awsvpcConfiguration={subnets=[$subnet],securityGroups=[$sg],assignPublicIp=ENABLED}" \
     --query 'tasks[0].taskArn' --output text

@@ -29,12 +29,16 @@ class Completion:
 
 
 class BedrockChat:
-    def __init__(self, model_id: str, region: str, client=None) -> None:
+    def __init__(self, model_id: str, region: str, client=None, read_timeout: int = 300,
+                 attempts: int = 8) -> None:  # fmt: skip
+        """read_timeout / attempts: the defaults suit batch evaluation (wait out
+        throttling); the API passes short ones, because CloudFront gives a request 60 s
+        and a call still retrying after that only costs money (api/main.py)."""
         self.client = client or boto3.client(
             "bedrock-runtime",
             region_name=region,
-            config=Config(retries={"max_attempts": 8, "mode": "adaptive"}, read_timeout=300,
-                          max_pool_connections=16),
+            config=Config(retries={"max_attempts": attempts, "mode": "adaptive"},
+                          read_timeout=read_timeout, connect_timeout=5, max_pool_connections=16),
         )  # fmt: skip
         self.model_id = self.name = model_id
         self.input_tokens = self.output_tokens = 0
@@ -81,11 +85,16 @@ def parse_json(text: str) -> dict | list | None:
     m = re.search(r"```(?:json)?\s*(.*?)```", text, flags=re.DOTALL)
     if m:
         text = m.group(1)
-    starts = [i for i in (text.find("{"), text.find("[")) if i >= 0]
-    if not starts:
-        return None
-    try:
-        value, _ = json.JSONDecoder().raw_decode(text[min(starts) :])
-        return value
-    except json.JSONDecodeError:
-        return None
+    # every "{" or "[" in order: an object first ("Passage [3] is best. {"ranking": ...}"
+    # decodes [3] at the first bracket), else the first value that decodes
+    first = None
+    for m in re.finditer(r"[{\[]", text):
+        try:
+            value, _ = json.JSONDecoder().raw_decode(text[m.start() :])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return value
+        if first is None:
+            first = value
+    return first

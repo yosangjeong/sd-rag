@@ -15,6 +15,7 @@ itself protected (ECS agent endpoint) while it works on a message, so scale-in w
 import json
 import os
 import tempfile
+import threading
 import urllib.request
 from pathlib import Path
 from types import SimpleNamespace
@@ -25,9 +26,11 @@ from sdrag.api.store import DynamoStore
 from sdrag.common.config import settings
 from sdrag.common.logs import log
 from sdrag.common.search_client import make_client
-from sdrag.ingest.ocr import BedrockVisionOcr
+from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.worker.job import process
+
+MAX_RECEIVES = 3  # the queue's maxReceiveCount (infra/stacks/data.py): then the DLQ
 
 
 def protect(on: bool) -> None:
@@ -35,7 +38,7 @@ def protect(on: bool) -> None:
     agent = os.environ.get("ECS_AGENT_URI")
     if not agent:
         return
-    body = {"ProtectionEnabled": on} | ({"ExpiresInMinutes": 60} if on else {})
+    body = {"ProtectionEnabled": on} | ({"ExpiresInMinutes": 120} if on else {})
     req = urllib.request.Request(f"{agent}/task-protection/v1/state", data=json.dumps(body).encode(),
                                  method="PUT", headers={"Content-Type": "application/json"})  # fmt: skip
     try:
@@ -52,34 +55,80 @@ def main() -> None:
         client=make_client(settings.opensearch_url, settings.aws_region, 120),
         index=settings.index,
         embedder=TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims),
-        ocr=BedrockVisionOcr(settings.ocr_model, settings.aws_region),
+        # a retry on the same task does not pay for the OCR of its pages again
+        ocr=CachedOcr(
+            BedrockVisionOcr(settings.ocr_model, settings.aws_region),
+            Path(tempfile.gettempdir()) / "sdrag-ocr-cache",
+        ),
     )
     log("worker_start", queue=settings.upload_queue_url.rsplit("/", 1)[-1])
     while True:
         r = sqs.receive_message(QueueUrl=settings.upload_queue_url, MaxNumberOfMessages=1,
-                                WaitTimeSeconds=20)  # fmt: skip
+                                WaitTimeSeconds=20, AttributeNames=["ApproximateReceiveCount"])  # fmt: skip
         for m in r.get("Messages", []):
-            job = json.loads(m["Body"])
-            protect(True)
             try:
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp) / Path(job["filename"]).name
-                    try:
-                        s3.download_file(settings.upload_bucket, job["key"], str(path))
-                    except Exception as e:  # noqa: BLE001 - leave the message for a retry
-                        log("error", path="worker-download", doc_id=job.get("doc_id"),
-                            error=f"{type(e).__name__}: {e}"[:500])  # fmt: skip
-                        continue  # visible again after the timeout; DLQ after 3 tries
-                    result = process(job["user"], job["doc_id"], path, job["filename"], deps)
-                url, handle = settings.upload_queue_url, m["ReceiptHandle"]
-                if result["status"] == "retrying":  # visible again in a minute; DLQ after 3
-                    sqs.change_message_visibility(QueueUrl=url, ReceiptHandle=handle,
-                                                  VisibilityTimeout=60)  # fmt: skip
-                else:
-                    sqs.delete_message(QueueUrl=url, ReceiptHandle=handle)
-            finally:
-                protect(False)
+                handle(m, sqs, s3, deps)
+            except Exception as e:  # noqa: BLE001 - one message must not stop the worker
+                log("error", path="worker", error=f"{type(e).__name__}: {e}"[:500])
+                _later(sqs, m["ReceiptHandle"], 60)
 
 
-if __name__ == "__main__":
-    main()
+def _later(sqs, receipt: str, seconds: int) -> None:
+    """Make the message visible again in `seconds` (the queue's DLQ counts the tries)."""
+    try:
+        sqs.change_message_visibility(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt,
+                                      VisibilityTimeout=seconds)  # fmt: skip
+    except Exception as e:  # noqa: BLE001 - a stale handle: the timeout makes it visible
+        log("error", path="worker-visibility", error=f"{type(e).__name__}: {e}"[:300])
+
+
+class Heartbeat:
+    """While a job runs, push the message's visibility out every 5 minutes, so a long
+    scan is not handed to the other worker at the queue's 30-minute timeout (it would
+    be OCR'd twice, and this worker's delete would fail on a stale handle)."""
+
+    def __init__(self, sqs, receipt: str, every: int = 300, extend: int = 1800) -> None:
+        self.sqs, self.receipt, self.every, self.extend = sqs, receipt, every, extend
+        self.stop = threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+
+    def _run(self) -> None:
+        while not self.stop.wait(self.every):
+            _later(self.sqs, self.receipt, self.extend)
+
+    def __enter__(self):
+        self.thread.start()
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.stop.set()
+
+
+def handle(m: dict, sqs, s3, deps) -> None:
+    job = json.loads(m["Body"])
+    receipt = m["ReceiptHandle"]
+    last_try = int(m.get("Attributes", {}).get("ApproximateReceiveCount", "1")) >= MAX_RECEIVES
+    protect(True)
+    try:
+        with tempfile.TemporaryDirectory() as tmp, Heartbeat(sqs, receipt):
+            path = Path(tmp) / Path(job["filename"]).name
+            try:
+                s3.download_file(settings.upload_bucket, job["key"], str(path))
+            except Exception as e:  # noqa: BLE001 - leave the message for a retry
+                log("error", path="worker-download", doc_id=job.get("doc_id"),
+                    error=f"{type(e).__name__}: {e}"[:500])  # fmt: skip
+                result = {"status": "retrying", "error": "파일을 내려받지 못했습니다"}
+            else:
+                result = process(job["user"], job["doc_id"], path, job["filename"], deps)
+        if result["status"] == "retrying" and last_try:
+            # the queue moves it to the DLQ now: say so instead of "retrying" forever
+            deps.store.update_document(job["user"], job["doc_id"], status="failed",
+                                       error=(result.get("error") or "처리하지 못했습니다")
+                                       + " (재시도 끝)")  # fmt: skip
+            sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
+        elif result["status"] == "retrying":  # visible again in a minute; DLQ after 3
+            _later(sqs, receipt, 60)
+        else:
+            sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
+    finally:
+        protect(False)

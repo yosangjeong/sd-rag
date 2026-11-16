@@ -28,19 +28,48 @@ def _transient(e: Exception) -> bool:
     from botocore.exceptions import ClientError, EndpointConnectionError
     from opensearchpy import ConnectionError as SearchConnectionError
     from opensearchpy import TransportError
+    from opensearchpy.helpers import BulkIndexError
 
+    from sdrag.ingest.ocr import TRANSIENT_CODES, OcrError
     from sdrag.retrieval.index import RETRYABLE
 
     if isinstance(e, SearchConnectionError | EndpointConnectionError):
         return True
+    if isinstance(e, OcrError):
+        return e.transient
+    if isinstance(e, BulkIndexError):  # documents the busy node kept refusing (429)
+        return all(next(iter(x.values()), {}).get("status") == 429 for x in e.errors)
     if isinstance(e, TransportError):
         return e.status_code in RETRYABLE
     if isinstance(e, ClientError):
         return e.response.get("Error", {}).get("Code") in (
-            "ThrottlingException",
-            "ServiceUnavailable",
+            *TRANSIENT_CODES,
+            "ProvisionedThroughputExceededException",  # DynamoDB
+            "RequestLimitExceeded",
+            "SlowDown",  # S3
         )
     return False
+
+
+def _shown(e: Exception) -> str:
+    """The failure as the user sees it: UnreadableFile messages are written for the
+    user; a damaged or password-protected file gets one too; anything else is reported
+    by type, with the details in the log only."""
+    import zipfile
+
+    if isinstance(e, UnreadableFile):
+        return str(e)
+    if isinstance(e, zipfile.BadZipFile):
+        return "파일이 손상되었거나 암호가 걸려 있어 열 수 없습니다"
+    return f"처리 중 오류 ({type(e).__name__})"
+
+
+def _remove_chunks(deps, doc: str) -> None:
+    try:
+        deps.client.delete_by_query(index=deps.index, body={"query": {"term": {"doc_id": doc}}},
+                                    refresh=True, conflicts="proceed")  # fmt: skip
+    except Exception as e:  # noqa: BLE001 - the failure is already being reported
+        log("error", path="ingest-cleanup", doc_id=doc, error=f"{type(e).__name__}: {e}"[:300])
 
 
 def detect_lang(text: str) -> str:
@@ -80,6 +109,7 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
                    [to_source(doc, c, v, ocr, owner=user) for c, v in zip(chunks, vectors, strict=True)])  # fmt: skip
         t3 = time.perf_counter()
         result = {"status": "done", "stage": "", "doc": doc.id, "chunks": len(chunks),
+                  "unread_pages": len(parsed.needs_ocr_pages),  # OCR failed or no text
                   "lang": doc.lang, "file_type": file_type,
                   "ocr_pages": len(ocr), "parse_s": round(t1 - t0, 2), "embed_s": round(t2 - t1, 2),
                   "index_s": round(t3 - t2, 2), "finished": time.time()}  # fmt: skip
@@ -89,8 +119,10 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
         transient = _transient(e)
         # UnreadableFile messages are written for the user; anything else is reported
         # by type, with the details in the log only
-        shown = str(e) if isinstance(e, UnreadableFile) else f"처리 중 오류 ({type(e).__name__})"
+        shown = _shown(e)
         log("error", path="ingest", doc_id=doc_id, error=f"{type(e).__name__}: {e}"[:1000])
+        if not transient:  # batches already indexed must not stay searchable
+            _remove_chunks(deps, f"u-{doc_id}")
         result = {
             "status": "retrying" if transient else "failed",
             "error": shown[:300],

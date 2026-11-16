@@ -4,6 +4,8 @@ In ECS, these come from the task definition (plain values) or Secrets Manager
 (secrets). Locally, they can come from a .env file.
 """
 
+import os
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -47,6 +49,9 @@ class Settings(BaseSettings):
     def _no_dev_auth_in_aws(self):
         if self.env != "local" and self.auth_mode != "cognito":
             raise ValueError("auth_mode must be 'cognito' outside local development")
+        # in an ECS task (its metadata endpoint is set), even if SDRAG_ENV were missing
+        if os.environ.get("ECS_CONTAINER_METADATA_URI_V4") and self.auth_mode != "cognito":
+            raise ValueError("auth_mode 'dev' is not allowed in an ECS task")
         return self
 
 
