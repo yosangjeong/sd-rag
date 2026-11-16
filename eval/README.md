@@ -32,6 +32,7 @@ The decisions they support are in `docs/decisions.md`.
 | `real_re.py` | the real-estate real questions: gold by the same pooling as the labor ones |
 | `ocr_corpus.py` | OCR accuracy on every scanned corpus page (cached results, no calls) |
 | `single_file.py` | the brief's one-file comparison with Claude and ChatGPT (`ours-now`: served code path scoped to the file; `grade-full [--wide] [--skip-fix q]`: the 20 compared rows with checked references) |
+| `answer_slices.py` | answer accuracy of a stored run by question language and file type (no model calls) |
 | `yesno.py` | re-asks every stored answer that opens with yes/no, old and new side by side for reading |
 | `real_scan.py` | OCR on 9 printed pages scanned with a phone (plan in data/raw/bench/real-scan/) |
 | `answer_models.py` | answer models compared on the same sources (single-file questions, judge v2) |

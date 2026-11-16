@@ -1075,7 +1075,8 @@ tag-breakout document included (`data/eval/results/injection.md`).
 
 Left as limitations (docs/design.md): the CloudFront to ALB leg (HTTP, header check), one
 DynamoDB item per conversation, duplicate uploads, the sibling statute version in the
-answer, the agent measured on the real-estate sets only, answers not split by slice.
+answer, the agent measured on the real-estate sets only. Answers are now split by language
+and file type too (`eval/answer_slices.py`, from the run's own grades).
 
 ## Deployment rehearsal (2026-11-12)
 

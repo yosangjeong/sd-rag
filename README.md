@@ -35,7 +35,9 @@ Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real esta
 which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
 passage; questions the corpus cannot answer declined 67% / 90%; the other country's law cited
 0 times. Every period, ratio and amount with a unit in an answer is checked against the cited
-sources before it is shown (bare numbers and dates are not).
+sources before it is shown (bare numbers and dates are not). By slice (judge v3,
+`data/eval/results/answers/v11-final/slices.md`): Korean questions 90% / 90% (labor / real
+estate), English 84% / 88%; by file type the lowest is labor scans, 74% (23 questions).
 
 Uploads (`data/eval/results/upload/upload.md`): 53 files in one request were done in 154 s
 locally (20.7 files/min) and 429 s on AWS (7.4 files/min, the worker starting from zero);

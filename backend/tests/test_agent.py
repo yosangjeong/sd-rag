@@ -234,3 +234,15 @@ def test_no_sources_no_model_call():
 
     assert "찾을 수 없습니다" in answer(Boom(), "연차는 며칠?", []).text
     assert "do not answer" in answer(Boom(), "How many days of leave?", []).text
+
+
+def test_an_unusable_ranking_keeps_the_first_stage_order_and_is_logged(capsys):
+    class Cut:
+        name = "fake"
+
+        def complete(self, *a, **k):
+            return Completion('{"rank', 10, 400, "max_tokens")
+
+    hits = [Hit(f"c{i}", 1.0, {"text": f"t{i}", "title": "d"}) for i in range(3)]
+    assert [h.chunk_id for h in LlmReranker(Cut()).rerank("q", hits)] == ["c0", "c1", "c2"]
+    assert '"rerank_fallback"' in capsys.readouterr().out

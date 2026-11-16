@@ -17,6 +17,7 @@ the other language. The LLM translates it literally, keeping legal terms.
 import re
 
 from sdrag.common.llm import parse_json
+from sdrag.common.logs import log
 from sdrag.common.text import attr, is_korean, neutralize_tags, strip_think
 from sdrag.retrieval.search import Hit
 
@@ -54,12 +55,16 @@ class LlmReranker:
             text = neutralize_tags(window(s.get("text", ""), terms))
             blocks.append(f'<passage n="{n}" title="{attr(head)}">\n{text}\n</passage>')
         user = f"Question: {question}\n\nPassages:\n\n" + "\n\n".join(blocks)
-        out = parse_json(self.chat.complete(RERANK_SYSTEM, user, max_tokens=self.max_tokens).text)
+        reply = self.chat.complete(RERANK_SYSTEM, user, max_tokens=self.max_tokens)
+        out = parse_json(reply.text)
         order = out.get("ranking", []) if isinstance(out, dict) else []
         seen: list[int] = []
         for n in order:
             if isinstance(n, int) and 1 <= n <= len(hits) and n - 1 not in seen:
                 seen.append(n - 1)
+        if not seen:  # no usable ranking: the first-stage order stands; say so in the logs
+            log("rerank_fallback", candidates=len(hits), stop_reason=reply.stop_reason,
+                reply=reply.text[:200])  # fmt: skip
         rest = [i for i in range(len(hits)) if i not in seen]  # unranked keep their order
         return [hits[i] for i in seen + rest]
 

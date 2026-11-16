@@ -160,6 +160,6 @@ trail of searches and source views (who, which document). Queries for evaluators
 | Duplicate uploads | the same file uploaded twice is indexed twice | a content hash per user |
 | Statute versions in the answer | when only one version of an amended article ranks into the 6 answer sources, the other is not added (not measured) | add the sibling version from the pool |
 | Agent ablation | measured on the real-estate sets (82 + 83), not on the 338 labor questions | the same table for every set |
-| Answer quality by slice | answers are reported per set, not by language and file type (retrieval is) | the slice table for answers too |
+| Rules from case law | the corpus is statute text; a rule set by courts or ministry guidance is not in it ("unused annual leave is paid" comes from case law; the Act only says the leave expires and when the employer owes nothing), so the answer follows the articles it has. A prompt rule "open with the general rule" was tried on 2026-11-16 and made it worse ("원칙적으로 받을 수 없습니다"): dropped | add guidance and case summaries as sources, labelled as such |
 | Live demo time | a request has 60 s at CloudFront; model calls get 30 s and 3 attempts, the agent 30 s of searching | streaming the answer, or a job the page polls |
 | Jurisdiction | an LLM label (KR / US / none) filters the public statutes by country; a country-less English question about Korean law is taken as US | ask the user's country once (profile), or show "answering under US law" with a switch |
