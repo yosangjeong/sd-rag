@@ -1029,6 +1029,26 @@ contradicts (above). Two changes:
   the same measure moved 84% -> 92% on 11-15. Adopted; the served re-measure after the
   final deploy shows it on the full sets. Cost estimated under $2 (Bedrock usage shows a day late).
 
+## Where an answer's time goes (2026-11-16)
+
+The served basic path, each step timed on 10 real dev questions (local, median; total
+7.5 s): country, translation and statute terms at once 0.95 s, search (embeddings and
+OpenSearch, about 59 candidates) 0.9 s, the reranker 3.7 s, the answer with its figure
+check 2.3 s. The reranker reads every candidate (about 20,000 tokens) and is half the
+time; fewer round trips in the search would save at most part of its 0.9 s, so that is not
+worth the change. Faster would mean fewer or shorter candidates, which cost accuracy
+(passages cut to 800 characters: dev hit@1 0.894 -> 0.859), or showing the answer as it
+is written (streaming).
+
+## Duplicate uploads and conversation items (2026-11-16)
+
+Two limitations closed after the review, free: an upload whose content (SHA-256, taken
+while it is written to disk) matches one of the user's files that is not failed is refused
+("already uploaded (as a.pdf)"), so the same file is not indexed twice; and a conversation
+is now one item plus one item per message (`MSG#<conversation>#<time>`), so a long one no
+longer meets DynamoDB's 400 KB item limit. Conversations written before keep their
+message list and are read together with any new message items.
+
 ## Code review before the final deploy (2026-11-16)
 
 Five reviews, one per area (ingest and worker; retrieval and answers; API, auth and UI;
@@ -1073,8 +1093,8 @@ the fixes gives the same pool without its gold: the model's rewrites of that que
 differ from the 11-14 run, not the code. Prompt injection: 18 of 18 resisted, the new
 tag-breakout document included (`data/eval/results/injection.md`).
 
-Left as limitations (docs/design.md): the CloudFront to ALB leg (HTTP, header check), one
-DynamoDB item per conversation, duplicate uploads, the sibling statute version in the
+Left as limitations (docs/design.md): the CloudFront to ALB leg (HTTP, header check), the
+sibling statute version in the
 answer, the agent measured on the real-estate sets only. Answers are now split by language
 and file type too (`eval/answer_slices.py`, from the run's own grades).
 

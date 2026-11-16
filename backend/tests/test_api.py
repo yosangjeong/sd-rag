@@ -205,3 +205,67 @@ def test_upload_refuses_a_renamed_file_and_one_over_the_limit(api, monkeypatch):
         and "PDF" in reasons["fake.pdf"]
         and "MB" in reasons["big.pdf"]
     )
+
+
+def test_the_same_file_twice_is_indexed_once(api):
+    c, d = api
+    pdf = ("files", ("a.pdf", b"%PDF-1.4 same", "application/pdf"))
+    r = c.post("/api/documents", files=[pdf, ("files", ("copy.pdf", b"%PDF-1.4 same", "application/pdf"))],
+               headers=as_user("alice")).json()  # fmt: skip
+    assert [a["file"] for a in r["accepted"]] == ["a.pdf"]
+    assert "already uploaded (as a.pdf)" in r["rejected"][0]["reason"]
+    r = c.post("/api/documents", files=[pdf], headers=as_user("alice")).json()  # a later request
+    assert r["accepted"] == [] and "already uploaded" in r["rejected"][0]["reason"]
+    assert c.post("/api/documents", files=[pdf], headers=as_user("bob")).json()[
+        "accepted"
+    ]  # per user
+    for doc in d.store.documents("alice"):  # a failed upload may be sent again
+        d.store.update_document("alice", doc["id"], status="failed")
+    assert c.post("/api/documents", files=[pdf], headers=as_user("alice")).json()["accepted"]
+
+
+def test_dynamo_store_keeps_one_item_per_message_in_order():
+    from botocore.exceptions import ClientError
+
+    from sdrag.api.store import DynamoStore
+
+    class Table:  # just enough of a DynamoDB table: keys, a condition, begins_with
+        def __init__(self):
+            self.items = {}
+
+        def put_item(self, Item):
+            self.items[(Item["pk"], Item["sk"])] = dict(Item)
+
+        def get_item(self, Key):
+            item = self.items.get((Key["pk"], Key["sk"]))
+            return {"Item": dict(item)} if item else {}
+
+        def update_item(self, Key, ConditionExpression=None, ExpressionAttributeValues=None, **kw):
+            k = (Key["pk"], Key["sk"])
+            if k not in self.items:
+                raise ClientError(
+                    {"Error": {"Code": "ConditionalCheckFailedException"}}, "UpdateItem"
+                )
+            self.items[k]["updated"] = ExpressionAttributeValues[":t"]
+
+        def query(self, KeyConditionExpression, **kw):
+            pk, prefix = (c._values[1] for c in KeyConditionExpression._values)
+            rows = sorted(
+                (k[1], v) for k, v in self.items.items() if k[0] == pk and k[1].startswith(prefix)
+            )
+            return {"Items": [v for _, v in rows]}
+
+    store = DynamoStore.__new__(DynamoStore)
+    store.table = Table()
+    conv = store.add_message("u", None, {"role": "user", "text": "첫 질문"})
+    for i in range(3):
+        store.add_message("u", conv, {"role": "assistant", "text": f"답 {i}"})
+    c = store.conversation("u", conv)
+    assert [m["text"] for m in c["messages"]] == ["첫 질문", "답 0", "답 1", "답 2"]
+    assert all("pk" not in m for m in c["messages"])
+    assert [x["id"] for x in store.conversations("u")] == [conv]  # messages are not conversations
+    assert store.conversation("v", conv) is None  # another user's id
+    import pytest
+
+    with pytest.raises(ClientError):
+        store.add_message("v", conv, {"role": "user", "text": "x"})

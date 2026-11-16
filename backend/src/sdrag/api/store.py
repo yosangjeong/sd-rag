@@ -5,12 +5,16 @@ one user's items: user isolation is in the key, not in a filter that could be
 forgotten); a dict in memory for local runs and tests. Both implement Store.
 
 Items (pk = "USER#<user id>"):
-- sk = "CONV#<id>": title, messages [{role, text, citations, mode, ts}]
+- sk = "CONV#<id>": title, ts (started), updated
+- sk = "MSG#<conversation id>#<ms time>#<rand>": one message {role, text, citations,
+  mode, ts}. One item per message, so a long conversation never meets DynamoDB's
+  400 KB item limit (one growing list did); a query by prefix reads them in order.
 - sk = "DOC#<id>": file name, status (queued | processing | done | failed), chunk
   count, timings, error
 """
 
 import json
+import threading
 import time
 import uuid
 from decimal import Decimal
@@ -30,6 +34,18 @@ class Store(Protocol):
 
 def new_id() -> str:
     return uuid.uuid4().hex[:16]
+
+
+_last = [0]
+_lock = threading.Lock()
+
+
+def _order() -> int:
+    """Nanoseconds since the epoch, strictly increasing within the process: messages
+    sort in the order they were written even when two fall in the same tick."""
+    with _lock:
+        _last[0] = max(time.time_ns(), _last[0] + 1)
+        return _last[0]
 
 
 class MemoryStore:
@@ -79,16 +95,19 @@ class DynamoStore:
         new = conv_id is None
         conv_id = conv_id or new_id()
         key = {"pk": self._pk(user), "sk": f"CONV#{conv_id}"}
+        now = int(time.time())
         if new:
-            self.table.put_item(Item=key | _ddb({"id": conv_id, "title": message["text"][:60],
-                                                 "messages": [message], "ts": int(time.time())}))  # fmt: skip
+            self.table.put_item(Item=key | {"id": conv_id, "title": message["text"][:60],
+                                            "ts": now, "updated": now})  # fmt: skip
         else:
             self.table.update_item(
                 Key=key,
-                UpdateExpression="SET messages = list_append(messages, :m)",
-                ExpressionAttributeValues={":m": _ddb([message])},
+                UpdateExpression="SET updated = :t",
+                ExpressionAttributeValues={":t": now},
                 ConditionExpression="attribute_exists(pk)",  # someone else's id fails here
             )
+        sk = f"MSG#{conv_id}#{_order():020d}#{new_id()[:4]}"
+        self.table.put_item(Item={"pk": self._pk(user), "sk": sk} | _ddb(message))
         return conv_id
 
     def _query(self, user: str, prefix: str, fields: tuple[str, ...] = ()) -> list[dict]:
@@ -116,7 +135,13 @@ class DynamoStore:
 
     def conversation(self, user, conv_id):
         r = self.table.get_item(Key={"pk": self._pk(user), "sk": f"CONV#{conv_id}"})
-        return r.get("Item")
+        item = r.get("Item")
+        if not item:
+            return None
+        msgs = [{k: v for k, v in m.items() if k not in ("pk", "sk")}
+                for m in self._query(user, f"MSG#{conv_id}#")]  # fmt: skip
+        # items written before 2026-11-16 kept their messages in the conversation item
+        return item | {"messages": list(item.get("messages", [])) + msgs}
 
     def put_document(self, user, doc):
         self.table.put_item(Item={"pk": self._pk(user), "sk": f"DOC#{doc['id']}"} | _ddb(doc))

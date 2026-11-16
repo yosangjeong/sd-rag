@@ -1,5 +1,21 @@
 # sd-rag: retrieval-augmented search over Korean and US labor and real-estate law
 
+> **한국어 요약 (평가자용, 5분)**
+>
+> - **무엇**: PDF·DOCX·HWPX(스캔 포함) 여러 개를 올리고 한국어나 영어로 물으면, 문서와 위치(조문·쪽)를
+>   인용해 답하는 RAG 서비스입니다. 공개 코퍼스는 한국·미국 노동·부동산 법령 70건입니다. 업로드는 올린
+>   사람만 검색합니다. AWS 한 리전(ap-southeast-2), ECS Fargate, OpenSearch, Bedrock으로 구성했습니다.
+> - **접속**: 아래 "For evaluators"의 URL로 접속합니다. 계정은 제출 메일에 있습니다(평가자 2개는 로그 보기
+>   가능, 일반 1개는 불가).
+> - **써 보기**: 예시 질문 클릭 → 답의 `[n]`을 누르면 원문이 열립니다 → 영어로 한국 법을 묻기(교차 언어)
+>   → 파일 여러 개 올리고 "이 문서에 질문" → 에이전트 모드 → 다른 계정으로 로그인해 격리 확인.
+> - **핵심 숫자** (아래 표): 서비스 검색 hit@10 / MRR, 노동 시험 0.97 / 0.90, 실제 질문 0.98 / 0.91
+>   (일반 hybrid 0.78 / 0.54). 마지막 변경 뒤에 모아 한 번만 잰 실제 질문 97개: 0.91 / 0.82. 답변 정확도
+>   (자동 채점, 하한) 노동 87%, 부동산 89%. 파일 하나 기준 같은 20문항에서 Claude·ChatGPT와 같은 수준.
+> - **어디를 읽나**: 설계·보안·한계 `docs/design.md` → 결정과 근거(측정 포함) `docs/decisions.md` →
+>   평가 방법·채점 모델과 프롬프트 `data/eval/README.md` → 문항별 결과 `data/eval/results/`.
+>   로그 조회 방법은 `docs/operations.md`.
+
 A RAG system on AWS: upload many PDF / DOCX / HWPX files (scans included), then ask
 questions in Korean or English and get answers that cite the document and the place
 (article, section, page) they come from. The public corpus is 70 statutes and

@@ -20,6 +20,7 @@ Every request gets a request id, logged with each step (common/logs.py); each se
 and source view also writes an audit record.
 """
 
+import hashlib
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -162,21 +163,22 @@ def conversation(conv_id: str, user: str = Depends(current_user)) -> dict:
     return c
 
 
-def _save_capped(f: UploadFile, local: Path, limit: int) -> int | None:
-    """Copy the upload to disk in pieces, stopping at `limit` bytes: the size of the
-    file, or None when it is larger (nothing is held whole in memory)."""
+def _save_capped(f: UploadFile, local: Path, limit: int) -> tuple[int, str] | None:
+    """Copy the upload to disk in pieces, stopping at `limit` bytes: (size, SHA-256 of
+    the content), or None when it is larger (nothing is held whole in memory)."""
     local.parent.mkdir(parents=True, exist_ok=True)
-    n = 0
+    n, digest = 0, hashlib.sha256()
     with local.open("wb") as out:
         while piece := f.file.read(2**20):
             n += len(piece)
             if n > limit:
                 break
+            digest.update(piece)
             out.write(piece)
     if n > limit:
         local.unlink(missing_ok=True)
         return None
-    return n
+    return n, digest.hexdigest()
 
 
 def _looks_like(path: Path, suffix: str) -> bool:
@@ -194,6 +196,9 @@ def upload(files: list[UploadFile], request: Request, user: str = Depends(curren
     if not files or len(files) > MAX_FILES:
         raise HTTPException(400, f"send 1 to {MAX_FILES} files")
     d, accepted, rejected = deps(), [], []
+    # the same content uploaded again (not a failed one) would be indexed twice
+    have = {x["sha256"]: x.get("file", "") for x in d.store.documents(user)
+            if x.get("sha256") and x.get("status") != "failed"}  # fmt: skip
     for f in files:
         name = Path(f.filename or "file").name
         if Path(name).suffix.lower() not in ALLOWED:
@@ -201,9 +206,14 @@ def upload(files: list[UploadFile], request: Request, user: str = Depends(curren
             continue
         doc_id = new_id()
         local = Path(settings.upload_dir) / user_hash(user) / doc_id / name
-        size = _save_capped(f, local, MAX_FILE_MB * 2**20)
-        if size is None:
+        saved = _save_capped(f, local, MAX_FILE_MB * 2**20)
+        if saved is None:
             rejected.append({"file": name, "reason": f"over {MAX_FILE_MB} MB"})
+            continue
+        size, sha = saved
+        if sha in have:
+            local.unlink(missing_ok=True)
+            rejected.append({"file": name, "reason": f"already uploaded (as {have[sha]})"})
             continue
         if not _looks_like(local, Path(name).suffix.lower()):
             local.unlink(missing_ok=True)
@@ -211,8 +221,9 @@ def upload(files: list[UploadFile], request: Request, user: str = Depends(curren
                       else "not a DOCX/HWPX file (an old .hwp/.doc renamed? save it as HWPX, DOCX or PDF)")  # fmt: skip
             rejected.append({"file": name, "reason": reason})
             continue
-        d.store.put_document(user, {"id": doc_id, "file": name, "bytes": size,
+        d.store.put_document(user, {"id": doc_id, "file": name, "bytes": size, "sha256": sha,
                                     "status": "queued", "queued": time.time()})  # fmt: skip
+        have[sha] = name  # the same file twice in one batch
         d.queue.send(user, doc_id, local, name)
         accepted.append({"id": doc_id, "file": name})
     if accepted:
