@@ -63,3 +63,11 @@ Agreement: judge v1 10/20, judge v2 11/20. Every disagreement is the judge being
 Agreement with the human grade (19): judge v2 11, judge with corrected references and whole articles 15, Claude Code 15. Correct vs not: 12 -> 16 (Claude Code 16). The human graded 15 of 19 correct, the judge 10, 12 after the corrections: the judge is stricter, and half its disagreements came from the faulty references, not from the judge.
 
 The four left after the corrections: g0589 and g0279 are boundary cases the human graded more leniently (and Claude Code, too, graded partial); g0274 is a label (wrong vs no_answer, both not correct); g0330 the judge marks down for a detail taken from another cited source than the gold article, the weakness judge v3's pooled spans address.
+
+Judge v4's passage (`eval/judges.wide_passage`, 2026-11-16: the gold chunks widened to the
+run under the same heading and one chunk on each side, built automatically) on the same 19
+with the corrected references: 14 agree with the human, against 15 with the passages picked
+by hand per item (`data/raw/scratch/judge-check/rejudge_wide.py`, local). On the 80 grades
+of the one-file comparison it agrees with the hand-read grades 68 times, against 65 with the
+gold article only (`data/eval/single_file/README.md`). The corrected references are now in
+`data/eval/reference_fixes.json`, which `eval/answers.py` uses.

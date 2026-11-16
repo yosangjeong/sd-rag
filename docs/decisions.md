@@ -969,9 +969,15 @@ answer) on claude.ai (Sonnet 5.5) and chatgpt.com (GPT-6). Details and table:
 - References first, against whole articles (`fixes20.json`): 5 of 20 corrected. g0597's
   sentence (a certification "shall be sufficient") governs premium recovery after a failure
   to return, not approving leave, so the reference "yes" was wrong; r0176 was written from
-  the association-inspection article for a broker-inspection question. r0176 was found
-  after the answers came in (our served answer cited the other article), so the table shows
-  the grades both ways; it moved every system, not only ours.
+  the association-inspection article for a broker-inspection question. r0176's error had
+  been noted on 11-13 (judge-agreement.md, v6 item 1) but not applied to the set; today's
+  audit missed it and it was applied after the answers came in (our served answer cited
+  the other article), so the table shows the grades both ways; it moved every system, not
+  only ours. Lesson: a reference error found in a judge check goes into the set (or
+  item_flags.json) at once.
+- Done the same day: the 10 references corrected so far (6 from the v8 hand grading, 4 from
+  this audit) are in `data/eval/reference_fixes.json`, which `eval/answers.py` grades with;
+  before, they lived only in the grading page's files.
 - Our system answered twice: the `ours` column (2026-11-13, an older retrieval path in the
   eval script, `bilingual_union`) and the served code path (`RagService.ask`, wide pool,
   statute terms), the code as committed before the other answers were seen. The served one

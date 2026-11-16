@@ -28,7 +28,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 from evalset import DATA, LLM_CACHE, Item, doc_texts, load_items, overlaps
-from judges import correct_prompt, correct_user, correct_user_v3
+from judges import correct_prompt, correct_user, correct_user_v3, wide_passage
 
 from sdrag.agent.answer import KST
 from sdrag.common.config import settings
@@ -78,6 +78,10 @@ def sample(items, texts, n: int):
 
 def judge(llm, system: str, user: str) -> dict:
     return parse_json(llm.complete(system, user, max_tokens=300).text) or {"grade": "unparsed"}
+
+
+# reference answers corrected against the statutes (data/eval/reference_fixes.json)
+REF_FIXES = json.loads((DATA / "eval" / "reference_fixes.json").read_text("utf-8"))["fixes"]
 
 
 def main() -> None:
@@ -141,7 +145,8 @@ def main() -> None:
         row["citation_hit"] = any(
             overlaps(vars(c), s) for c in ans.citations for s in [*it.gold, *it.also]
         )
-        ref = it.meta.get("check_answer") or it.meta.get("answer", "")
+        ref = (REF_FIXES.get(it.qid, {}).get("reference")
+               or it.meta.get("check_answer") or it.meta.get("answer", ""))  # fmt: skip
         sources = [(c.n, texts[c.doc_id].text[c.start : c.end]) for c in ans.citations]
         # judge v3 (eval/judges.py) also sees the cited sources and today's date; v2 is
         # kept beside it so this version compares with the earlier ones
@@ -151,6 +156,13 @@ def main() -> None:
         )
         row["correct_v2"] = judge(
             jllm, correct_system, correct_user(it.question, ref, g.quote, ans.text)
+        )
+        # judge v4: the v2 prompt with the gold widened to whole articles, split tables and
+        # the next article (judges.wide_passage; from the final re-measure on)
+        spans = [(s.start, s.end) for s in [*it.gold, *it.also] if s.doc_id == g.doc_id]
+        passage = wide_passage(client, settings.index, g.doc_id, spans)
+        row["correct_v4"] = judge(
+            jllm, correct_system, correct_user(it.question, ref, passage, ans.text)
         )
         cited = "\n\n".join(f"[{n}] {s[:2000]}" for n, s in sources)
         row["grounded"] = judge(
@@ -201,6 +213,7 @@ def main() -> None:
         "| Measure | Result |",
         "|---|---|",
         f"| correctness (vs reference) | {share(rows, 'correct')} |",
+        f"| correctness, judge v4 (whole articles) | {share([r for r in rows if 'correct_v4' in r], 'correct_v4')} |",
         f"| groundedness (vs cited sources) | {share(rows, 'grounded')} |",
         f"| a citation overlaps the gold | {sum(r['citation_hit'] for r in rows) / max(len(rows), 1):.0%} |",
         f"| unanswerable: declined | {share(un, 'decline')} |",

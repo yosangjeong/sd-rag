@@ -1,0 +1,55 @@
+{
+ "note": "Reference answers corrected against the statutes after the sets were written. eval/answers.py grades with these instead of the item's own reference (retrieval scores use the gold spans and are unaffected). A reference error found anywhere goes here at once (r0176's was noted on 2026-11-13 and applied only on 11-16).",
+ "fixes": {
+  "g0170": {
+   "reference": "Any one of the five reasons in Article 82 of the Enforcement Decree: falsifying inspection documents; refusing inspection work without good reason; taking fees without doing the inspection; omitting inspection items or not following inspection methods; not following the judgment criteria or not giving the safety-measure opinion.",
+   "why": "질문은 사유 '하나'를 묻는데, 기준 답은 4호(검사 항목 생략)를, 정답 근거는 1호(서류 거짓 작성)를 가리켜 서로 달랐습니다. 제82조의 다섯 사유 중 어느 하나를 맞게 말하면 정답입니다.",
+   "from": "hand-grading check v8, 2026-11-16 (data/raw/scratch/judge-check/fix_v8.py)"
+  },
+  "g0276": {
+   "reference": "사업주가 남녀 근로자 현황을 제출하지 않거나 거짓으로 제출하면 과태료 300만원이 부과됩니다(시행령 별표 과태료 부과기준 카목, 법 제39조제4항제3호). 벌금(형벌)이 아니라 과태료(행정처분)입니다.",
+   "why": "The reference said 벌금 (a criminal fine); the table is 과태료 (an administrative fine). The amount, 300만원, is right.",
+   "from": "one-file comparison audit, 2026-11-16 (data/eval/single_file/fixes20.json)"
+  },
+  "g0330": {
+   "reference": "Two kinds (Article 159(1), in force today): (1) violating Article 38, 39 or 63 and causing an accident set by Presidential Decree in which many workers die or that seriously harms the area near the workplace (Decree Article 110: two or more workers die at once, or an accident under Article 43(3)); (2) violating an order under Article 53(1) or (3) and a worker dies from work. An amended Article 159 takes effect on 2027-04-28.",
+   "why": "정답 근거가 아직 시행되지 않은 개정 조문(2027. 4. 28. 시행)이었고, 기준 답에는 1호만 있었습니다. 오늘 시행 중인 제159조①은 1호·2호 두 가지이므로 둘 다 넣고, 1호를 정의한 시행령 제110조도 함께 보였습니다.",
+   "from": "hand-grading check v8, 2026-11-16 (data/raw/scratch/judge-check/fix_v8.py)"
+  },
+  "g0364": {
+   "reference": "By the deadline for the work details confirmation report: the 15th of the month after the month in which the reason for coverage arose (Enforcement Decree Article 7(1), second sentence). The employer submits the foreign worker insurance application and the work details confirmation report (Enforcement Rule Article 2(2)).",
+   "why": "기준 답이 '근로내용 확인신고서 제출 기한까지'라고 돌려 말할 뿐 기한을 말하지 않았습니다(사용자 지적, 11/16). 시행령 제7조① 후단의 '사유가 발생한 날의 다음 달 15일까지'를 넣었습니다. 기준 답은 맞지만, 정답 근거가 엉뚱한 조문(고용보험법 제10조의2, 신청이 있어야 적용된다는 내용)이었습니다. 신청 기한을 정한 시행규칙 제2조②로 바꿨습니다.",
+   "from": "hand-grading check v8, 2026-11-16 (data/raw/scratch/judge-check/fix_v8.py)"
+  },
+  "g0589": {
+   "reference": "Under Article 15(1) of the Fixed-Term and Part-Time Workers Act, the Minister of Employment and Labor may require the employer to report on how a finalized correction order is being carried out; Article 5 of the Enforcement Decree delegates this power to the head of the regional employment and labor office. So the request is made by the head of the regional office, exercising the Minister's power.",
+   "why": "정답 근거가 시행령 제5조의 1호 한 줄뿐이라, 누가 권한을 갖는지(본문: 장관이 지방고용노동관서의 장에게 위임)가 빠져 있었습니다. 권한의 근거인 법 제15조①도 함께 넣었습니다. 채점 기준: 위임 사실까지 말하면 정답, 장관만 말하면 부분 정답(틀린 말은 아니지만 실제로 요구하는 기관을 빠뜨림).",
+   "from": "hand-grading check v8, 2026-11-16 (data/raw/scratch/judge-check/fix_v8.py)"
+  },
+  "g0597": {
+   "reference": "Not as a rule for approving leave. 29 U.S.C. 2614(c) is about an employee who does not return to work after FMLA leave: the employer may recover the health-plan premiums it paid during unpaid leave, unless the employee failed to return because of the continuation, recurrence or onset of a serious health condition (or other circumstances beyond the employee's control). The employer may require a health care provider's certification of that claim, and for a family member's condition the certification is sufficient if it states that the employee is needed to care for the family member who has a serious health condition on the date the leave expired. So the certificate is enough to show that the failure to return was excused (no premium recovery); whether the leave itself is granted is governed by the leave certification rules (section 2613).",
+   "why": "The reference answered 'yes, the leave is approved'. The sentence is the sufficiency rule of the certification in 2614(c)(3), which only applies to recovering health premiums from an employee who did not return; it says nothing about approving leave. Grading: correct if the answer places the certificate in the failure-to-return / premium context (or says it does not by itself approve leave and explains why); partial if it only says the certificate is sufficient without that context; wrong if it says the certificate alone approves the leave.",
+   "from": "one-file comparison audit, 2026-11-16 (data/eval/single_file/fixes20.json)"
+  },
+  "r0037": {
+   "reference": "The Commercial Building Lease Protection Act applies to leases of commercial buildings (buildings subject to business registration, used mainly for business). It does not apply to leases whose deposit exceeds the amount set by Presidential Decree after deliberation by the Commercial Building Lease Committee (Article 2(1) proviso); when there is rent, the deposit includes the rent converted at the decree's rate (Article 2(2)). Even above that amount, some provisions still apply (Article 2(3): Article 3 on opposability, Article 10(1)-(3) on renewal, Articles 10-2 to 10-9 including premium protection, Article 11-2 and Article 19).",
+   "why": "Reference right on the key fact (the deposit threshold) but missed Article 2(3): several protections apply to leases over the threshold too. The deposit threshold is the key fact; Article 2(3) is not required, but saying the Act does not apply at all above the threshold is incomplete, and answers that mention 2(3) must not be marked down.",
+   "from": "one-file comparison audit, 2026-11-16 (data/eval/single_file/fixes20.json)"
+  },
+  "r0066": {
+   "reference": "Within 15 days of receiving evidence that the borrower has had hazard insurance meeting the loan contract's requirements, the servicer must cancel the force-placed insurance and refund all force-placed premium charges and related fees for any period of overlapping coverage (12 CFR 1024.37(g)).",
+   "why": "질문은 '언제' 환급해야 하는지 묻는데, 기준 답은 '무엇을' 환급하는지(겹친 기간의 보험료)만 말했습니다. 정답 근거도 해설(Supplement I)이었습니다. 본 조문 § 1024.37(g)에 '증빙을 받은 날부터 15일 이내'가 있어 그것으로 바꿨습니다.",
+   "from": "hand-grading check v8, 2026-11-16 (data/raw/scratch/judge-check/fix_v8.py)"
+  },
+  "r0133": {
+   "reference": "조정위원회의 위원장은 다음 6가지 경우 신청을 각하합니다(주택임대차보호법 제21조③): ① 이미 법원에 소가 제기된 경우, ② 민사조정법에 따른 조정이 신청된 경우, ③ 이 법에 따른 조정위원회에 이미 조정이 신청되었거나 성립된 경우, ④ 신청 자체로 주택임대차 분쟁이 아님이 명백한 경우, ⑤ 피신청인이 조정에 응하지 않겠다고 통지한 경우, ⑥ 신청인이 정당한 사유 없이 조사에 응하지 않거나 2회 이상 출석요구에 응하지 않은 경우.",
+   "why": "조문 제21조③에는 각하 사유가 6개인데, 기준 답과 정답 근거에는 1~4호만 있었습니다. 5·6호를 넣었습니다.",
+   "from": "hand-grading check v8, 2026-11-16 (data/raw/scratch/judge-check/fix_v8.py)"
+  },
+  "r0176": {
+   "reference": "중개사무소를 출입·검사하는 공무원은 공무원증과 별지 제26호서식의 중개사무소조사·검사증명서를 보여야 합니다(공인중개사법 시행규칙 제23조, 법 제37조제2항). 공인중개사협회를 조사·검사할 때는 공무원증과 별지 제27호서식의 한국공인중개사협회조사·검사증명서입니다(제27조, 법 제44조제2항).",
+   "why": "The question asks about inspecting a broker; the reference was written from Article 27, which is about inspecting the brokers' association (law Art. 44(2)). Inspecting a brokerage office is Article 23 (law Art. 37(2)): form No. 26. Already noted in the judge check of 2026-11-13 (judge-agreement.md, v6 item 1: 'form 26 is right; the reference is the association form 27') but never applied to the set; missed in the audit of these 20 and applied after the answers came in (our served answer cited Article 23), from the statute text alone.",
+   "from": "one-file comparison audit, 2026-11-16 (data/eval/single_file/fixes20.json)"
+  }
+ }
+}

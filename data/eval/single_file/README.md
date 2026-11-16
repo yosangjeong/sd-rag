@@ -42,8 +42,9 @@ Steps, all reproducible from the files here:
 
 1. References checked against the whole articles before grading (`fixes20.json`): 5 of 20
    corrected (g0597 answered a question its sentence does not govern; r0176 was written
-   from the association-inspection article for a broker-inspection question, found after
-   the answers came in, so shown both ways; g0276 벌금 -> 과태료; r0037 and g0274 completed).
+   from the association-inspection article for a broker-inspection question: already noted
+   in the judge check of 2026-11-13 (`judge-agreement.md`, v6 item 1) but never applied to
+   the set; missed in today's audit, applied after the answers came in, so shown both ways; g0276 벌금 -> 과태료; r0037 and g0274 completed).
 2. `ours_now`: the served code path (`service.RagService.ask`, scoped to the file), code
    as committed before the Claude / ChatGPT answers were seen (`ours20_now.json`). The
    `ours` column is the 2026-11-13 run through the older retrieval path, kept as it was.

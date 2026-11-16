@@ -19,9 +19,9 @@ The decisions they support are in `docs/decisions.md`.
 | Script | Measures |
 |---|---|
 | `run_retrieval.py` | retrieval systems on a set: `<mode>[+rerank][+jur]@<index>` |
-| `answers.py` | answer quality of the served pipeline: correct, grounded, citing the gold, declining (`--set labor | re | heldout`) |
+| `answers.py` | answer quality of the served pipeline: correct (judge v3, v2, v4), grounded, citing the gold, declining (`--set labor | re | heldout`); references corrected in `data/eval/reference_fixes.json` take precedence |
 | `jurisdiction_check.py` | answers citing the other country's law, per answer version |
-| `judges.py` | the correctness judge's prompts (v1, v2), shared by the answer scripts |
+| `judges.py` | the correctness judge's prompts (v1, v2, v3) and judge v4's passage (`wide_passage`: gold chunks widened to split tables and the next article), shared by the answer scripts |
 | `rejudge.py` | re-grades every stored answer version with the current judge |
 | `run_retrieval.py --rerank-llm <model> --cache-aux` | compares rerankers on the same pools (translation, jurisdiction and statute terms cached) |
 | `unseen.py` | retrieval on public documents unrelated to the corpus, uploaded as a user (prepare, ingest, generate, measure; `--suite similar`: 35 look-alike press releases) |
@@ -31,7 +31,8 @@ The decisions they support are in `docs/decisions.md`.
 | `check_items.py` | checks every graded item's reference answer and question (third model family) |
 | `real_re.py` | the real-estate real questions: gold by the same pooling as the labor ones |
 | `ocr_corpus.py` | OCR accuracy on every scanned corpus page (cached results, no calls) |
-| `single_file.py` | the brief's one-file comparison with Claude and ChatGPT |
+| `single_file.py` | the brief's one-file comparison with Claude and ChatGPT (`ours-now`: served code path scoped to the file; `grade-full [--wide] [--skip-fix q]`: the 20 compared rows with checked references) |
+| `yesno.py` | re-asks every stored answer that opens with yes/no, old and new side by side for reading |
 | `real_scan.py` | OCR on 9 printed pages scanned with a phone (plan in data/raw/bench/real-scan/) |
 | `answer_models.py` | answer models compared on the same sources (single-file questions, judge v2) |
 | `upload_bench.py` | upload throughput through the API |

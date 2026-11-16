@@ -14,7 +14,7 @@ tuning (`data/eval/`). hit@10 / MRR of the served system against plain hybrid se
 |---|---|---|---|
 | Labor, generated (test) | 338 | **0.97 / 0.90** | 0.78 / 0.54 |
 | Labor, real user questions (government FAQs) | 137 | **0.98 / 0.91** | 0.89 / 0.60 |
-| Real estate, generated (test) | 82 | **0.99 / 0.95** | 0.85 / 0.58 |
+| Real estate, generated (test) | 82 | **0.99 / 0.94** | 0.85 / 0.58 |
 | Real estate, real user questions | 83 | **0.96 / 0.94** (agent mode 0.95 / 0.88) | 0.76 / 0.52 |
 
 On documents it was never built or tuned on (press releases incl. HWPX and a scan, a NIST
