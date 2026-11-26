@@ -52,7 +52,9 @@ class CiCdStack(Stack):
             # a job with `environment: aws` (deploy.yml) gets the subject
             # "repo:<repo>:environment:aws", not ":ref:refs/heads/main"; the environment
             # allows the main branch only (repository settings)
-            assumed_by=principal([f"repo:{REPO}:environment:aws", f"repo:{REPO}:ref:refs/heads/main"]),
+            assumed_by=principal(
+                [f"repo:{REPO}:environment:aws", f"repo:{REPO}:ref:refs/heads/main"]
+            ),
             max_session_duration=Duration.hours(1),
         )
         deploy.add_to_policy(

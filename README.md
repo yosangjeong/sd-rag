@@ -196,16 +196,20 @@ The corpus files are downloaded by `data/scripts/fetch.py` (sources and licenses
 
 ```bash
 cd frontend && npm ci && npm run build && cd ../infra && npm ci && uv sync
-AWS_PROFILE=<profile> npx cdk deploy SdRag-Network SdRag-Data SdRag-App \
-  --outputs-file ../data/raw/deploy/cdk-outputs.json        # about 30 min the first time
+AWS_PROFILE=<profile> npx cdk deploy SdRag-Network SdRag-Data SdRag-App   # about 30 min the first time
 cd .. && AWS_PROFILE=<profile> infra/scripts/after_deploy.sh corpus   # index the corpus inside the VPC
 AWS_PROFILE=<profile> infra/scripts/after_deploy.sh user <email> evaluator   # an evaluator account
 ```
 
-`SdRag-CiCd` (GitHub OIDC roles) is deployed once by hand; its outputs go to the
-repository variables `DEPLOY_ROLE_ARN`, `EVAL_ROLE_ARN` and `CORPUS_BUCKET`, after which
-pushes to `main` deploy and retrieval changes are gated on the dev sets. Behind a
-TLS-inspecting proxy, set `SDRAG_BUILD_CA` to its CA for the image build.
+The scripts read the stack outputs from CloudFormation, so they work the same after a
+deploy by CI/CD. `SdRag-CiCd` (GitHub OIDC roles) is deployed by hand (it also deploys
+the network and data stacks it depends on: the eval role reads the corpus bucket); its
+outputs and the bucket name go to the repository variables `DEPLOY_ROLE_ARN`,
+`EVAL_ROLE_ARN` and `CORPUS_BUCKET`, after which pushes to `main` deploy and retrieval
+changes are gated on the dev sets. The roles trust GitHub's immutable subject for this
+repository (`repo:<owner>@<id>/<repo>@<id>:...`, see `gh api
+repos/<owner>/<repo>/actions/oidc/customization/sub`). Behind a TLS-inspecting proxy, set
+`SDRAG_BUILD_CA` to its CA for the image build.
 
 ## Evaluate
 

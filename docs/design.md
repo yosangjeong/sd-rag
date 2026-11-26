@@ -121,7 +121,11 @@ Bedrock Guardrails' prompt-attack filter on retrieved text.
 
 **Secrets.** None in code or the repository: AWS access through task roles and
 GitHub OIDC; OpenSearch through IAM; the account id is not in the repository
-(`cdk.context.json` is ignored).
+(`cdk.context.json` is ignored). The task roles may call the named Bedrock models only
+(`InvokeModel`, and `InvokeModelWithResponseStream` for the streamed answer). The deploy
+role trusts GitHub's immutable subject for this repository (owner and repository IDs
+in it, so a re-created repository of the same name does not match) and the `aws`
+environment, which allows the main branch only.
 
 **Encryption.** HTTPS at CloudFront; OpenSearch with HTTPS, node-to-node and at-rest
 encryption; S3 and DynamoDB encrypted at rest; SQS and S3 refuse non-TLS requests.
