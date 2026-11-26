@@ -44,13 +44,15 @@ hybrid 0.63 / 0.54 (`eval/unseen.py`). Among 35 look-alike press releases of one
 (60 questions) it put the right release first 59 times (hybrid 48), MRR 0.88 against 0.65.
 
 On 97 real questions collected after the last change and measured once (held out:
-easylaw topics no other set uses, the HUD/DOJ accommodations statement): hit@10 0.91,
-MRR 0.82, against hybrid 0.73 / 0.53; the 64 it cannot answer declined 78%.
+easylaw topics no other set uses, the HUD/DOJ accommodations statement): on the 33 the
+corpus answers, hit@10 0.91, MRR 0.82, against hybrid 0.73 / 0.53; of the 64 it cannot
+answer, 78% were declined.
 
 Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real estate (judge v3,
 which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
-passage; questions the corpus cannot answer declined 67% / 90%; the other country's law cited
-0 times. Every period, ratio and amount with a unit in an answer is checked against the cited
+passage; questions the corpus cannot answer declined 67% / 90%; on the 27 unanswerable labor
+questions where answers used to cite the other country's law (9 before the country filter),
+0 do. Every period, ratio and amount with a unit in an answer is checked against the cited
 sources before it is shown (bare numbers and dates are not). By slice (judge v3,
 `data/eval/results/answers/v11-final/slices.md`): Korean questions 90% / 90% (labor / real
 estate), English 84% / 88%; by file type the lowest is labor scans, 74% (23 questions).
@@ -160,7 +162,7 @@ question -> which country's law (KR / US / none): the other country's statutes a
 |---|---|---|
 | Parsing | pypdf + pdfplumber (tables, columns), HWPX/DOCX XML | measured against HWPX ground truth |
 | OCR | Qwen3-VL 235B on Bedrock | CER 0.4-2.3% Korean on synthetic scans; 2.8% on a real iPhone scan |
-| Chunks | one per article / section, split at paragraph > item > line | beats fixed windows on every slice |
+| Chunks | one per article / section, split at paragraph > item > line | ahead of fixed windows with vectors and in the served system (hit@10 0.94 vs 0.92); level with BM25 alone; citations name one article |
 | Embeddings | Titan Text Embeddings v2 | far ahead across languages |
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |
 | Cross-lingual | query translation, candidates added | test ko->en hit@10 0.47 (hybrid) -> 0.94 (served) |

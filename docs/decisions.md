@@ -159,8 +159,11 @@ per system (`data/eval/results/retrieval-53docs/`). hit@10 / MRR, span level:
 
 How the served configuration was reached:
 
-- **Chunking**: structure chunks beat fixed windows in every configuration measured
-  (hybrid test MRR equal, hit@10 0.78 vs 0.75; final system 0.94 vs 0.92).
+- **Chunking**: structure chunks beat fixed windows in every configuration measured here
+  (hybrid test MRR equal, hit@10 0.78 vs 0.75; final system 0.94 vs 0.92). On the 70-document
+  corpus (README ablation table) BM25 alone is level or slightly behind (MRR 0.42 vs 0.44),
+  dense ahead (0.58 vs 0.53); the margin is small, and one article per chunk also gives
+  citations a single article to name.
 - **Dense vs hybrid**: hybrid is best within a language (test en->en 0.97, ko->ko
   0.90), dense across languages, where BM25 scores 0: the cross-lingual problem.
 - **Per-language fusion** (the earlier candidate) forces the other language into the
