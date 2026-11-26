@@ -132,3 +132,7 @@ def handle(m: dict, sqs, s3, deps) -> None:
             sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
     finally:
         protect(False)
+
+
+if __name__ == "__main__":
+    main()

@@ -18,7 +18,11 @@ from aws_cdk import CfnOutput, Duration, Stack
 from aws_cdk import aws_iam as iam
 from constructs import Construct
 
-REPO = "yosangjeong/sd-rag"
+# GitHub's token subject, in the immutable form the repository uses ("use_immutable_subject":
+# owner and repository names carry their numeric IDs, so a deleted and re-created repository
+# with the same name does not match). Check with:
+#   gh api repos/yosangjeong/sd-rag/actions/oidc/customization/sub
+REPO = "yosangjeong@22970102/sd-rag@1456241745"
 
 
 class CiCdStack(Stack):
