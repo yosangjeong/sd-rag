@@ -249,7 +249,10 @@ class AppStack(Stack):
 
         # ---- permissions ----
         bedrock = iam.PolicyStatement(
-            actions=["bedrock:InvokeModel"],  # Converse calls are authorized as InvokeModel
+            # Converse is authorized as InvokeModel, ConverseStream (the streamed answer,
+            # /api/chat/stream) as InvokeModelWithResponseStream: without it every streamed
+            # answer failed with AccessDenied (found in the 11/26 rehearsal deploy)
+            actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
             resources=[f"arn:aws:bedrock:{self.region}::foundation-model/{m}" for m in MODELS],
         )
         roles = (

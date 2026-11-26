@@ -59,12 +59,18 @@ def test_alb_refuses_requests_without_the_cloudfront_header():
     )
 
 
-def test_bedrock_access_is_limited_to_named_models():
+def test_bedrock_access_is_limited_to_named_models_and_allows_streaming():
     _, app = _templates()
+    found = 0
     for p in app.find_resources("AWS::IAM::Policy").values():
         for st in p["Properties"]["PolicyDocument"]["Statement"]:
-            if st["Action"] == "bedrock:InvokeModel":
+            actions = st["Action"] if isinstance(st["Action"], list) else [st["Action"]]
+            if "bedrock:InvokeModel" in actions:
+                found += 1
                 assert all("foundation-model/" in str(r) for r in st["Resource"])
+                # the streamed answer (ConverseStream) needs its own action
+                assert "bedrock:InvokeModelWithResponseStream" in actions
+    assert found == 3  # API, worker, corpus ingest
 
 
 def test_worker_scales_to_zero():
