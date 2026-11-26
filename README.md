@@ -57,8 +57,9 @@ estate), English 84% / 88%; by file type the lowest is labor scans, 74% (23 ques
 
 Uploads (`data/eval/results/upload/upload.md`): 53 files in one request were done in 154 s
 locally (20.7 files/min) and 429 s on AWS (7.4 files/min, the worker starting from zero);
-the last AWS run with 70 files finished 63, the other 7 failed on a busy search node, which
-led to retries and two workers at most. It is measured again on the final deployment.
+a run with 70 files finished 63, the other 7 failed on a busy search node, which led to
+retries and two workers at most; with those, the second rehearsal (2026-11-26) finished all
+70 in 830 s (5.1 files/min, 78 scanned pages OCR'd). It is measured again on the final deployment.
 
 On one uploaded file, against Claude (Sonnet 5.5) and ChatGPT (GPT-6) on the same 20
 questions (2026-11-16, references checked against the statutes, every non-correct grade

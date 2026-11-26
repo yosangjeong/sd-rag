@@ -1,0 +1,36 @@
+{
+ "files": 70,
+ "megabytes": 66.3,
+ "done": 70,
+ "failed": [],
+ "chunks": 8048,
+ "wall_s": 830,
+ "upload_s": 8.5,
+ "files_per_min": 5.1,
+ "chunks_per_min": 582,
+ "median_parse_s": 0.395,
+ "median_embed_s": 0.62,
+ "slowest": [
+  [
+   "us-cfr24-100.pdf",
+   130.01
+  ],
+  [
+   "kr-wage-claim-rul.pdf",
+   124.79999999999998
+  ],
+  [
+   "kr-real-estate-transaction-rul.pdf",
+   109.49
+  ],
+  [
+   "kr-equal-employment-dec.pdf",
+   106.92
+  ],
+  [
+   "kr-occupational-safety-rul.pdf",
+   65.83
+  ]
+ ],
+ "ocr_pages": 78
+}

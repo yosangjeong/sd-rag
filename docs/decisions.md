@@ -1195,6 +1195,26 @@ in 429 s before the fixes, the first done at 59 s after the worker wake-up; acce
 controls as designed (401 without a token or with the dev header, 403 on the ALB
 directly and for non-evaluators on the log viewer).
 
+## Second deployment rehearsal (2026-11-26, through CI/CD)
+
+This time GitHub Actions deployed the app stack (push -> CI -> deploy.yml); only the
+CiCd, network and data stacks were deployed by hand. Three faults, none visible locally:
+
+| Found | Fix |
+|---|---|
+| `AssumeRoleWithWebIdentity` denied: the repository uses GitHub's immutable OIDC subject (`repo:<owner>@<id>/<repo>@<id>:...`), the trust policy expected `repo:<owner>/<repo>:...` (seen in CloudTrail's failed event) | `cicd.py` trusts the immutable form: a deleted and re-created repository with the same name does not match |
+| every worker task exited at once with no log line; the circuit breaker rolled the app stack back. A refactor on 11-16 had dropped `if __name__ == "__main__": main()` from `worker/main.py`, so `python -m` only imported it (reproduced by running the CI-built image locally) | guard restored; `tests/test_entrypoints.py` checks the modules ECS starts with `python -m` |
+| every streamed answer failed with AccessDenied: `ConverseStream` is authorized as `bedrock:InvokeModelWithResponseStream`, the task roles had `bedrock:InvokeModel` only (local runs use the developer's credentials) | the action added; the policy test requires both |
+
+Measured: corpus ingest 70 documents / 8,049 chunks in 138 s from the caches; upload of 70
+files through CloudFront all done in 830 s, none failed (the first rehearsal lost 7);
+401 / 403 / evaluator-only logs and per-user isolation of documents, sources and
+conversations as designed; the streamed answer arrives in pieces through CloudFront
+(4-20 deltas); agent mode 10-19 s. Answers took 10-11 s against 7.5 s measured on 11-14:
+single GLM-4.7 calls from the laptop took 1.1-3.5 s that afternoon (0.95 s for the three
+in parallel on 11-14), so most of it was Bedrock latency; to be measured again on the
+final deployment. Torn down the same day.
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region
