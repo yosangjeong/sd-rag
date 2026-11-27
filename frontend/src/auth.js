@@ -9,8 +9,14 @@ import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 let manager = null;
 
 export async function initAuth() {
+  // only "no config.json" (404, or the dev server) means local mode; a network error
+  // or a 5xx must not render the page signed-out, so it is thrown (main.jsx shows it)
   const r = await fetch("/config.json").catch(() => null);
-  const cfg = r && r.ok ? await r.json().catch(() => null) : null;
+  if (!r) throw new Error("설정을 불러오지 못했습니다 (네트워크 오류)");
+  if (r.status === 404 || (import.meta.env.DEV && !r.ok)) return null; // local: no sign-in
+  if (!r.ok) throw new Error(`설정을 불러오지 못했습니다 (${r.status})`);
+  // the dev server answers a missing file with index.html: not JSON, local mode
+  const cfg = await r.json().catch(() => null);
   if (!cfg || !cfg.authority) return null; // local: no sign-in
   manager = new UserManager({
     authority: cfg.authority, // https://cognito-idp.<region>.amazonaws.com/<pool id>
@@ -23,7 +29,14 @@ export async function initAuth() {
   });
   manager.logoutUrl = `${cfg.domain}/logout?client_id=${cfg.clientId}&logout_uri=${encodeURIComponent(window.location.origin + "/")}`;
   if (window.location.search.includes("code=")) {
-    await manager.signinRedirectCallback();
+    try {
+      await manager.signinRedirectCallback();
+    } catch (err) {
+      // a stale or mismatched ?code= (reload, back button, another tab): drop it and
+      // sign in again below instead of failing the whole page
+      console.warn("sign-in callback failed", err);
+      await manager.removeUser().catch(() => {});
+    }
     window.history.replaceState({}, "", "/");
   }
   const user = await manager.getUser();

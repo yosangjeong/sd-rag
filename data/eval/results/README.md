@@ -9,7 +9,7 @@
 | `repool.json` | candidates judged and gold spans added per set by the pooling | `eval/repool.py` |
 | `injection.md`, `injection.jsonl` | uploaded documents with planted instructions, asked in basic and agent mode | `eval/injection.py` |
 | `ann-recall.md` | the HNSW index's recall against exact search | `eval/ann_recall.py` |
-| `ocr-real-scan.md`, `ocr-real-scan.json` | OCR on 9 printed pages scanned with a phone | `eval/real_scan.py` |
+| `ocr-real-scan.md`, `ocr-real-scan.json` | OCR on 9 printed pages scanned with a phone (CER 2.8%, before the `<br>` clean-up of 11-27; 1.1% after it: `ocr-textract.md`) | `eval/real_scan.py` |
 | `answers/yesno-check.json` | every stored yes/no answer re-asked after the yes/no rule, old and new side by side | `eval/yesno.py` |
 | `answers/<version>/` | answer quality per prompt or pipeline version: `test_sample.jsonl`, `unanswerable.jsonl`, `summary.md` | `eval/answers.py --version ...` |
 | `answers/rejudge.md`, `answers/judge-agreement.md` | every version re-graded with judge v2; the judge against a reference grading (Claude Code) | `eval/rejudge.py`, Claude Code |

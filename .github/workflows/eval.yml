@@ -7,7 +7,16 @@
 name: eval
 on:
   pull_request:
-    paths: ["backend/src/sdrag/ingest/**", "backend/src/sdrag/retrieval/**", "eval/**"]
+    # also the settings (model ids, OCR check) and pinned dependencies the scored system
+    # runs with, and the dev sets and baselines eval/gate.py compares against
+    paths:
+      - "backend/src/sdrag/ingest/**"
+      - "backend/src/sdrag/retrieval/**"
+      - "backend/src/sdrag/common/**"
+      - "backend/uv.lock"
+      - "eval/**"
+      - "data/eval/dev*.jsonl"
+      - "data/eval/baseline-dev*.json"
   workflow_dispatch:
 permissions:
   contents: read

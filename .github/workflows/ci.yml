@@ -27,3 +27,5 @@ jobs:
         working-directory: frontend
       - run: npm ci && uv sync --frozen && uv run pytest -q
         working-directory: infra
+      - run: uv run ruff check . && uv run ruff format --check .  # infra's own ruff config
+        working-directory: infra

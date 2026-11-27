@@ -3,6 +3,7 @@
 Endpoints (all but /health need a signed-in user; see auth.py):
 
 - POST /api/chat                 ask; answers with citations; stored in the conversation
+- POST /api/chat/stream          the same, streamed as NDJSON (stages, answer pieces, result)
 - GET  /api/conversations        the user's conversations
 - GET  /api/conversations/{id}   one conversation with its messages
 - POST /api/documents            upload files (PDF, DOCX, HWPX; many at once)
@@ -22,7 +23,9 @@ and source view also writes an audit record.
 
 import hashlib
 import json
+import os
 import queue
+import re
 import threading
 import time
 import uuid
@@ -50,12 +53,16 @@ from sdrag.service import RagService
 from sdrag.worker.job import ALLOWED, LocalQueue
 
 MAX_FILES, MAX_FILE_MB = 100, 50
+# files one user can upload per 24 hours: OCR is the cost (Qwen3-VL and the Textract
+# check per scanned page), and 100 files of 300 scanned pages would be about $550
+MAX_DAY_FILES = 30
+MAX_NAME_BYTES = 200  # the file name is a path and an S3 key part (255 bytes on Linux)
 
 
 @lru_cache(maxsize=1)
 def deps() -> SimpleNamespace:
     """Clients built once per process (they are thread-safe and keep connections)."""
-    client = make_client(settings.opensearch_url, settings.aws_region, 60)
+    client = make_client(settings.opensearch_url, settings.aws_region, 30)  # CloudFront allows 60
     embedder = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
     # a request has 60 s at CloudFront: one model call gets 30 s and 3 attempts
     chat = BedrockChat(settings.llm_model, settings.aws_region, read_timeout=30, attempts=3)
@@ -92,11 +99,9 @@ if settings.env == "local":  # the Vite dev server; in AWS the page and /api/* s
 
 @app.middleware("http")
 async def request_log(request: Request, call_next):
-    # a client's id is kept only if it looks like ours: free text in it could otherwise
-    # join another request's trail in the logs
-    rid = request.headers.get("x-request-id") or ""
-    if not logs_api.RE_RID.match(rid):
-        rid = uuid.uuid4().hex[:12]
+    # always our own id: a client's, even well-formed, could join another request's
+    # trail in the evaluators' log view (ids are shown in responses)
+    rid = uuid.uuid4().hex[:12]
     request.state.rid = rid
     t = time.perf_counter()
     try:
@@ -119,7 +124,7 @@ def health() -> dict[str, str]:
 
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
-    conversation_id: str | None = None
+    conversation_id: str | None = Field(default=None, max_length=64)  # ids are ours (new_id)
     mode: str = Field(default="basic", pattern="^(basic|agent)$")
     documents: list[str] = Field(default_factory=list, max_length=50)  # search only these
 
@@ -171,7 +176,7 @@ def chat_stream(body: ChatIn, request: Request, user: str = Depends(current_user
     numbers not yet renumbered), {"type": "rewrite"} if the figure check sends the draft
     back, then {"type": "done", ...the /api/chat body} or {"type": "error", ...}. The
     page shows the deltas, then replaces them with the final text. A line goes out at
-    least every few seconds, so CloudFront's 60 s wait between bytes is not reached by
+    least every 10 seconds, so CloudFront's 60 s wait between bytes is not reached by
     the searches either."""
     d, rid = deps(), request.state.rid
     history = _history(d, user, body)  # a 404 here is still a plain HTTP error
@@ -220,7 +225,7 @@ def conversations(user: str = Depends(current_user)) -> list[dict]:
 
 @app.get("/api/conversations/{conv_id}")
 def conversation(conv_id: str, user: str = Depends(current_user)) -> dict:
-    c = deps().store.conversation(user, conv_id)
+    c = deps().store.conversation(user, conv_id) if len(conv_id) <= 64 else None
     if not c:
         raise HTTPException(404, "conversation not found")
     return c
@@ -252,6 +257,51 @@ def _looks_like(path: Path, suffix: str) -> bool:
     return b"%PDF" in head if suffix == ".pdf" else head.startswith(b"PK")
 
 
+def _safe_name(raw: str) -> str:
+    """The upload's file name without a path or control characters, cut to
+    MAX_NAME_BYTES of UTF-8 keeping its extension (a longer one failed the whole batch:
+    "File name too long")."""
+    name = re.sub(r"[\x00-\x1f\x7f]", "", Path(raw.replace("\\", "/")).name) or "file"
+    stem, suffix = os.path.splitext(name)
+    while len((stem + suffix).encode()) > MAX_NAME_BYTES and stem:
+        stem = stem[:-1]
+    return (stem + suffix) or "file"
+
+
+def _accept(d, user: str, f: UploadFile, name: str, have: dict, request: Request) -> dict:
+    """Check, store and queue one uploaded file: {"id", "file"} or {"file", "reason"}."""
+    if Path(name).suffix.lower() not in ALLOWED:
+        return {"file": name, "reason": "only PDF, DOCX and HWPX"}
+    doc_id = new_id()
+    local = Path(settings.upload_dir) / user_hash(user) / doc_id / name
+    saved = _save_capped(f, local, MAX_FILE_MB * 2**20)
+    if saved is None:
+        return {"file": name, "reason": f"over {MAX_FILE_MB} MB"}
+    size, sha = saved
+    if sha in have:
+        local.unlink(missing_ok=True)
+        return {"file": name, "reason": f"already uploaded (as {have[sha]})"}
+    if not _looks_like(local, Path(name).suffix.lower()):
+        local.unlink(missing_ok=True)
+        reason = ("not a PDF file" if name.lower().endswith(".pdf")
+                  else "not a DOCX/HWPX file (an old .hwp/.doc renamed? save it as HWPX, DOCX or PDF)")  # fmt: skip
+        return {"file": name, "reason": reason}
+    d.store.put_document(user, {"id": doc_id, "file": name, "bytes": size, "sha256": sha,
+                                "status": "queued", "queued": time.time()})  # fmt: skip
+    have[sha] = name  # the same file twice in one batch
+    try:
+        d.queue.send(user, doc_id, local, name)
+    except Exception as e:  # noqa: BLE001 - S3 or SQS refused it: no message, no worker
+        # a record left "queued" would never move and would block sending the file again
+        d.store.update_document(user, doc_id, status="failed",
+                                error="접수하지 못했습니다 (잠시 뒤 다시 올려 주세요)")  # fmt: skip
+        del have[sha]
+        local.unlink(missing_ok=True)
+        log("error", request_id=request.state.rid, path="enqueue", error=f"{type(e).__name__}: {e}")
+        return {"file": name, "reason": "could not be queued, try again"}
+    return {"id": doc_id, "file": name}
+
+
 # a plain def: FastAPI runs it in its thread pool, so the blocking S3 / SQS / DynamoDB
 # calls of a large batch do not stall other requests and the health check
 @app.post("/api/documents")
@@ -259,51 +309,27 @@ def upload(files: list[UploadFile], request: Request, user: str = Depends(curren
     if not files or len(files) > MAX_FILES:
         raise HTTPException(400, f"send 1 to {MAX_FILES} files")
     d, accepted, rejected = deps(), [], []
+    mine = d.store.documents(user)
     # the same content uploaded again (not a failed one) would be indexed twice
-    have = {x["sha256"]: x.get("file", "") for x in d.store.documents(user)
+    have = {x["sha256"]: x.get("file", "") for x in mine
             if x.get("sha256") and x.get("status") != "failed"}  # fmt: skip
+    left = MAX_DAY_FILES - sum(1 for x in mine if float(x.get("queued", 0)) > time.time() - 86400)
     for f in files:
-        name = Path(f.filename or "file").name
-        if Path(name).suffix.lower() not in ALLOWED:
-            rejected.append({"file": name, "reason": "only PDF, DOCX and HWPX"})
+        name = _safe_name(f.filename or "file")
+        if left <= 0:
+            rejected.append({"file": name, "reason": f"daily limit of {MAX_DAY_FILES} files"})
             continue
-        doc_id = new_id()
-        local = Path(settings.upload_dir) / user_hash(user) / doc_id / name
-        saved = _save_capped(f, local, MAX_FILE_MB * 2**20)
-        if saved is None:
-            rejected.append({"file": name, "reason": f"over {MAX_FILE_MB} MB"})
-            continue
-        size, sha = saved
-        if sha in have:
-            local.unlink(missing_ok=True)
-            rejected.append({"file": name, "reason": f"already uploaded (as {have[sha]})"})
-            continue
-        if not _looks_like(local, Path(name).suffix.lower()):
-            local.unlink(missing_ok=True)
-            reason = ("not a PDF file" if name.lower().endswith(".pdf")
-                      else "not a DOCX/HWPX file (an old .hwp/.doc renamed? save it as HWPX, DOCX or PDF)")  # fmt: skip
-            rejected.append({"file": name, "reason": reason})
-            continue
-        d.store.put_document(user, {"id": doc_id, "file": name, "bytes": size, "sha256": sha,
-                                    "status": "queued", "queued": time.time()})  # fmt: skip
-        have[sha] = name  # the same file twice in one batch
         try:
-            d.queue.send(user, doc_id, local, name)
-        except Exception as e:  # noqa: BLE001 - S3 or SQS refused it: no message, no worker
-            # a record left "queued" would never move and would block sending the file again
-            d.store.update_document(user, doc_id, status="failed",
-                                    error="접수하지 못했습니다 (잠시 뒤 다시 올려 주세요)")  # fmt: skip
-            del have[sha]
-            local.unlink(missing_ok=True)
-            log(
-                "error",
-                request_id=request.state.rid,
-                path="enqueue",
-                error=f"{type(e).__name__}: {e}",
-            )
-            rejected.append({"file": name, "reason": "could not be queued, try again"})
-            continue
-        accepted.append({"id": doc_id, "file": name})
+            r = _accept(d, user, f, name, have, request)
+        except Exception as e:  # noqa: BLE001 - one file's failure must not fail the batch
+            log("error", request_id=request.state.rid, path="upload",
+                error=f"{type(e).__name__}: {e}"[:300])  # fmt: skip
+            r = {"file": name, "reason": "could not be saved, try again"}
+        if "id" in r:
+            accepted.append(r)
+            left -= 1
+        else:
+            rejected.append(r)
     if accepted:
         try:
             d.queue.wake(len(accepted))

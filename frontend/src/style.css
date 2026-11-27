@@ -51,6 +51,7 @@ button { font: inherit; }
 .button.ghost { background: var(--surface); color: var(--text); border: 1px solid var(--line); font-weight: 500; }
 .button.upload { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px; }
 .button.upload small { font-size: 11px; opacity: .85; font-weight: 400; }
+.button.upload.busy { opacity: .6; cursor: progress; }
 .link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; text-align: left; }
 .link:hover { text-decoration: underline; }
 .convs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }

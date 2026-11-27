@@ -40,6 +40,8 @@ from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from PIL import Image
 
+from sdrag.common.files import write_atomic
+
 log = logging.getLogger(__name__)
 
 PROMPT = (
@@ -292,7 +294,8 @@ class CheckedOcr:
     the check's text, the primary invented them: the page keeps the check's text and
     is marked replaced. On 33 benchmark pages a 5% threshold flagged the one page with
     invented text and no good page (eval/textract_bench.py --agree; a small sample).
-    The check never fails a page: if it errors, the primary's text is kept."""
+    The check never fails a page: if it errors, or reads under half of the primary's
+    characters (it missed the page), the primary's text is kept."""
 
     _pool = ThreadPoolExecutor(4)  # the checks run beside ocr_pages' own 4 readers
 
@@ -310,6 +313,12 @@ class CheckedOcr:
             return res
         share = missing_share(tidy(res.text), tidy(other.text))
         if share <= self.threshold:
+            return replace(res, missing=round(share, 4))
+        if len(norm(tidy(other.text))) < 0.5 * len(norm(tidy(res.text))):
+            # the check read under half of what the reader did (a faint photo, a blank
+            # answer): it missed the page, not the reader inventing; keep the reader's
+            log.warning("OCR check read %d of the reader's %d characters; keeping the reader's",
+                        len(norm(tidy(other.text))), len(norm(tidy(res.text))))  # fmt: skip
             return replace(res, missing=round(share, 4))
         log.warning("OCR check: %.1f%% of the reader's characters are not on the page "
                     "(Textract); using Textract's text", share * 100)  # fmt: skip
@@ -329,10 +338,12 @@ class CachedOcr:
         ).hexdigest()
         path = self.dir / key[:2] / f"{key}.json"
         if path.exists():
-            return OcrResult(**json.loads(path.read_text(encoding="utf-8")))
+            try:
+                return OcrResult(**json.loads(path.read_text(encoding="utf-8")))
+            except (ValueError, TypeError):  # a torn file (a task died mid-write): read again
+                pass
         res = self.engine.transcribe(image)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(asdict(res), ensure_ascii=False), encoding="utf-8")
+        write_atomic(path, json.dumps(asdict(res), ensure_ascii=False))
         return res
 
 

@@ -3,10 +3,10 @@
 GitHub's token for a workflow run is exchanged for short-lived credentials of these
 roles; the trust policy accepts only this repository:
 
-- DeployRole (the `aws` environment, main branch only): assumes the CDK bootstrap roles, which do the actual
+- DeployRole (jobs in the `aws` environment only, which allows the main branch): assumes the CDK bootstrap roles, which do the actual
   deployment (cdk deploy), so this role itself holds no broad permissions.
 - EvalRole (pull requests and main of the repository): invokes the Bedrock models
-  the retrieval uses and reads the corpus from S3, for the evaluation gate
+  the retrieval uses and Textract (the OCR check), and reads the corpus from S3, for the evaluation gate
   (.github/workflows/eval.yml). Read-only plus model calls: a pull request cannot
   change anything in the project.
 
@@ -17,6 +17,8 @@ repository's Actions variables.
 from aws_cdk import CfnOutput, Duration, Stack
 from aws_cdk import aws_iam as iam
 from constructs import Construct
+
+from stacks.app import MODELS
 
 # GitHub's token subject, in the immutable form the repository uses ("use_immutable_subject":
 # owner and repository names carry their numeric IDs, so a deleted and re-created repository
@@ -50,11 +52,10 @@ class CiCdStack(Stack):
             self,
             "DeployRole",
             # a job with `environment: aws` (deploy.yml) gets the subject
-            # "repo:<repo>:environment:aws", not ":ref:refs/heads/main"; the environment
-            # allows the main branch only (repository settings)
-            assumed_by=principal(
-                [f"repo:{REPO}:environment:aws", f"repo:{REPO}:ref:refs/heads/main"]
-            ),
+            # "repo:<repo>:environment:aws"; the environment allows the main branch only
+            # (repository settings). No ":ref:refs/heads/main" subject: any workflow on main
+            # without the environment (and its protection rules) could then deploy
+            assumed_by=principal([f"repo:{REPO}:environment:aws"]),
             max_session_duration=Duration.hours(1),
         )
         deploy.add_to_policy(
@@ -73,15 +74,15 @@ class CiCdStack(Stack):
         evaluate.add_to_policy(
             iam.PolicyStatement(
                 actions=["bedrock:InvokeModel"],
-                resources=[
-                    f"arn:aws:bedrock:{self.region}::foundation-model/{m}"
-                    for m in (
-                        "amazon.titan-embed-text-v2:0",
-                        "zai.glm-4.7",
-                        "qwen.qwen3-vl-235b-a22b",
-                    )
-                ],
+                # the same models as the service roles (app.py), so a model change
+                # reaches the gate too
+                resources=[f"arn:aws:bedrock:{self.region}::foundation-model/{m}" for m in MODELS],
             )
+        )
+        # the index step OCRs with the Textract check on (backend config ocr_check=True);
+        # Textract accepts only "*" as the resource
+        evaluate.add_to_policy(
+            iam.PolicyStatement(actions=["textract:AnalyzeDocument"], resources=["*"])
         )
         evaluate.add_to_policy(
             iam.PolicyStatement(

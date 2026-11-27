@@ -4,7 +4,7 @@ Two modes, compared in the evaluation (eval/run_retrieval.py):
 
 - ``basic``: Searcher.wide (served since 2026-11-13): hybrid search (BM25 + dense, RRF)
   for the question, its translation into the other corpus language and its
-  statute-terms rewrite, with referenced and defining articles (about 50 candidates),
+  statute-terms rewrite, with referenced and defining articles (about 70 candidates, 78 at most),
   all reranked by the LLM (docs/decisions.md, "Wider candidate pool"). Fusing the lists
   instead let the translation's results push out the question's own.
 - Optional steps (country, translation, statute terms, reranking) that fail are
@@ -34,7 +34,7 @@ from sdrag.retrieval.rerank import LlmReranker, LlmTranslator, condense
 from sdrag.retrieval.search import COUNTRIES, Hit, Searcher
 
 ANSWER_SOURCES = 6  # 8 tried on 2026-11-17: declined 74% -> 59% on unanswerable questions
-RERANK_DEPTH = 20
+RERANK_DEPTH = 20  # the question's own hybrid top in the pool (Searcher.wide size); the reranker reads the whole pool
 TRANSLATION_EXTRA = 10
 
 
@@ -169,7 +169,6 @@ class RagService:
         with ThreadPoolExecutor(3) as pool:
             country_f = pool.submit(jurisdiction, chat, question) if not scope else None
             # both modes: the agent starts from the same wide pool (agent/search.with_pool)
-            basic = True
             translation_f = pool.submit(translator.to_other_language, question)
             terms_f = pool.submit(translator.to_statute_terms, question)
             # each of these only widens or narrows the search: if one fails, the request
@@ -177,9 +176,9 @@ class RagService:
             country = _optional(country_f, "jurisdiction", request_id)
             # "" (not None) for a failed one: Searcher.wide would ask again for None
             t = _optional(translation_f, "translation", request_id)
-            translation = (t[0] if t else "") if basic else None
+            translation = t[0] if t else ""
             terms = _optional(terms_f, "statute_terms", request_id)
-            statute_terms = (terms or "") if basic else None
+            statute_terms = terms or ""
         s = Searcher(self.client, self.index, self.embedder, translator,
                      owners=[user_id, PUBLIC], scope=scope or None, country=country)  # fmt: skip
         steps: list[dict] = []

@@ -10,8 +10,8 @@
 > - **써 보기**: 예시 질문 클릭 → 답의 `[n]`을 누르면 원문이 열립니다 → 영어로 한국 법을 묻기(교차 언어)
 >   → 파일 여러 개 올리고 "이 문서에 질문" → 에이전트 모드 → 다른 계정으로 로그인해 격리 확인.
 > - **핵심 숫자** (아래 표): 서비스 검색 hit@10 / MRR, 노동 시험 0.96 / 0.90, 실제 질문 0.98 / 0.90
->   (일반 hybrid 0.78 / 0.54). 마지막 변경 뒤에 모아 한 번만 잰 실제 질문 97개: 0.91 / 0.81. 답변 정확도
->   (자동 채점, 하한) 노동 87%, 부동산 89%. 파일 하나 기준 같은 20문항에서 Claude·ChatGPT와 같은 수준.
+>   (일반 hybrid 0.78 / 0.54). 11/14에 따로 모은 실제 질문 97개: 0.91 / 0.81 (두 번 쓰였고
+>   일부는 개발셋과 정답 조문이 겹침, 본문 참조). 답변 정확도 (자동 채점, 하한, 11/14 답변 버전) 노동 87%, 부동산 89%. 파일 하나 기준 같은 20문항에서 Claude·ChatGPT와 같은 수준.
 > - **어디를 읽나**: 설계·보안·한계 `docs/design.md` → 결정과 근거(측정 포함) `docs/decisions.md` →
 >   평가 방법·채점 모델과 프롬프트 `data/eval/README.md` → 문항별 결과 `data/eval/results/`.
 >   로그 조회 방법은 `docs/operations.md`.
@@ -26,8 +26,12 @@ The focus is retrieval accuracy (`data/eval/`). Choices were made on the dev set
 test sets below were kept apart from them, but they are not untouched: their results were
 read and their errors analysed after each measurement, a few decisions were checked on
 them too, and the answer versions were compared on a fixed sample of the labor test set
-(`docs/decisions.md`). The strictly held-out check is the set of real questions collected
-after the last change and measured once (below: hit@10 0.91, MRR 0.81; 5 of its questions re-run after the 11/27 OCR clean-up). hit@10 / MRR of
+(`docs/decisions.md`). The closest to held-out is the set of real questions collected on 11-14 after the
+retrieval changes of that day (below: hit@10 0.91, MRR 0.81). It is not clean: it was used
+twice (the second time to reject doc2query), 5 of its questions were re-run after the 11/27
+OCR clean-up, retrieval changed after it (11-16 to 11-28), and 9 of its 33 answerable
+questions have a gold passage that a tuning-set question also has (served 1.00 / 1.00 on
+those 9, 0.875 / 0.74 on the other 24). hit@10 / MRR of
 the served system against plain hybrid search (gold spans pooled from every reported
 system's top 5, TREC-style, `eval/repool.py`):
 
@@ -43,12 +47,14 @@ framework, an IRS guide; uploaded as a user, 35 questions): hit@5 1.00, MRR 0.87
 hybrid 0.63 / 0.54 (`eval/unseen.py`). Among 35 look-alike press releases of one ministry
 (60 questions) it put the right release first 59 times (hybrid 48), MRR 0.88 against 0.65.
 
-On 97 real questions collected after the last change and measured once (held out:
-easylaw topics no other set uses, the HUD/DOJ accommodations statement): on the 33 the
+On 97 real questions collected on 11-14 (easylaw topics no other set uses, the HUD/DOJ
+accommodations statement; used twice, and 9 share a gold passage with tuning questions, above): on the 33 the
 corpus answers, hit@10 0.91, MRR 0.81, against hybrid 0.73 / 0.53; of the 64 it cannot
 answer, 78% were declined.
 
-Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real estate (judge v3,
+Answers (automatic judge, a lower bound; answer version v11 of 11-14, before the later
+answer-prompt changes: scope rule, dates and digits, yes/no; re-measured at the final deploy):
+87% correct on labor, 89% on real estate (judge v3,
 which also reads the cited sources; the stricter v2 gave 78% / 77%); 96% / 98% cite the gold
 passage; questions the corpus cannot answer declined 67% / 90%; on the 27 unanswerable labor
 questions where answers used to cite the other country's law (9 before the country filter),
@@ -166,7 +172,7 @@ question -> which country's law (KR / US / none): the other country's statutes a
 | Part | Choice | Why (details in `docs/decisions.md`) |
 |---|---|---|
 | Parsing | pypdf + pdfplumber (tables, columns), HWPX/DOCX XML | measured against HWPX ground truth |
-| OCR | Qwen3-VL 235B on Bedrock, checked by Amazon Textract | CER 0.4-2.3% Korean on synthetic scans; 1.1% on a real iPhone scan (2.8% before the `<br>` it writes in table cells was cleaned) |
+| OCR | Qwen3-VL 235B on Bedrock, checked by Amazon Textract | CER 0.4-2.3% Korean on synthetic office-quality scans (2.8% body text on the poor profile); 1.1% on a real iPhone scan (2.8% before the `<br>` it writes in table cells was cleaned) |
 | Chunks | one per article / section, split at paragraph > item > line | ahead of fixed windows with vectors and in the served system (hit@10 0.94 vs 0.92); level with BM25 alone; citations name one article |
 | Embeddings | Titan Text Embeddings v2 | far ahead across languages |
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |

@@ -167,6 +167,20 @@ def test_a_failing_check_never_fails_the_page():
     assert (res.text, res.replaced, res.missing) == (READ, False, None)
 
 
+def test_a_check_that_missed_the_page_does_not_replace_it():
+    res = CheckedOcr(Fixed("qwen", READ), Fixed("textract", "")).transcribe(PAGE)
+    assert res.text == READ and not res.replaced
+
+
+def test_a_torn_cache_file_is_read_again(tmp_path):
+    cached = CachedOcr(Fixed("qwen", READ), tmp_path)
+    cached.transcribe(PAGE)
+    (f,) = [p for p in tmp_path.rglob("*.json")]
+    f.write_text('{"text": "제1조', encoding="utf-8")  # a task died mid-write
+    assert cached.transcribe(PAGE).text == READ
+    assert not list(tmp_path.rglob("*.tmp"))
+
+
 def test_reader_errors_are_not_hidden_by_the_check():
     busy = OcrError("throttled", transient=True)
     with pytest.raises(OcrError):

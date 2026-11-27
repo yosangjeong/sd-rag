@@ -25,7 +25,8 @@ ALLOWED = {".pdf", ".docx", ".hwpx"}
 
 
 def _transient(e: Exception) -> bool:
-    from botocore.exceptions import ClientError, EndpointConnectionError
+    from botocore.exceptions import ClientError, HTTPClientError
+    from botocore.exceptions import ConnectionError as BotoConnectionError
     from opensearchpy import ConnectionError as SearchConnectionError
     from opensearchpy import TransportError
     from opensearchpy.helpers import BulkIndexError
@@ -33,7 +34,9 @@ def _transient(e: Exception) -> bool:
     from sdrag.ingest.ocr import TRANSIENT_CODES, OcrError
     from sdrag.retrieval.index import RETRYABLE
 
-    if isinstance(e, SearchConnectionError | EndpointConnectionError):
+    # unreachable or timed out even after botocore's own retries (Titan, DynamoDB, S3);
+    # BedrockVisionOcr and TextractOcr already count these as transient
+    if isinstance(e, SearchConnectionError | BotoConnectionError | HTTPClientError):
         return True
     if isinstance(e, OcrError):
         return e.transient
@@ -64,9 +67,13 @@ def _shown(e: Exception) -> str:
     return f"처리 중 오류 ({type(e).__name__})"
 
 
-def _remove_chunks(deps, doc: str) -> None:
+def _remove_chunks(deps, doc: str, keep: list[str] | None = None) -> None:
+    """Delete a document's chunks from the index, except the ids in `keep`."""
+    query: dict = {"term": {"doc_id": doc}}
+    if keep:
+        query = {"bool": {"filter": [query], "must_not": [{"ids": {"values": keep}}]}}
     try:
-        deps.client.delete_by_query(index=deps.index, body={"query": {"term": {"doc_id": doc}}},
+        deps.client.delete_by_query(index=deps.index, body={"query": query},
                                     refresh=True, conflicts="proceed")  # fmt: skip
     except Exception as e:  # noqa: BLE001 - the failure is already being reported
         log("error", path="ingest-cleanup", doc_id=doc, error=f"{type(e).__name__}: {e}"[:300])
@@ -101,12 +108,15 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
                 "문서에서 글자를 찾지 못했습니다 (빈 문서이거나 읽을 수 없는 이미지)"
             )
         deps.store.update_document(user, doc_id, stage=f"embedding {len(chunks)} chunks")
-        vectors = deps.embedder.embed([embed_input(c, doc.title) for c in chunks]) if chunks else []
+        vectors = deps.embedder.embed([embed_input(c, doc.title) for c in chunks])
         t2 = time.perf_counter()
         ocr = set(parsed.ocr_pages)
         deps.store.update_document(user, doc_id, stage="indexing")
         bulk_index(deps.client, deps.index,
                    [to_source(doc, c, v, ocr, owner=user) for c, v in zip(chunks, vectors, strict=True)])  # fmt: skip
+        # an earlier try of this file may have indexed more chunks (its OCR read a page
+        # differently): those ids would stay searchable next to this result
+        _remove_chunks(deps, doc.id, keep=[c.id for c in chunks])
         t3 = time.perf_counter()
         result = {"status": "done", "stage": "", "doc": doc.id, "chunks": len(chunks),
                   "unread_pages": len(parsed.needs_ocr_pages),  # OCR failed or no text
@@ -126,6 +136,7 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
             _remove_chunks(deps, f"u-{doc_id}")
         result = {
             "status": "retrying" if transient else "failed",
+            "stage": "",
             "error": shown[:300],
             "finished": time.time(),
         }

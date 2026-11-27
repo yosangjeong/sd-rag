@@ -5,7 +5,8 @@
   group, over HTTPS with IAM (SigV4) auth: no passwords anywhere
 - DynamoDB table for per-user records (conversations, upload status), on-demand
 - S3 bucket for uploads and for the corpus files / caches used by the bulk ingest
-- SQS queue for upload jobs, with a dead-letter queue after 3 failed attempts
+- SQS queue for upload jobs: the worker tries a job 3 times, a 4th delivery only records
+  the failure, and the dead-letter queue keeps what even that could not handle
 - Cognito user pool (admin-created users only: evaluator accounts) and an app client
   for the managed login page (authorization code + PKCE)
 
@@ -13,7 +14,7 @@ Assignment scale: single node, no replicas, no dedicated masters; production wou
 use 3 AZs and replicas (docs/design.md, limitations).
 """
 
-from aws_cdk import Duration, Fn, RemovalPolicy, Stack
+from aws_cdk import CfnOutput, Duration, Fn, RemovalPolicy, Stack
 from aws_cdk import aws_cognito as cognito
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_ec2 as ec2
@@ -86,7 +87,10 @@ class DataStack(Stack):
                     "DomainName": self.search.domain_name,
                 },
                 physical_resource_id=cr.PhysicalResourceId.of("nori"),
-                ignore_error_codes_matching="Conflict.*|ResourceAlreadyExists.*|ValidationException",  # already associated
+                # only "already associated" is ignored: a wrong package id or engine version
+                # (ValidationException, ResourceNotFound) must fail the deploy, not leave a
+                # domain without nori that the corpus ingest finds out about later
+                ignore_error_codes_matching="Conflict.*|ResourceAlreadyExists.*",
             ),
             policy=cr.AwsCustomResourcePolicy.from_statements(
                 [
@@ -103,6 +107,16 @@ class DataStack(Stack):
             ),
         )
         nori.node.add_dependency(self.search)
+        # the access policy above and nori share one CDK helper Lambda (created by the first,
+        # so a log_group passed here is ignored); its log group is kept 14 days like the
+        # service logs, not CDK's default of 2 years. The group exists only with the feature
+        # flag @aws-cdk/aws-lambda:useCdkManagedLogGroup (cdk.json; not in the unit tests)
+        helper = self.node.find_child("AWS679f53fac002430cb0da5b7982bd2287")
+        helper_logs = helper.node.try_find_child("LogGroup")
+        if helper_logs:
+            helper_logs.node.default_child.retention_in_days = 14
+        # scripts/after_deploy.sh waits for nori on this domain by name
+        CfnOutput(self, "SearchDomainName", value=self.search.domain_name)
 
         self.table = ddb.TableV2(
             self,

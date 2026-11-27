@@ -1,7 +1,7 @@
 """Second-stage ranking and query translation, both done by a text LLM on Bedrock.
 
 Reranker: the first stage (Searcher.wide: question, translation and statute terms)
-returns ~50 candidates; the reranker reads
+returns about 70 candidates (78 at most); the reranker reads
 the question and all of them in one call and returns them in order of relevance.
 Bedrock's rerank models (Cohere Rerank, Amazon Rerank) are not offered in
 ap-southeast-2, and a cross-encoder of our own would be another service to run, so a

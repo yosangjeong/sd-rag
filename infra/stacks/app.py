@@ -89,6 +89,9 @@ class AppStack(Stack):
 
         env = {
             "SDRAG_ENV": "aws",
+            # the stack's Region (app.py REGION), so the backend does not rely on its typed
+            # default (common/config.py aws_region)
+            "SDRAG_AWS_REGION": self.region,
             "SDRAG_AUTH_MODE": "cognito",
             "SDRAG_OPENSEARCH_URL": f"https://{data.search.domain_endpoint}",
             "SDRAG_TABLE": data.table.table_name,
@@ -187,7 +190,8 @@ class AppStack(Stack):
             scaling_steps=[
                 appscaling.ScalingInterval(upper=0, change=-4),
                 appscaling.ScalingInterval(lower=1, change=+1),
-                appscaling.ScalingInterval(lower=20, change=+1),
+                # a long backlog starts both tasks at once (max capacity 2), not one per alarm
+                appscaling.ScalingInterval(lower=20, change=+2),
             ],
             assign_public_ip=True,
             task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
@@ -276,6 +280,26 @@ class AppStack(Stack):
             role.add_to_principal_policy(textract)
 
         # ---- web ----
+        # HSTS, nosniff, X-Frame-Options DENY (the managed SECURITY_HEADERS policy sends
+        # SAMEORIGIN), Referrer-Policy. No CSP: one strict enough to matter could block the
+        # Cognito login redirect or the API calls, and would need its own testing
+        headers = cf.ResponseHeadersPolicy(
+            self,
+            "SecurityHeaders",
+            security_headers_behavior=cf.ResponseSecurityHeadersBehavior(
+                strict_transport_security=cf.ResponseHeadersStrictTransportSecurity(
+                    access_control_max_age=Duration.days(365), override=True
+                ),
+                content_type_options=cf.ResponseHeadersContentTypeOptions(override=True),
+                frame_options=cf.ResponseHeadersFrameOptions(
+                    frame_option=cf.HeadersFrameOption.DENY, override=True
+                ),
+                referrer_policy=cf.ResponseHeadersReferrerPolicy(
+                    referrer_policy=cf.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+                    override=True,
+                ),
+            ),
+        )
         dist = cf.Distribution(
             self,
             "Web",
@@ -283,6 +307,7 @@ class AppStack(Stack):
             default_behavior=cf.BehaviorOptions(
                 origin=origins.S3BucketOrigin.with_origin_access_control(site),
                 viewer_protocol_policy=cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                response_headers_policy=headers,
             ),
             additional_behaviors={
                 "/api/*": cf.BehaviorOptions(
@@ -296,6 +321,7 @@ class AppStack(Stack):
                     allowed_methods=cf.AllowedMethods.ALLOW_ALL,
                     cache_policy=cf.CachePolicy.CACHING_DISABLED,
                     origin_request_policy=cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                    response_headers_policy=headers,
                 )
             },
         )
@@ -329,13 +355,38 @@ class AppStack(Stack):
                 "SDRAG_COGNITO_CLIENT_ID", client.user_pool_client_id
             )
 
-        s3deploy.BucketDeployment(
+        # the deployments' helper Lambda logs here (14 days), not in a group that never expires
+        deploy_logs = logs.LogGroup(
+            self,
+            "SiteDeployLogs",
+            retention=logs.RetentionDays.TWO_WEEKS,
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+        dist_files = s3deploy.Source.asset(str(ROOT / "frontend" / "dist"))
+        # the hashed assets (default caching); a deploy prunes the old ones
+        assets = s3deploy.BucketDeployment(
             self,
             "SiteFiles",
             destination_bucket=site,
+            sources=[dist_files],
+            exclude=["index.html", "config.json"],  # SiteEntry's: neither uploaded nor pruned
+            log_group=deploy_logs,
+        )
+        # index.html and config.json name the current assets and Cognito client: a browser
+        # must not keep them, or after a deploy it asks for asset names already pruned (404).
+        # Written after the assets, then the CloudFront cache is invalidated.
+        entry = s3deploy.BucketDeployment(
+            self,
+            "SiteEntry",
+            destination_bucket=site,
             distribution=dist,
+            cache_control=[s3deploy.CacheControl.no_cache()],
+            exclude=["*"],
+            include=["index.html", "config.json"],
+            prune=False,  # the assets belong to SiteFiles
+            log_group=deploy_logs,
             sources=[
-                s3deploy.Source.asset(str(ROOT / "frontend" / "dist")),
+                dist_files,
                 s3deploy.Source.json_data(
                     "config.json",
                     {
@@ -346,6 +397,7 @@ class AppStack(Stack):
                 ),
             ],
         )
+        entry.node.add_dependency(assets)
 
         CfnOutput(self, "Url", value=url)
         CfnOutput(self, "UserPoolId", value=data.user_pool.user_pool_id)

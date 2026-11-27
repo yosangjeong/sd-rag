@@ -28,7 +28,7 @@ from sdrag.common.logs import log
 from sdrag.common.search_client import make_client
 from sdrag.ingest.ocr import build_ocr
 from sdrag.retrieval.embed import TitanEmbedder
-from sdrag.worker.job import process
+from sdrag.worker.job import _remove_chunks, process
 
 MAX_TRIES = 3  # jobs run at most this often; the queue's maxReceiveCount is one more
 # (infra/stacks/data.py): a delivery after the last try means the task died mid-job each
@@ -107,6 +107,9 @@ class Heartbeat:
 
     def __exit__(self, *exc) -> None:
         self.stop.set()
+        # a tick in flight must not push the visibility out after the caller's own
+        # change (a retry would wait 30 minutes instead of 1)
+        self.thread.join(timeout=10)
 
 
 def handle(m: dict, sqs, s3, deps) -> None:
@@ -114,6 +117,7 @@ def handle(m: dict, sqs, s3, deps) -> None:
     receipt = m["ReceiptHandle"]
     receives = int(m.get("Attributes", {}).get("ApproximateReceiveCount", "1"))
     if receives > MAX_TRIES:  # every try died mid-job (out of memory, task stopped)
+        _remove_chunks(deps, f"u-{job['doc_id']}")  # batches a try indexed before it died
         deps.store.update_document(job["user"], job["doc_id"], status="failed", stage="",
                                    error="처리 도중 작업이 멈췄습니다 (재시도 끝)")  # fmt: skip
         sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
@@ -129,11 +133,14 @@ def handle(m: dict, sqs, s3, deps) -> None:
                 log("error", path="worker-download", doc_id=job.get("doc_id"),
                     error=f"{type(e).__name__}: {e}"[:500])  # fmt: skip
                 result = {"status": "retrying", "error": "파일을 내려받지 못했습니다"}
+                deps.store.update_document(job["user"], job["doc_id"], **result)  # not "queued"
             else:
                 result = process(job["user"], job["doc_id"], path, job["filename"], deps)
         if result["status"] == "retrying" and last_try:
-            # the last try: say "failed" instead of "retrying" forever and delete it
-            deps.store.update_document(job["user"], job["doc_id"], status="failed",
+            # the last try: say "failed" instead of "retrying" forever and delete it; a
+            # busy index may have taken some batches, which must not stay searchable
+            _remove_chunks(deps, f"u-{job['doc_id']}")
+            deps.store.update_document(job["user"], job["doc_id"], status="failed", stage="",
                                        error=(result.get("error") or "처리하지 못했습니다")
                                        + " (재시도 끝)")  # fmt: skip
             sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)

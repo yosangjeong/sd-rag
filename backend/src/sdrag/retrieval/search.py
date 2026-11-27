@@ -6,7 +6,7 @@
 - ``bilingual``: the hybrid search run with the question and with its translation into
   the other corpus language (rerank.LlmTranslator), fused
 - ``wide`` (served): bilingual_union plus each first-stage list on its own and the
-  decree/rule articles that cite the retrieved law articles, about 66 candidates for
+  decree/rule articles that cite the retrieved law articles, about 70 candidates for
   the reranker (docs/decisions.md, "Wider candidate pool")
 - ``per_language``: the hybrid search run once per corpus language and fused. Both
   embedding models measured favor chunks in the query's language: a Korean query put
@@ -275,7 +275,7 @@ class Searcher:
                    articles: int = 15) -> list[Hit]:  # fmt: skip
         """Decree and rule chunks that cite the law (or decree) articles among `hits`:
         for "제39조(과태료)" of kr-equal-employment-law, the chunks of -dec and -rul
-        with the phrase "법 제39", best `per_article` by BM25 on the queries (the
+        with the phrase "법 제39" ("영 제N조" for a decree article), best `per_article` by BM25 on the queries (the
         question and its translation: an English question shares no words with a
         Korean decree table), all of them ordered by that score.
 
@@ -295,14 +295,20 @@ class Searcher:
             seen.add(key)
             if len(seen) > articles:
                 break
-            phrase = f"{'법' if kind == 'law' else '영'} 제{m.group(1)}"
+            n = m.group(1)
             targets = [f"{fam}-{k}" for k in CITED_BY[kind]]
             if doc_ids:
                 targets = [t for t in targets if t in doc_ids]
             if not targets:
                 continue
             filters = _filters(None, targets, self.owners, self.scope, self.country)
-            filters.append({"match_phrase": {"search_text": phrase}})
+            if kind == "law":  # nori keeps 법 ("「근로기준법」 제39조" too: 근로/기준/법 39)
+                cites = {"match_phrase": {"search_text": f"법 제{n}"}}
+            else:  # but drops 영 and 제: "영 제2" became "2", matching 1,390 of 1,852 rule
+                # chunks; the standard analyzer keeps "영" and "제2조제1항" as a token
+                cites = {"match_phrase_prefix": {"search_text.en": {"query": f"영 제{n}조",
+                                                                     "max_expansions": 50}}}  # fmt: skip
+            filters.append(cites)
             should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"]}}
                       for q in queries if q.strip()]  # fmt: skip
             bodies.append({"size": per_article, "_source": SOURCE,

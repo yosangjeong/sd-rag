@@ -16,6 +16,8 @@ from typing import Protocol
 import boto3
 from botocore.config import Config
 
+from sdrag.common.files import write_atomic
+
 
 class Embedder(Protocol):
     name: str
@@ -64,13 +66,14 @@ class CachedEmbedder:
         missing: list[int] = []
         for i, t in enumerate(texts):
             p = self._path(t)
-            out.append(json.loads(p.read_text()) if p.exists() else None)
+            try:
+                out.append(json.loads(p.read_text()) if p.exists() else None)
+            except ValueError:  # a torn file: embed again
+                out.append(None)
             if out[-1] is None:
                 missing.append(i)
         if missing:
             for i, vec in zip(missing, self.inner.embed([texts[i] for i in missing]), strict=True):
-                p = self._path(texts[i])
-                p.parent.mkdir(parents=True, exist_ok=True)
-                p.write_text(json.dumps(vec))
+                write_atomic(self._path(texts[i]), json.dumps(vec))
                 out[i] = vec
         return out  # type: ignore[return-value]

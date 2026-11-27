@@ -762,6 +762,23 @@ def _open_pdf(path: Path) -> PdfReader:
         raise UnreadableFile(f"손상되었거나 끝까지 받지 못한 PDF입니다 ({type(e).__name__})") from e
 
 
+def _pdf_page(i, orig, text, page, blank, rotated, doc) -> list[tuple[str, object]] | None:
+    """One page's parts for parse_pdf, or None for a page with no text (recorded)."""
+    if not orig.strip() or (i in blank and i not in doc.ocr_pages):
+        doc.needs_ocr_pages.append(i)  # no text, or OCR failed on it
+        return None
+    if i in doc.ocr_pages:
+        return split_markdown(text)
+    # a turned page: pdfplumber's boxes come back in unturned coordinates and the
+    # table and column logic garbled the text; pypdf's text reads it in order
+    tables = [] if i in rotated else _pdf_tables(page)
+    if not tables:
+        return [("text", text)]
+    running = Counter(_edge_key(ln) for ln in orig.splitlines() if ln.strip())
+    running.subtract(_edge_key(ln) for ln in text.splitlines() if ln.strip())
+    return _pdf_page_parts(page, tables, {k for k, n in running.items() if n > 0})
+
+
 def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> ParsedDocument:
     """Pages without a text layer are read by `ocr` when given; their text then goes
     through the same clean-up as extracted text (headers, line wraps, headings), and
@@ -777,8 +794,12 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
         # a scan stamped with a little text ("Scanned with CamScanner", a page number,
         # a fax header) is a scan too: OCR it (no corpus page qualifies, 2026-11-16)
         with pdfplumber.open(path, password="") as plumber:
-            blank = sorted(set(blank) | {i for i, (t, page) in enumerate(zip(raw, plumber.pages), 1)
-                                         if t.strip() and _stamped_scan(t, page)})  # fmt: skip
+            stamped = set()
+            for i, (t, page) in enumerate(zip(raw, plumber.pages), 1):
+                if t.strip() and _stamped_scan(t, page):
+                    stamped.add(i)
+                page.close()  # pdfplumber keeps every parsed page until closed: ~9 MB each
+            blank = sorted(set(blank) | stamped)
         if len(blank) > MAX_OCR_PAGES:
             raise UnreadableFile(
                 f"스캔 쪽이 {len(blank)}쪽으로 한 번에 처리할 수 있는 {MAX_OCR_PAGES}쪽을 넘습니다 "
@@ -787,6 +808,8 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     if ocr is not None and blank:
         for i, res in ocr_pages(path, blank, ocr, progress=progress).items():
             raw[i - 1] = res.text
+            if not res.text.strip():  # read but empty: still a page with no text
+                continue
             doc.ocr_pages.append(i)
             if res.replaced:
                 doc.ocr_replaced_pages.append(i)
@@ -796,23 +819,12 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     pages: list[tuple[int, list[tuple[str, object]]]] = []
     with pdfplumber.open(path, password="") as plumber:
         for i, (orig, text, page) in enumerate(zip(raw, kept, plumber.pages), start=1):
-            if not orig.strip() or (i in blank and i not in doc.ocr_pages):
-                doc.needs_ocr_pages.append(i)  # no text, or OCR failed on it
-                continue
-            if i in doc.ocr_pages:
-                pages.append((i, split_markdown(text)))
-                continue
-            # a turned page: pdfplumber's boxes come back in unturned coordinates and the
-            # table and column logic garbled the text; pypdf's text reads it in order
-            tables = [] if i in rotated else _pdf_tables(page)
-            if not tables:
-                pages.append((i, [("text", text)]))
-                continue
-            running = Counter(_edge_key(ln) for ln in orig.splitlines() if ln.strip())
-            running.subtract(_edge_key(ln) for ln in text.splitlines() if ln.strip())
-            pages.append(
-                (i, _pdf_page_parts(page, tables, {k for k, n in running.items() if n > 0}))
-            )
+            try:
+                parts = _pdf_page(i, orig, text, page, blank, rotated, doc)
+            finally:
+                page.close()  # 113 pages held 1 GB at the peak; closed one by one, 91 MB
+            if parts is not None:
+                pages.append((i, parts))
 
     spacing = KoreanSpacing([c for _, parts in pages for k, c in parts if k == "text"])
     table_end = 0  # page the last table block ends on (a block keeps its first page)
@@ -863,7 +875,8 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
 
 
 OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"  # old binary HWP / DOC, and encrypted DOCX
-MAX_UNZIPPED = 500 * 2**20  # a 50 MB upload that inflates past this is refused (zip bomb)
+MAX_UNZIPPED = 200 * 2**20  # a 50 MB upload that inflates past this is refused (zip bomb;
+# lxml and python-docx hold the whole XML, several times its size, on the 4 GB worker)
 
 
 def sniff_format(path: Path) -> str:
@@ -936,27 +949,44 @@ def mark_versions(doc: ParsedDocument) -> ParsedDocument:
         m = RE_ARTICLE.match(blocks[i].text)
         return bool(m) and _article_id(re.sub(r"\s+", "", m.group(1))) == aid
 
+    marks: dict[str, list[tuple[int, str]]] = {}  # article -> (block, date) of its markers
     for k, b in enumerate(blocks):
-        m = RE_EFFECTIVE.search(b.text)
-        if not m:
+        for m in RE_EFFECTIVE.finditer(b.text):  # a block can hold several markers
+            date = f"{m.group(1)}. {int(m.group(2))}. {int(m.group(3))}."
+            for x in RE_ARTICLE_ID.finditer(m.group(4)):
+                aid = f"제{x.group(1)}조" + (f"의{x.group(2)}" if x.group(2) else "")
+                if (k, date) not in marks.setdefault(aid, []):
+                    marks[aid].append((k, date))
+    for aid, ms in marks.items():
+        last = max(k for k, _ in ms)
+        new = next((i for i in range(last, -1, -1) if starts(i, aid)), None)
+        if new is None or "[" in (blocks[new].heading or "").split(")")[-1]:
+            continue  # article not found before the marker, or already labelled
+        # the version before it: the run of the same article right before (its title may
+        # differ: "근로감독관의 권한" -> "노동감독관의 권한"); one further away is another
+        # article of that number (a 부칙's 제1조)
+        old = next((i for i in range(new - 1, -1, -1) if starts(i, aid)), None)
+        if old is not None and any(
+            blocks[i].heading != blocks[old].heading for i in range(old, new)
+        ):
+            old = None
+        # the amended version's date: a marker the version before it does not carry too
+        # (근로기준법 제116조: both carry "[시행일: 2027. 1. 1.] 제116조제1항제2호", only the
+        # second "[시행일: 2026. 12. 8.] 제116조제2항제1호")
+        dates = [d for k, d in ms if new <= k <= last]
+        before = {d for k, d in ms if old is not None and old <= k < new}
+        if not dates:
             continue
-        date = f"{m.group(1)}. {int(m.group(2))}. {int(m.group(3))}."
-        ids = []
-        for x in RE_ARTICLE_ID.finditer(m.group(4)):
-            aid = f"제{x.group(1)}조" + (f"의{x.group(2)}" if x.group(2) else "")
-            if aid not in ids:
-                ids.append(aid)
-        for aid in ids:
-            new = next((i for i in range(k, -1, -1) if starts(i, aid)), None)
-            if new is None or "[" in (blocks[new].heading or "").split(")")[-1]:
-                continue  # article not found before the marker, or already labelled
-            base = blocks[new].heading
-            for i in range(new, k + 1):
-                if blocks[i].heading == base:
-                    blocks[i].heading = versions.amended(base, date)
-            old = next((i for i in range(new - 1, -1, -1) if starts(i, aid)), None)
-            if old is not None and blocks[old].heading == base:
-                for i in range(old, new):
-                    if blocks[i].heading == base:
-                        blocks[i].heading = versions.before(base, date)
+        # several of its own: the earliest, when the version starts to apply (제72조 from
+        # 2027. 4. 28., only its 제5항 from 2027. 10. 28.)
+        own = [d for d in dates if d not in before] or dates
+        date = min(own, key=lambda d: tuple(int(x) for x in d.rstrip(".").split(". ")))
+        base = blocks[new].heading
+        for i in range(new, last + 1):
+            if blocks[i].heading == base:
+                blocks[i].heading = versions.amended(base, date)
+        if old is not None:
+            prev = blocks[old].heading
+            for i in range(old, new):
+                blocks[i].heading = versions.before(prev, date)
     return doc

@@ -109,3 +109,57 @@ def test_api_runs_two_tasks_and_deploys_without_dropping_below_them():
             "DeploymentConfiguration": Match.object_like({"MinimumHealthyPercent": 100}),
         },
     )
+
+
+def test_tasks_get_the_region_from_the_stack():
+    _, app = _templates()
+    for td in app.find_resources("AWS::ECS::TaskDefinition").values():
+        env = td["Properties"]["ContainerDefinitions"][0]["Environment"]
+        assert {"Name": "SDRAG_AWS_REGION", "Value": "ap-southeast-2"} in env
+
+
+def test_site_sends_security_headers_and_entry_files_are_not_cached():
+    _, app = _templates()
+    dist = next(iter(app.find_resources("AWS::CloudFront::Distribution").values()))
+    assert (
+        "ResponseHeadersPolicyId"
+        in dist["Properties"]["DistributionConfig"]["DefaultCacheBehavior"]
+    )
+    app.has_resource_properties(
+        "AWS::CloudFront::ResponseHeadersPolicy",
+        {
+            "ResponseHeadersPolicyConfig": Match.object_like(
+                {
+                    "SecurityHeadersConfig": Match.object_like(
+                        {"FrameOptions": {"FrameOption": "DENY", "Override": True}}
+                    )
+                }
+            )
+        },
+    )
+    app.has_resource_properties(
+        "Custom::CDKBucketDeployment",
+        {"Include": ["index.html", "config.json"], "SystemMetadata": {"cache-control": "no-cache"}},
+    )
+
+
+def test_cicd_deploy_role_trusts_only_the_protected_environment():
+    from stacks.cicd import CiCdStack
+
+    app = cdk.App()
+    env = cdk.Environment(account="111111111111", region="ap-southeast-2")
+    t = Template.from_stack(CiCdStack(app, "C", bucket_name="b", env=env))
+    subs = []
+    for r in t.find_resources("AWS::IAM::Role").values():
+        for st in r["Properties"]["AssumeRolePolicyDocument"]["Statement"]:
+            like = st.get("Condition", {}).get("StringLike", {})  # skip CDK's helper roles
+            if like:
+                subs.append(like["token.actions.githubusercontent.com:sub"])
+    deploy = [s for s in subs if any("environment:aws" in x for x in s)]
+    assert len(deploy) == 1 and len(deploy[0]) == 1  # no ref:refs/heads/main subject
+    actions = [
+        st["Action"]
+        for p in t.find_resources("AWS::IAM::Policy").values()
+        for st in p["Properties"]["PolicyDocument"]["Statement"]
+    ]
+    assert "textract:AnalyzeDocument" in actions  # eval indexes with the OCR check on

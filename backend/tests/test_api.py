@@ -307,3 +307,19 @@ def test_chat_stream_sends_stages_deltas_then_the_stored_answer(api):
     assert [m["role"] for m in conv["messages"]] == ["user", "assistant"]
     assert c.post("/api/chat/stream", json={"message": "x", "conversation_id": "nope"},
                   headers=as_user("alice")).status_code == 404  # fmt: skip
+
+
+def test_upload_shortens_a_long_name_and_keeps_a_daily_limit(api, monkeypatch, tmp_path):
+    c, d = api
+    monkeypatch.setattr(main.settings, "upload_dir", str(tmp_path))
+    monkeypatch.setattr(main, "MAX_DAY_FILES", 2)
+    long = "근로계약서" * 40 + ".pdf"  # 600 bytes: "File name too long" failed the batch
+    files = [("files", (long, b"%PDF-1.4 a", "application/pdf")),
+             ("files", ("b.pdf", b"%PDF-1.4 b", "application/pdf")),
+             ("files", ("c.pdf", b"%PDF-1.4 c", "application/pdf"))]  # fmt: skip
+    r = c.post("/api/documents", files=files, headers=as_user("alice")).json()
+    assert len(r["accepted"]) == 2
+    assert (
+        r["accepted"][0]["file"].endswith(".pdf") and len(r["accepted"][0]["file"].encode()) <= 200
+    )
+    assert r["rejected"] == [{"file": "c.pdf", "reason": "daily limit of 2 files"}]

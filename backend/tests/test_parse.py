@@ -361,6 +361,32 @@ def test_unruled_cfr_cells_lose_leader_dots_and_get_their_minus_back():
     assert _unruled_cell(None) == ""
 
 
+def test_versions_with_a_new_title_and_a_marker_both_versions_carry():
+    from sdrag.ingest.parse import Block, ParsedDocument, mark_versions
+
+    texts = [  # 근로기준법 제116조 / 최저임금법 제26조, shortened
+        ("제116조(과태료) ① ... 근로감독관의 요구 ...", "제116조(과태료)"),
+        ("[시행일: 2027. 1. 1.] 제116조제1항제2호", "제116조(과태료)"),
+        ("제116조(과태료) ① ... 노동감독관의 요구 ...", "제116조(과태료)"),
+        ("[시행일: 2027. 1. 1.] 제116조제1항제2호\n[시행일: 2026. 12. 8.] 제116조제2항제1호",
+         "제116조(과태료)"),
+        ("제117조(근로감독관의 권한) ① ...", "제117조(근로감독관의 권한)"),
+        ("제117조(노동감독관의 권한) ① ...", "제117조(노동감독관의 권한)"),
+        ("[시행일: 2027. 10. 28.] 제117조제5항", "제117조(노동감독관의 권한)"),
+        ("[시행일: 2027. 4. 28.] 제117조", "제117조(노동감독관의 권한)"),
+    ]  # fmt: skip
+    doc = ParsedDocument(
+        "x", "hwpx", [Block("text", t, i, heading=h) for i, (t, h) in enumerate(texts)]
+    )
+    heads = [b.heading for b in mark_versions(doc).blocks]
+    # the 2027 marker is on both versions: the 12. 8. one tells them apart
+    assert heads[:2] == ["제116조(과태료) [개정 전, 2026. 12. 8. 전까지]"] * 2
+    assert heads[2:4] == ["제116조(과태료) [2026. 12. 8. 시행]"] * 2
+    # the old title is labelled too; of two own markers the earlier date
+    assert heads[4] == "제117조(근로감독관의 권한) [개정 전, 2027. 4. 28. 전까지]"
+    assert heads[5:] == ["제117조(노동감독관의 권한) [2027. 4. 28. 시행]"] * 3
+
+
 def test_version_labels_round_trip_and_status_follows_the_date():
     import datetime as dt
 
