@@ -212,6 +212,23 @@ def test_upload_refuses_a_renamed_file_and_one_over_the_limit(api, monkeypatch):
     )
 
 
+def test_a_file_the_queue_refuses_is_marked_failed_and_may_be_sent_again(api, monkeypatch):
+    c, d = api
+    pdf = ("files", ("a.pdf", b"%PDF-1.4 x", "application/pdf"))
+
+    def refuse(*a):
+        raise RuntimeError("SQS unavailable")
+
+    monkeypatch.setattr(d.queue, "send", refuse)
+    r = c.post("/api/documents", files=[pdf], headers=as_user("alice")).json()
+    assert r["accepted"] == [] and "queued" in r["rejected"][0]["reason"]
+    [doc] = d.store.documents("alice")
+    assert doc["status"] == "failed" and doc["error"]  # not left "queued" forever
+    monkeypatch.undo()
+    monkeypatch.setattr(main, "deps", lambda: d)
+    assert c.post("/api/documents", files=[pdf], headers=as_user("alice")).json()["accepted"]
+
+
 def test_the_same_file_twice_is_indexed_once(api):
     c, d = api
     pdf = ("files", ("a.pdf", b"%PDF-1.4 same", "application/pdf"))

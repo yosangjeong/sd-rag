@@ -287,7 +287,22 @@ def upload(files: list[UploadFile], request: Request, user: str = Depends(curren
         d.store.put_document(user, {"id": doc_id, "file": name, "bytes": size, "sha256": sha,
                                     "status": "queued", "queued": time.time()})  # fmt: skip
         have[sha] = name  # the same file twice in one batch
-        d.queue.send(user, doc_id, local, name)
+        try:
+            d.queue.send(user, doc_id, local, name)
+        except Exception as e:  # noqa: BLE001 - S3 or SQS refused it: no message, no worker
+            # a record left "queued" would never move and would block sending the file again
+            d.store.update_document(user, doc_id, status="failed",
+                                    error="접수하지 못했습니다 (잠시 뒤 다시 올려 주세요)")  # fmt: skip
+            del have[sha]
+            local.unlink(missing_ok=True)
+            log(
+                "error",
+                request_id=request.state.rid,
+                path="enqueue",
+                error=f"{type(e).__name__}: {e}",
+            )
+            rejected.append({"file": name, "reason": "could not be queued, try again"})
+            continue
         accepted.append({"id": doc_id, "file": name})
     if accepted:
         try:
