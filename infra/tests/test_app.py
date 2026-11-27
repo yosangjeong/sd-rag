@@ -33,6 +33,14 @@ def test_opensearch_in_vpc_https_encrypted():
     )
 
 
+def test_upload_queue_gives_one_delivery_past_the_workers_tries():
+    # worker/main.py MAX_TRIES = 3: the 4th delivery marks a job whose task kept dying
+    data, _ = _templates()
+    data.has_resource_properties(
+        "AWS::SQS::Queue", {"RedrivePolicy": Match.object_like({"maxReceiveCount": 4})}
+    )
+
+
 def test_no_self_sign_up():
     data, _ = _templates()
     data.has_resource_properties(

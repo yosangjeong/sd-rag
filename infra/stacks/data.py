@@ -130,7 +130,9 @@ class DataStack(Stack):
             "Uploads",
             visibility_timeout=JOB_TIMEOUT,
             enforce_ssl=True,
-            dead_letter_queue=sqs.DeadLetterQueue(queue=dlq, max_receive_count=3),
+            # 3 tries + 1 delivery that records "failed" when every try died mid-job
+            # (worker/main.py MAX_TRIES); the DLQ keeps what even that could not handle
+            dead_letter_queue=sqs.DeadLetterQueue(queue=dlq, max_receive_count=4),
         )
 
         self.user_pool = cognito.UserPool(

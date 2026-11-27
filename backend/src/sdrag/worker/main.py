@@ -30,7 +30,10 @@ from sdrag.ingest.ocr import build_ocr
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.worker.job import process
 
-MAX_RECEIVES = 3  # the queue's maxReceiveCount (infra/stacks/data.py): then the DLQ
+MAX_TRIES = 3  # jobs run at most this often; the queue's maxReceiveCount is one more
+# (infra/stacks/data.py): a delivery after the last try means the task died mid-job each
+# time, and that delivery only records the failure (else the record says "processing"
+# forever while the message sits in the DLQ)
 
 
 def protect(on: bool) -> None:
@@ -109,7 +112,13 @@ class Heartbeat:
 def handle(m: dict, sqs, s3, deps) -> None:
     job = json.loads(m["Body"])
     receipt = m["ReceiptHandle"]
-    last_try = int(m.get("Attributes", {}).get("ApproximateReceiveCount", "1")) >= MAX_RECEIVES
+    receives = int(m.get("Attributes", {}).get("ApproximateReceiveCount", "1"))
+    if receives > MAX_TRIES:  # every try died mid-job (out of memory, task stopped)
+        deps.store.update_document(job["user"], job["doc_id"], status="failed", stage="",
+                                   error="처리 도중 작업이 멈췄습니다 (재시도 끝)")  # fmt: skip
+        sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
+        return
+    last_try = receives >= MAX_TRIES
     protect(True)
     try:
         with tempfile.TemporaryDirectory() as tmp, Heartbeat(sqs, receipt):
@@ -123,12 +132,12 @@ def handle(m: dict, sqs, s3, deps) -> None:
             else:
                 result = process(job["user"], job["doc_id"], path, job["filename"], deps)
         if result["status"] == "retrying" and last_try:
-            # the queue moves it to the DLQ now: say so instead of "retrying" forever
+            # the last try: say "failed" instead of "retrying" forever and delete it
             deps.store.update_document(job["user"], job["doc_id"], status="failed",
                                        error=(result.get("error") or "처리하지 못했습니다")
                                        + " (재시도 끝)")  # fmt: skip
             sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
-        elif result["status"] == "retrying":  # visible again in a minute; DLQ after 3
+        elif result["status"] == "retrying":  # visible again in a minute
             _later(sqs, receipt, 60)
         else:
             sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)

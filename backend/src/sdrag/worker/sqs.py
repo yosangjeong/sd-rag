@@ -2,8 +2,9 @@
 
 The API process stays responsive whatever the batch size: it only stores the files
 and enqueues; worker tasks (worker/main.py) parse, embed and index, and more tasks
-can be started to raise throughput. A message that fails is retried by SQS and,
-after maxReceiveCount attempts, moved to the dead-letter queue (infra).
+can be started to raise throughput. A job that fails for a passing reason is retried
+(3 tries, worker/main.py); one whose task died each time is marked failed on the next
+delivery, and only a message even that delivery could not handle reaches the DLQ.
 
 Waking the worker: the service scales on the queue's depth, but the alarm behind it
 looks at 5-minute periods, so the first file of a batch waited 4-5 minutes for a
