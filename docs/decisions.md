@@ -86,14 +86,18 @@ filter). Claude (needs the Anthropic use-case form) was not available to test; t
 engine sits behind one interface (`OcrEngine`) and can be swapped.
 
 **Textract, measured later (2026-11-27, on the paid plan; `eval/textract_bench.py`,
-`results/ocr-textract.md`)**: AnalyzeDocument with tables on the same 24 bench pages and
-the 9 real-scan sheets. It recognizes characters about as well (recall 94-99.5% against
-95.7-99.8%), invents less (real scan: extra 0.3% against 1.6%) and is faster (2-6 s per
-page against 11-14 s), but loses reading order on two-column English pages (CER 58-76%
-against 3.9%) and is behind on Korean (body CER 3.1-5.1% against 2.3-2.8%, tables in
-table form 11-12% against 0.4%; real scan overall 12.7% against 2.8%). Mixed, so
-Qwen3-VL stays, as decided before the run. Improvement: Textract with LAYOUT for
-reading order, or Textract as a check on Qwen3-VL (pages where they disagree re-read).
+`results/ocr-textract.md`)**: AnalyzeDocument on the same 24 bench pages and the 9
+real-scan sheets, with tables and then also with LAYOUT (reading order). It recognizes
+characters about as well (recall 94-99.5% against 95.7-99.8%), invents less (real scan:
+extra 0.3% against 1.6%) and is faster (2-6 s per page against 11-14 s). Without LAYOUT it
+loses reading order on two-column English pages (CER 58-76% against 3.9%); with LAYOUT
+those come level (3.6-5.6%), but Korean stays behind (body 3.1-4.4% against 2.3-2.8%,
+tables 11-12% against 0.4%), and the real scan overall is 4.9% against 2.8%. Qwen3-VL
+stays, as the criteria set before the run said. Simulated as a check on Qwen3-VL: flagging
+pages where over 5% of Qwen3-VL's characters are missing from Textract's output finds the
+one page with invented text (real-scan sheet 5) and no good page, but not Qwen3-VL's other
+high-CER pages, whose errors are reading order that Textract shares (33 pages; a direction,
+not a rate). That narrow check is the improvement on record.
 
 **Two guards found by the benchmark**: the prompt asks for leader dots as "...",
 since the model otherwise repeated dots until the token limit and lost the rest of
