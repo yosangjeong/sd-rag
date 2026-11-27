@@ -220,12 +220,12 @@ def ingest() -> None:
     from evalset import OCR_CACHE
 
     from sdrag.common.search_client import make_client
-    from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
+    from sdrag.ingest.ocr import build_ocr
     from sdrag.worker.job import process
 
     client = make_client(settings.opensearch_url, settings.aws_region)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
-    ocr = CachedOcr(BedrockVisionOcr(settings.ocr_model, settings.aws_region), OCR_CACHE)
+    ocr = build_ocr(settings.ocr_model, settings.aws_region, settings.ocr_check, OCR_CACHE)  # as the worker
     deps = SimpleNamespace(store=MemoryStore(), client=client, index=settings.index,
                            embedder=CachedEmbedder(emb, EMBED_CACHE), ocr=ocr)  # fmt: skip
     client.delete_by_query(index=settings.index, refresh=True,

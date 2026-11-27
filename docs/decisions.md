@@ -604,7 +604,7 @@ the law's subject.
 (question's hybrid top 20, translation's 10 more), then the top 5 of each first-stage
 list on its own (BM25 and dense, question and translation), then up to 5
 cross-references: for each Korean law (or decree) article among them, the decree and
-rule chunks with the phrase "법 제N" ("영 제N" for decrees), best two by BM25 on the
+rule chunks with the phrase "법 제N" ("영 제N" for decrees), best three by BM25 on the
 question (`Searcher.references`). About 50 candidates instead of 30.
 
 - Chosen on the dev sets only (pool size 29 to 69 and passage length tried; the test
@@ -779,7 +779,8 @@ The served system with all of the above, on every set, after pooling the gold sp
 before, hybrid, agent) were judged with finalize_qa.py's prompts and models (DeepSeek
 V3.2 finds passages giving the same answer, gpt-oss-120b confirms each); 210 spans were
 added to `also` for 163 questions, logged in each item's `meta.also_repooled`, and
-every stored result file was re-scored, so all systems gain alike. Before pooling, the
+every stored result file was re-scored. The four pooled systems gain most; the other
+ablation rows (fixed windows, BM25 or dense alone) only where they found the same passages. Before pooling, the
 served system's own top answers that differed from the single gold counted as misses
 (the youth-wage question's top passage, "during the first 90 consecutive calendar
 days", next to its gold sentence).
@@ -895,7 +896,8 @@ is no longer clean for that. The questions are in `data/raw/d2q/` (not committed
 ## Answer model compared, GLM-4.7 kept (`eval/answer_models.py`, 2026-11-15)
 
 Only the answer step changes: the 50 single-file questions get the same top 6 sources
-(served retrieval, GLM-4.7 translation + rerank, run once) and the served answer prompt;
+(bilingual_union + GLM-4.7 rerank, the retrieval single_file.py records, not the wide
+pool served since 11-13; run once) and the served answer prompt;
 judge v2 (DeepSeek V3.2) grades every answer. Candidates are the in-Region on-demand
 text models; DeepSeek is left out (the judge's family), Claude too (cross-Region only).
 
@@ -1285,6 +1287,42 @@ definitions search, and the up-to-15 cross-reference searches. Same calls, same 
 order, so the same pool (40 of 40 dev questions identical); `wide` 0.78 s -> 0.27 s median
 on 40 dev questions (local OpenSearch, Bedrock embeddings from the laptop). Spend about
 $3.8 (rerank calls). Scripts were scratch, not kept.
+
+## Consistency audit (2026-11-28)
+
+After the statute-terms asymmetry above, the question path, ingestion and evaluation were
+read for the same kind of thing: parallel steps treated differently with no reason given.
+
+Fixed in the service:
+- **Empty tables**: HWPX dropped them, DOCX and PDF kept them; a blank DOCX form was
+  "done, 1 chunk" of empty cells instead of "no text found". All three drop them now.
+- **Agent mode**: the reranker was meant to see the agent's own queries (for long
+  passages' windows) but never did; the agent records them now.
+- **Fallbacks**: jurisdiction, translation, statute terms and the reranker could fail
+  without failing the request; condensing a follow-up and the agent could not. Now a
+  failed condense searches the question as asked, a failed agent keeps the wide pool.
+- **Bulk ingest** deleted the public corpus first and then indexed document by document:
+  one failure left a partial corpus in service. Every document is now parsed and
+  embedded first, the index touched only after; a document with no chunks stops the run.
+- **Pool (as option (a): fixed for consistency, pool checked free, accuracy left to the
+  final re-measure)**: definition articles matched "(정의)" exactly in Korean but any
+  "definition" in English, so 제10조의3(권리금의 정의 등) and two others never came up
+  (now "(정의" or " 정의", which adds those 3 and none of the 50-odd "조정의"/"결정의"
+  headings); the statute-terms query took its new ones from its fused top 10, the
+  translation from its top 20 (now both 20); BM25 expanded everyday words for the main
+  search and the definitions search but not for the cross-references, and expanded the
+  statute-terms query only in the definitions search (now one rule for all three).
+  Gold in the pool over all seven sets: 1 more (real_dev eld-032), none lost; pool mean
+  66 -> 70.
+- Corpus chunks identical before and after (140 document/strategy pairs), so no re-index.
+
+Corrected in the docs: answer_models.py's retrieval is bilingual_union + rerank (not the
+wide pool); re-pooling covered four systems, so the other ablation rows gain less
+(README); fixed windows are 400 tokens against at most 500 per article (README);
+references keep the best three, not two; rejudge.py grades against the original
+references (do not re-run it over v11 on); eval text now uses the index's OCR with its
+Textract check; MAX_OCR_PAGES' comment named the old 30-minute limit. Not changed: HWPX
+headings from styles (design.md limitations: the press releases use none).
 
 ## Constraints that shaped the above
 

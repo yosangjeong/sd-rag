@@ -149,7 +149,16 @@ class RagService:
         emit({"type": "stage", "stage": "searching"})
         t0 = time.perf_counter()
         chat = RequestChat(self.chat)
-        standalone = condense(chat, history or [], question)
+        try:
+            standalone = condense(chat, history or [], question)
+        except Exception as e:  # noqa: BLE001 - like the optional steps below: search the question as asked
+            log(
+                "degraded",
+                request_id=request_id,
+                step="condense",
+                error=f"{type(e).__name__}: {e}"[:300],
+            )
+            standalone = question
         if standalone != question:
             log("rewrite", request_id=request_id, question=question, standalone=standalone)
         question = standalone
@@ -182,12 +191,22 @@ class RagService:
                 docs = [d for d in docs if not is_other_country(d, country)]
             wide = s.wide(question, size=RERANK_DEPTH, extra=TRANSLATION_EXTRA,
                           translation=translation, statute_terms=statute_terms)  # fmt: skip
-            queries = list(s.last_queries)  # the reranker reads these; the agent adds its own
-            res = SearchAgent(chat.client, chat.model_id, s, docs).run(question)
-            s.last_queries = queries + [q for q in s.last_queries if q not in queries]
-            chat.input_tokens += res.input_tokens  # the agent calls Converse directly
-            chat.output_tokens += res.output_tokens
-            hits, steps = with_pool(wide, res.hits[:RERANK_DEPTH]), res.steps
+            try:  # the agent's own searches are added to s.last_queries for the reranker
+                res = SearchAgent(chat.client, chat.model_id, s, docs).run(question)
+            except Exception as e:  # noqa: BLE001 - the agent only adds to the wide pool: keep that
+                log(
+                    "degraded",
+                    request_id=request_id,
+                    step="agent",
+                    error=f"{type(e).__name__}: {e}"[:300],
+                )
+                res = None
+            if res is not None:
+                chat.input_tokens += res.input_tokens  # the agent calls Converse directly
+                chat.output_tokens += res.output_tokens
+                hits, steps = with_pool(wide, res.hits[:RERANK_DEPTH]), res.steps
+            else:
+                hits = wide
             for st in steps:
                 log("tool_call", request_id=request_id, tool=st["tool"], input=st["input"])
         else:

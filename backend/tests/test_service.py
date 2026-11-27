@@ -92,6 +92,22 @@ def test_a_failing_optional_step_is_skipped_not_fatal():
     assert reply.answer.text  # answered from the first-stage order
 
 
+def test_a_failing_condense_or_agent_falls_back_not_fatal(monkeypatch):
+    class Flaky(FakeChat):
+        def complete(self, system, user, max_tokens=1024, temperature=0.0):
+            if user.startswith("Conversation:"):  # condense
+                raise TimeoutError("model busy")
+            return super().complete(system, user, max_tokens, temperature)
+
+    history = [{"role": "user", "text": "해고 예고는?"}, {"role": "assistant", "text": "30일 전"}]
+    svc = RagService(FakeOpenSearch(), "chunks-structure", FakeEmbedder(), Flaky())
+    assert svc.ask("user-1", "집주인이 계약기간을 1년으로 하재요", history=history).answer.text
+    # agent mode: FakeChat has no Converse client, so the agent fails; the wide pool stands
+    monkeypatch.setattr("sdrag.service.list_documents", lambda *a, **k: [])
+    reply = svc.ask("user-1", "집주인이 계약기간을 1년으로 하재요", mode="agent")
+    assert reply.answer.text and reply.retrieved
+
+
 def test_an_amended_article_comes_with_its_other_version():
     from sdrag.retrieval.search import Hit
     from sdrag.service import with_versions

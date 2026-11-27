@@ -447,3 +447,11 @@ def test_a_scan_stamped_with_a_little_text_is_ocrd():
     assert not _stamped_scan(
         "3", SimpleNamespace(width=600, height=800, images=[])
     )  # a blank-ish page
+
+
+def test_docx_empty_table_is_dropped_as_in_hwpx(tmp_path):
+    d = Document()
+    d.add_paragraph("신청서")
+    d.add_table(rows=2, cols=3)  # a blank form's grid
+    d.save(tmp_path / "form.docx")
+    assert [b.kind for b in parse(tmp_path / "form.docx").blocks] == ["text"]

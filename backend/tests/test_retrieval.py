@@ -233,4 +233,4 @@ def test_definitions_search_only_definition_articles():
         ["평균임금 계산"]
     )
     f = client.bodies[0]["query"]["bool"]["filter"]
-    assert any("wildcard" in str(x) and "(정의)" in str(x) for x in f)
+    assert any("wildcard" in str(x) and "(정의*" in str(x) and " 정의*" in str(x) for x in f)

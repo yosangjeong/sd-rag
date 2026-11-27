@@ -359,7 +359,9 @@ def parse_docx(path: Path) -> ParsedDocument:
                         )
                         seen.append(cell._tc)
                     rows.append(cells)
-                heads.update_annex(" ".join(rows[0]) if rows else "")
+                if not any(c.strip() for r in rows for c in r):  # an empty table, as in HWPX
+                    continue
+                heads.update_annex(" ".join(rows[0]))
                 doc.blocks.append(
                     Block(
                         "table", table_text(rows), len(doc.blocks), heading=heads.current, rows=rows
@@ -471,6 +473,8 @@ def _pdf_tables(page) -> list:
     - A table whose cells hold less than MIN_CELL_COVERAGE of the characters inside its
       box lost text to cells pdfplumber could not assign (seen on a ministry press
       release: quotes in a 3-column box came out empty); its area is read as text.
+    - A table with no characters at all (a blank form's grid) is dropped, as HWPX and
+      DOCX drop theirs: it made a chunk of empty cells.
     """
     v = [e for e in page.edges if e["orientation"] == "v"]
     settings = (
@@ -486,7 +490,7 @@ def _pdf_tables(page) -> list:
             continue
         inside = sum(not c["text"].isspace() for c in page.within_bbox(t.bbox).chars)
         kept = sum(len(re.sub(r"\s", "", cell or "")) for r in rows for cell in r)
-        if inside and kept < MIN_CELL_COVERAGE * inside:
+        if not kept or kept < MIN_CELL_COVERAGE * inside:  # empty (as in HWPX and DOCX) or lossy
             continue
         tables.append(_widen_unruled(page, t))
     return sorted(tables, key=lambda t: t.bbox[1])
@@ -722,8 +726,9 @@ class KoreanSpacing:
         return "\n".join(out)
 
 
-# a scan longer than this would run past the upload queue's 30-minute visibility
-# timeout (about 14 s a page on 4 threads): refused with a message instead
+# a longer scan is refused with a message: about 14 s a page on 4 threads makes 300
+# pages ~18 minutes, well inside the worker's 120-minute scale-in protection (the
+# message's visibility is extended while it runs, worker/main.py Heartbeat)
 MAX_OCR_PAGES = 300
 
 

@@ -26,7 +26,7 @@ from sdrag.common.config import settings
 from sdrag.ingest import layout
 from sdrag.ingest.chunk import canonical_text
 from sdrag.ingest.corpus import CorpusDoc, load_corpus
-from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
+from sdrag.ingest.ocr import build_ocr
 from sdrag.ingest.parse import parse
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,11 +87,9 @@ def doc_texts(data: Path = DATA, refresh: bool = False) -> dict[str, DocText]:
             d["blocks"] = [BlockInfo(**b) for b in d["blocks"]]
             out[doc.id] = DocText(**d)
             continue
-        if ocr is None:  # only built when a document has to be parsed
-            ocr = CachedOcr(
-                BedrockVisionOcr(settings.ocr_model, settings.aws_region),
-                OCR_CACHE,
-            )
+        if ocr is None:  # only built when a document has to be parsed; the index's OCR
+            # (with the Textract check), so gold offsets point into the text it holds
+            ocr = build_ocr(settings.ocr_model, settings.aws_region, settings.ocr_check, OCR_CACHE)
         dt = _parse_doc(doc, ocr)
         path.write_text(json.dumps(asdict(dt), ensure_ascii=False), encoding="utf-8")
         out[doc.id] = dt

@@ -72,7 +72,7 @@ class FakeConverse:
 
 class FakeSearcher:
     def __init__(self):
-        self.calls = []
+        self.calls, self.last_queries = [], ["해고 예고?"]
 
     def bm25(self, query, size, langs=None, doc_ids=None):
         self.calls.append(("bm25", query))
@@ -83,6 +83,9 @@ def test_agent_returns_picked_chunks_first_then_the_rest():
     searcher = FakeSearcher()
     res = SearchAgent(FakeConverse(), "m", searcher, []).run("해고 예고?")
     assert res.finished and res.picked == ["b"]  # "zzz" was never retrieved
+    # the agent's own query is there for the reranker's passage windows, once
+    assert searcher.last_queries[0] == "해고 예고?"
+    assert len(searcher.last_queries) == len(set(searcher.last_queries)) > 1
     assert [h.chunk_id for h in res.hits] == ["b", "a"]
     assert searcher.calls == [("bm25", "해고")]
     assert res.input_tokens == 200

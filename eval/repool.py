@@ -10,8 +10,9 @@ was a miss because the gold is the next sentence.
 
 This judges, with the same prompts and models as finalize_qa.py (DeepSeek V3.2 finds
 the candidates that give the same answer, gpt-oss-120b confirms each), the top
-`--depth` of every result file of every system in a set's results folder, so all
-systems gain from it alike; then re-scores every stored result file (rebuild the
+`--depth` of the systems in REPORTED (served now and before, hybrid, agent): those gain
+most from it, the other ablation rows (fixed windows, BM25, dense) only where they share
+a passage with them; then re-scores every stored result file (rebuild the
 summaries after with run_retrieval.py --set <set>, which prints them). New spans are added to the set's `also`, with meta.also_repooled listing
 them, so a later reader sees what came from here.
 

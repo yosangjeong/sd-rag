@@ -192,9 +192,9 @@ class Searcher:
            answer is in the decree article that cites it ("법 제39조제3항제6호"), which
            shares few words with the question. 15 of the 49 misses were such a decree
            or rule article while its law article was retrieved.
-        4. The question in the statute's terms (`LlmTranslator.to_statute_terms`): its
-           hybrid top `extra` not yet in, then the top `each` of its BM25 and of its dense
-           list, as for the question and its translation. A situation question ("주변에서
+        4. The question in the statute's terms (`LlmTranslator.to_statute_terms`): like
+           the translation, up to `extra` new ones from its hybrid top `size`, then the top
+           `each` of its BM25 and of its dense list. A situation question ("주변에서
            계약기간을 1년으로 하라는데") or a provision's popular name shares few words with the
            article. Its own lists (2026-11-28) brought 3 of 10 test-set pool misses in and
            made the pool about 10 larger; reranked, the dev sets were even (top 6: 134 of
@@ -202,8 +202,9 @@ class Searcher:
         5. Definition articles (`definitions`): "평균임금은 어떻게 계산하나요" is answered
            by 제2조(정의), which lists dozens of terms and matches no single question well.
 
-        BM25 searches each query with the statute terms of its everyday words appended
-        (terms.expand: 집주인 -> 임대인); the vector search embeds the query as it is.
+        BM25 (here and in parts 3 and 5) searches the question and its translation with
+        the statute terms of their everyday words appended (terms.expand: 집주인 -> 임대인),
+        the statute-terms query as it is; the vector search embeds each as it is.
         """
         if translation is None:
             translation, _ = self.translator.to_other_language(query)
@@ -216,16 +217,16 @@ class Searcher:
         texts = queries + ([terms] if terms else [])
         # every search here is independent of the others, so they are sent at once: one
         # after another, the 9 searches and 3 embeddings took 0.78 s median (2026-11-28)
+        # what every BM25 search here (main, definitions, references) sends: the question
+        # and its translation with the statute terms of their everyday words appended
+        # (집주인 -> 임대인), the statute-terms query as it is (already in those terms)
+        keyword = [expand(q) for q in queries] + ([terms] if terms else [])
         vectors = self.embedder.embed(texts)
         with ThreadPoolExecutor(8) as pool:
-            bm25s = [
-                pool.submit(self.bm25, expand(q), 50, None, doc_ids) for q in queries
-            ]  # everyday words -> statute terms
-            if terms:  # already in the statute's terms: no expand
-                bm25s.append(pool.submit(self.bm25, terms, 50, None, doc_ids))
+            bm25s = [pool.submit(self.bm25, k, 50, None, doc_ids) for k in keyword]
             denses = [pool.submit(self.dense, t, 50, None, doc_ids, v)
                       for t, v in zip(texts, vectors, strict=True)]  # fmt: skip
-            defs_f = pool.submit(self.definitions, texts, doc_ids)
+            defs_f = pool.submit(self.definitions, keyword, doc_ids)
             bs, ds = [f.result() for f in bm25s], [f.result() for f in denses]
         lists = [(rrf(b, d, size=size), b, d) for b, d in zip(bs[: len(queries)], ds, strict=False)]
         out: dict[str, Hit] = {}
@@ -243,13 +244,14 @@ class Searcher:
         ranked = [x for _, b, d in lists for x in (b, d)]  # every list, for `fused`
         if terms:
             bt, dt = bs[-1], ds[-1]
-            t_hits = rrf(bt, dt, size=extra)  # = self.hybrid(terms, extra, 50, None, doc_ids)
+            # like the translation: up to `extra` new ones from its fused top `size`
+            t_hits = rrf(bt, dt, size=size)
             add(t_hits, extra)
             add(bt, each)
             add(dt, each)
             ranked.append(t_hits)
             queries.append(terms)
-        r_hits = self.references(queries, list(out.values()), doc_ids)
+        r_hits = self.references(keyword, list(out.values()), doc_ids)
         d_hits = defs_f.result()
         add(r_hits, refs)
         add(d_hits, defs)
@@ -316,11 +318,14 @@ class Searcher:
     def definitions(self, queries: list[str], doc_ids=None, size: int = 3) -> list[Hit]:
         """The definition articles ("제2조(정의)", "§ 1024.2 Definitions.") that best match
         the queries by BM25: a question about what a term means, or how it is computed,
-        is answered there. 133 such chunks in the 70-document corpus."""
-        should = [{"multi_match": {"query": expand(q), "fields": ["search_text", "search_text.en"]}}
+        is answered there. 133 such chunks in the 70-document corpus. `queries` as BM25
+        searches them (`wide` passes them expanded)."""
+        should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"]}}
                   for q in queries if q.strip()]  # fmt: skip
+        # "제2조(정의)", and "제10조의3(권리금의 정의 등)": the word, not "조정의" or "결정의"
         heading = {"bool": {"should": [
-            {"wildcard": {"heading": "*(정의)*"}},
+            {"wildcard": {"heading": "*(정의*"}},
+            {"wildcard": {"heading": "* 정의*"}},
             {"wildcard": {"heading": {"value": "*definition*", "case_insensitive": True}}}],
             "minimum_should_match": 1}}  # fmt: skip
         filters = _filters(None, doc_ids, self.owners, self.scope, self.country) + [heading]

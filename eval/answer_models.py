@@ -1,7 +1,8 @@
 """Which answer model: the same sources, only the model that writes the answer changes.
 
-For each of the 50 single-file questions (data/eval/single_file/compare.csv) the served
-retrieval (GLM-4.7 translation + rerank, search scoped to the file) runs once and its
+For each of the 50 single-file questions (data/eval/single_file/compare.csv) the retrieval
+(bilingual_union + GLM-4.7 rerank, as served before 2026-11-13 and as single_file.py
+records it; not the wide pool; search scoped to the file) runs once and its
 top 6 sources go to every candidate answer model with the served answer prompt
 (sdrag.agent.answer). The same judge as single_file.py (DeepSeek V3.2, judge v2) grades
 each answer against the reference answer and the gold text. DeepSeek is not a

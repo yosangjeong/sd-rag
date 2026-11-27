@@ -86,6 +86,11 @@ Latency p50 and LLM cost per query (query embeddings, about $0.00001, not counte
 | per article | + translation candidates | 0.85 | 0.93 | 0.89 | 0.90 | 3.0 s | 0.006 |
 | per article | **served** (+ wider pool, jurisdiction) | **0.85** | **0.96** | **0.90** | **0.91** | 5.7 s | 0.012 |
 
+Fixed windows are 400 tokens with a 60-token overlap, per-article chunks at most 500, so the
+two rows differ in size as well as in where they cut. The gold spans added by re-pooling
+(`eval/repool.py`) came from four systems (served now and before, hybrid, agent), not from
+the fixed windows, which favors the pooled systems slightly; the first pool included them.
+
 Agent against the basic (served) search, real-estate sets (the agent was measured there):
 
 | Set | System | hit@1 | hit@10 | MRR | p50 | $/query |

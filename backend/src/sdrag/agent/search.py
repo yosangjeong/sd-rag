@@ -101,9 +101,10 @@ class SearchAgent:
         lang = args.get("language")
         langs = [lang] if lang in ("ko", "en") else None
         docs = [d for d in args.get("documents") or [] if isinstance(d, str)] or None
-        hits = getattr(self.searcher, method)(
-            str(args.get("query", "")), RESULTS_PER_SEARCH, langs=langs, doc_ids=docs
-        )
+        query = str(args.get("query", ""))
+        hits = getattr(self.searcher, method)(query, RESULTS_PER_SEARCH, langs=langs, doc_ids=docs)
+        if query not in self.searcher.last_queries:  # the reranker picks long passages'
+            self.searcher.last_queries.append(query)  # windows by these (service.ask)
         out = []
         for h in hits:
             found.setdefault(h.chunk_id, h)

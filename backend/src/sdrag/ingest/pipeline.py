@@ -41,27 +41,34 @@ class DocStats:
     index_s: float
 
 
-def ingest(
-    doc: CorpusDoc,
-    client: OpenSearch,
-    index: str,
-    strategy: str,
-    embedder: Embedder,
-    ocr: OcrEngine | None,
-) -> DocStats:
+def prepare(doc: CorpusDoc, strategy: str, embedder: Embedder,
+            ocr: OcrEngine | None) -> tuple[list[dict], DocStats]:  # fmt: skip
+    """Parse, chunk and embed one document: its index sources, nothing written yet."""
     t0 = time.perf_counter()
     parsed = parse(doc.path, ocr=ocr)
     chunks = STRATEGIES[strategy](parsed, doc.id)
+    if not chunks:  # as an upload with no text fails (worker/job.py), not indexed as nothing
+        raise ValueError(f"{doc.id}: no chunks")
     t1 = time.perf_counter()
     vectors = embedder.embed([embed_input(c, doc.title) for c in chunks])
     t2 = time.perf_counter()
     ocr_pages = set(parsed.ocr_pages)
-    bulk_index(client, index, [to_source(doc, c, v, ocr_pages) for c, v in zip(chunks, vectors)])
-    t3 = time.perf_counter()
-    return DocStats(
+    sources = [to_source(doc, c, v, ocr_pages) for c, v in zip(chunks, vectors, strict=True)]
+    stats = DocStats(
         doc.id, doc.file_type, len(chunks), len(parsed.ocr_pages), len(parsed.needs_ocr_pages),
-        round(t1 - t0, 2), round(t2 - t1, 2), round(t3 - t2, 2),
+        round(t1 - t0, 2), round(t2 - t1, 2), 0.0,
     )  # fmt: skip
+    return sources, stats
+
+
+def ingest(doc: CorpusDoc, client: OpenSearch, index: str, strategy: str, embedder: Embedder,
+           ocr: OcrEngine | None) -> DocStats:  # fmt: skip
+    """One document, prepared and indexed."""
+    sources, stats = prepare(doc, strategy, embedder, ocr)
+    t = time.perf_counter()
+    bulk_index(client, index, sources)
+    stats.index_s = round(time.perf_counter() - t, 2)
+    return stats
 
 
 def main() -> None:
@@ -87,16 +94,24 @@ def main() -> None:
     ocr = build_ocr(settings.ocr_model, settings.aws_region, settings.ocr_check, cache)
 
     create_index(client, index, settings.embed_dims, recreate=a.recreate)
+    t = time.perf_counter()
+    # every document is parsed and embedded before the index is touched: one that fails
+    # stops the run with the old corpus still served, not half of it deleted
+    prepared = []
+    for doc in load_corpus(a.data):
+        prepared.append(prepare(doc, a.strategy, embedder, ocr))
+        s = prepared[-1][1]
+        print(f"{s.doc_id:34} {s.file_type:5} {s.chunks:5} chunks  parse {s.parse_s:6.1f}s  "
+              f"embed {s.embed_s:6.1f}s")  # fmt: skip
     if a.replace_public:  # a re-index in service: chunks a new chunking no longer makes go too
         client.delete_by_query(index=index, body={"query": {"term": {"owner": PUBLIC}}},
                                refresh=True, request_timeout=300)  # fmt: skip
-    t = time.perf_counter()
     stats = []
-    for doc in load_corpus(a.data):
-        s = ingest(doc, client, index, a.strategy, embedder, ocr)
+    for sources, s in prepared:
+        t1 = time.perf_counter()
+        bulk_index(client, index, sources)
+        s.index_s = round(time.perf_counter() - t1, 2)
         stats.append(s)
-        print(f"{s.doc_id:34} {s.file_type:5} {s.chunks:5} chunks  parse {s.parse_s:6.1f}s  "
-              f"embed {s.embed_s:6.1f}s  index {s.index_s:5.1f}s")  # fmt: skip
     client.indices.refresh(index=index)
     total = time.perf_counter() - t
     n = sum(s.chunks for s in stats)

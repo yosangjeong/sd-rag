@@ -7,6 +7,11 @@ versions under both judges, with and without the flagged items
 (data/eval/item_flags.json). Only the correctness judge changed; groundedness and
 declining keep their grades.
 
+It grades against each item's original reference answer, as when the judge v2 numbers
+in README were made; answers.py (v11 on) uses data/eval/reference_fixes.json instead.
+So do not re-run it over v11-final or later: it would overwrite their correct_v2 with
+grades against the uncorrected references.
+
     cd backend && AWS_PROFILE=<profile> uv run python ../eval/rejudge.py
 """
 
