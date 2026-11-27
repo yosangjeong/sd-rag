@@ -111,7 +111,8 @@ def process(user: str, doc_id: str, path: Path, filename: str, deps) -> dict:
         result = {"status": "done", "stage": "", "doc": doc.id, "chunks": len(chunks),
                   "unread_pages": len(parsed.needs_ocr_pages),  # OCR failed or no text
                   "lang": doc.lang, "file_type": file_type,
-                  "ocr_pages": len(ocr), "parse_s": round(t1 - t0, 2), "embed_s": round(t2 - t1, 2),
+                  "ocr_pages": len(ocr), "ocr_replaced": len(parsed.ocr_replaced_pages),
+                  "parse_s": round(t1 - t0, 2), "embed_s": round(t2 - t1, 2),
                   "index_s": round(t3 - t2, 2), "finished": time.time()}  # fmt: skip
     except Exception as e:  # noqa: BLE001 - a bad file must not stop the worker
         # a busy or unreachable service is worth another try (the queue redelivers);

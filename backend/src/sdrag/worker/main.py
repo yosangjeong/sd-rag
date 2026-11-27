@@ -26,7 +26,7 @@ from sdrag.api.store import DynamoStore
 from sdrag.common.config import settings
 from sdrag.common.logs import log
 from sdrag.common.search_client import make_client
-from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr
+from sdrag.ingest.ocr import build_ocr
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.worker.job import process
 
@@ -56,8 +56,10 @@ def main() -> None:
         index=settings.index,
         embedder=TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims),
         # a retry on the same task does not pay for the OCR of its pages again
-        ocr=CachedOcr(
-            BedrockVisionOcr(settings.ocr_model, settings.aws_region),
+        ocr=build_ocr(
+            settings.ocr_model,
+            settings.aws_region,
+            settings.ocr_check,
             Path(tempfile.gettempdir()) / "sdrag-ocr-cache",
         ),
     )

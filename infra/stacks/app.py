@@ -12,7 +12,7 @@
 - Worker: scales on the upload queue's depth, 0 tasks when the queue is empty, up to
   2 while files wait: throughput for a 50+ file batch without paying for idle tasks.
 - IAM: each task role gets only what it uses (grant_* calls), Bedrock limited to
-  invoking models in this Region.
+  invoking models in this Region; Textract (the OCR check) only for the roles that OCR.
 - Logs: both services write JSON lines to CloudWatch Logs (14 days).
 - OpenSearch access: the task roles' identity policies (grant_read_write) plus the
   security group; the domain's own policy defers to IAM in this account (data.py).
@@ -268,6 +268,12 @@ class AppStack(Stack):
         data.bucket.grant_put(api.task_definition.task_role, "uploads/*")
         data.queue.grant_send_messages(api.task_definition.task_role)
         data.bucket.grant_read(worker.task_definition.task_role, "uploads/*")
+        # the OCR check (ingest/ocr.py CheckedOcr) reads scanned pages with Textract too;
+        # the API only queues uploads, so it does not OCR in AWS. Textract has no
+        # resource-level permissions: "*" is the only resource it accepts.
+        textract = iam.PolicyStatement(actions=["textract:AnalyzeDocument"], resources=["*"])
+        for role in (worker.task_definition.task_role, self.ingest_task.task_role):
+            role.add_to_principal_policy(textract)
 
         # ---- web ----
         dist = cf.Distribution(

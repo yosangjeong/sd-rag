@@ -9,8 +9,8 @@
 >   가능, 일반 1개는 불가).
 > - **써 보기**: 예시 질문 클릭 → 답의 `[n]`을 누르면 원문이 열립니다 → 영어로 한국 법을 묻기(교차 언어)
 >   → 파일 여러 개 올리고 "이 문서에 질문" → 에이전트 모드 → 다른 계정으로 로그인해 격리 확인.
-> - **핵심 숫자** (아래 표): 서비스 검색 hit@10 / MRR, 노동 시험 0.97 / 0.90, 실제 질문 0.98 / 0.91
->   (일반 hybrid 0.78 / 0.54). 마지막 변경 뒤에 모아 한 번만 잰 실제 질문 97개: 0.91 / 0.82. 답변 정확도
+> - **핵심 숫자** (아래 표): 서비스 검색 hit@10 / MRR, 노동 시험 0.96 / 0.90, 실제 질문 0.98 / 0.90
+>   (일반 hybrid 0.78 / 0.54). 마지막 변경 뒤에 모아 한 번만 잰 실제 질문 97개: 0.91 / 0.81. 답변 정확도
 >   (자동 채점, 하한) 노동 87%, 부동산 89%. 파일 하나 기준 같은 20문항에서 Claude·ChatGPT와 같은 수준.
 > - **어디를 읽나**: 설계·보안·한계 `docs/design.md` → 결정과 근거(측정 포함) `docs/decisions.md` →
 >   평가 방법·채점 모델과 프롬프트 `data/eval/README.md` → 문항별 결과 `data/eval/results/`.
@@ -27,16 +27,16 @@ test sets below were kept apart from them, but they are not untouched: their res
 read and their errors analysed after each measurement, a few decisions were checked on
 them too, and the answer versions were compared on a fixed sample of the labor test set
 (`docs/decisions.md`). The strictly held-out check is the set of real questions collected
-after the last change and measured once (below: hit@10 0.91, MRR 0.82). hit@10 / MRR of
+after the last change and measured once (below: hit@10 0.91, MRR 0.81; 5 of its questions re-run after the 11/27 OCR clean-up). hit@10 / MRR of
 the served system against plain hybrid search (gold spans pooled from every reported
 system's top 5, TREC-style, `eval/repool.py`):
 
 | Set | Questions | Served | Hybrid (BM25 + vectors) |
 |---|---|---|---|
-| Labor, generated (test) | 338 | **0.97 / 0.90** | 0.78 / 0.54 |
-| Labor, real user questions (government FAQs) | 137 | **0.98 / 0.91** | 0.89 / 0.60 |
+| Labor, generated (test) | 338 | **0.96 / 0.90** | 0.78 / 0.54 |
+| Labor, real user questions (government FAQs) | 137 | **0.98 / 0.90** | 0.89 / 0.60 |
 | Real estate, generated (test) | 82 | **0.99 / 0.94** | 0.85 / 0.58 |
-| Real estate, real user questions | 83 | **0.96 / 0.94** (agent mode 0.99 / 0.93) | 0.76 / 0.52 |
+| Real estate, real user questions | 83 | **0.95 / 0.93** (agent mode 0.99 / 0.93) | 0.76 / 0.52 |
 
 On documents it was never built or tuned on (press releases incl. HWPX and a scan, a NIST
 framework, an IRS guide; uploaded as a user, 35 questions): hit@5 1.00, MRR 0.87, against
@@ -45,7 +45,7 @@ hybrid 0.63 / 0.54 (`eval/unseen.py`). Among 35 look-alike press releases of one
 
 On 97 real questions collected after the last change and measured once (held out:
 easylaw topics no other set uses, the HUD/DOJ accommodations statement): on the 33 the
-corpus answers, hit@10 0.91, MRR 0.82, against hybrid 0.73 / 0.53; of the 64 it cannot
+corpus answers, hit@10 0.91, MRR 0.81, against hybrid 0.73 / 0.53; of the 64 it cannot
 answer, 78% were declined.
 
 Answers (automatic judge, a lower bound): 87% correct on labor, 89% on real estate (judge v3,
@@ -84,7 +84,7 @@ Latency p50 and LLM cost per query (query embeddings, about $0.00001, not counte
 | per article | hybrid | 0.42 | 0.78 | 0.54 | 0.59 | 0.3 s | 0 |
 | per article | hybrid + reranker | 0.78 | 0.85 | 0.81 | 0.82 | 1.5 s | 0.004 |
 | per article | + translation candidates | 0.85 | 0.93 | 0.89 | 0.90 | 3.0 s | 0.006 |
-| per article | **served** (+ wider pool, jurisdiction) | **0.85** | **0.97** | **0.90** | **0.91** | 5.7 s | 0.012 |
+| per article | **served** (+ wider pool, jurisdiction) | **0.85** | **0.96** | **0.90** | **0.91** | 5.7 s | 0.012 |
 
 Agent against the basic (served) search, real-estate sets (the agent was measured there):
 
@@ -93,7 +93,7 @@ Agent against the basic (served) search, real-estate sets (the agent was measure
 | test_re (82) | basic | 0.91 | 0.99 | 0.94 | 5.6 s | 0.012 |
 | | agent + reranker (until 2026-11-16) | 0.87 | 0.99 | 0.92 | 5.0 s | 0.016 |
 | | **agent on the wide pool** (served agent mode) | 0.90 | 0.99 | 0.94 | 8.8 s | 0.026 |
-| real_re (83 real questions) | basic | 0.93 | 0.96 | 0.94 | 5.7 s | 0.012 |
+| real_re (83 real questions) | basic | 0.92 | 0.95 | 0.93 | 5.7 s | 0.012 |
 | | agent + reranker (until 2026-11-16) | 0.86 | 0.95 | 0.88 | 9.6 s | 0.023 |
 | | **agent on the wide pool** (served agent mode) | 0.90 | **0.99** | 0.93 | 12.4 s | 0.032 |
 
@@ -108,14 +108,14 @@ The agent is kept as a mode, not the default: it costs more and ranks no better.
 | Slice | n | hybrid | served |
 |---|---|---|---|
 | Korean question -> Korean document | 155 | 0.91 / 0.69 | 0.97 / 0.92 |
-| Korean -> English | 49 | 0.47 / 0.12 | 0.94 / 0.84 |
+| Korean -> English | 49 | 0.47 / 0.12 | 0.94 / 0.87 |
 | English -> English | 68 | 0.97 / 0.79 | 0.99 / 0.91 |
-| English -> Korean | 66 | 0.53 / 0.23 | 0.95 / 0.89 |
+| English -> Korean | 66 | 0.53 / 0.23 | 0.94 / 0.88 |
 | text PDF | 160 | 0.78 / 0.54 | 0.97 / 0.91 |
 | HWPX | 58 | 0.78 / 0.54 | 0.93 / 0.91 |
 | DOCX | 57 | 0.82 / 0.60 | 1.00 / 0.90 |
-| scanned PDF (OCR) | 54 | 0.72 / 0.44 | 0.94 / 0.85 |
-| answer in a table | 36 | 0.75 / 0.43 | 0.97 / 0.90 |
+| scanned PDF (OCR) | 54 | 0.72 / 0.44 | 0.93 / 0.83 |
+| answer in a table | 36 | 0.75 / 0.43 | 0.94 / 0.88 |
 
 Every set and slice: `data/eval/results/retrieval-70docs/<set>/summary.md`.
 
@@ -161,7 +161,7 @@ question -> which country's law (KR / US / none): the other country's statutes a
 | Part | Choice | Why (details in `docs/decisions.md`) |
 |---|---|---|
 | Parsing | pypdf + pdfplumber (tables, columns), HWPX/DOCX XML | measured against HWPX ground truth |
-| OCR | Qwen3-VL 235B on Bedrock | CER 0.4-2.3% Korean on synthetic scans; 2.8% on a real iPhone scan |
+| OCR | Qwen3-VL 235B on Bedrock, checked by Amazon Textract | CER 0.4-2.3% Korean on synthetic scans; 1.1% on a real iPhone scan (2.8% before the `<br>` it writes in table cells was cleaned) |
 | Chunks | one per article / section, split at paragraph > item > line | ahead of fixed windows with vectors and in the served system (hit@10 0.94 vs 0.92); level with BM25 alone; citations name one article |
 | Embeddings | Titan Text Embeddings v2 | far ahead across languages |
 | Search | OpenSearch (nori + English analyzers, HNSW) | hybrid BM25 + dense |

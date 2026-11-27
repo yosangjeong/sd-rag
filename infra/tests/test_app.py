@@ -73,6 +73,18 @@ def test_bedrock_access_is_limited_to_named_models_and_allows_streaming():
     assert found == 3  # API, worker, corpus ingest
 
 
+def test_textract_only_for_the_tasks_that_ocr():
+    _, app = _templates()
+    found = []
+    for p in app.find_resources("AWS::IAM::Policy").values():
+        for st in p["Properties"]["PolicyDocument"]["Statement"]:
+            actions = st["Action"] if isinstance(st["Action"], list) else [st["Action"]]
+            if any(a.startswith("textract:") for a in actions):
+                assert actions == ["textract:AnalyzeDocument"]  # read a page, nothing else
+                found.append(str(p["Properties"]["Roles"]))
+    assert len(found) == 2 and not any("Api" in r for r in found)  # worker, corpus ingest
+
+
 def test_worker_scales_to_zero():
     _, app = _templates()
     app.has_resource_properties(

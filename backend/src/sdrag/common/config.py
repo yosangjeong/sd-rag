@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # OCR engine for scanned PDF pages: a Bedrock vision model (eval/ocr_bench.py)
     ocr_model: str = "qwen.qwen3-vl-235b-a22b"
     ocr_cache_dir: str = ""  # empty: no cache (set locally to avoid paying twice)
+    # Textract reads each scanned page too; a page the model invented text on keeps Textract's
+    ocr_check: bool = True
     # embeddings: Titan Text Embeddings v2 (eval/embed_bench.py)
     embed_model: str = "amazon.titan-embed-text-v2:0"
     embed_dims: int = 1024

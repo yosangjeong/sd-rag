@@ -14,6 +14,11 @@ about 14 s and $0.005 per page); the prompt and the two guards below come from i
 
 Tables come back as "| a | b |" rows; ``split_markdown`` turns them into table
 parts so a scanned table is chunked like a born-digital one.
+
+A generative model can write characters that are not on the page. ``CheckedOcr``
+reads each page with Amazon Textract at the same time (it only writes what it
+recognizes) and keeps Textract's text for a page where the model's text has many
+characters Textract does not (eval/textract_bench.py). ``build_ocr`` puts it together.
 """
 
 import hashlib
@@ -23,8 +28,9 @@ import logging
 import re
 import threading
 import time
+from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Protocol
 
@@ -69,6 +75,8 @@ class OcrResult:
     output_tokens: int = 0
     seconds: float = 0.0
     split: bool = False  # read as two halves after a repetition loop
+    missing: float | None = None  # share of the characters the check (Textract) lacked
+    replaced: bool = False  # the check's text was used: the reader had invented text
 
 
 class OcrEngine(Protocol):
@@ -146,6 +154,168 @@ class BedrockVisionOcr:
         return res
 
 
+def _children(block: dict) -> list[str]:
+    return [i for r in block.get("Relationships", []) if r["Type"] == "CHILD" for i in r["Ids"]]
+
+
+def table_rows(blocks: dict[str, dict], resp: dict) -> tuple[dict[str, int], list[str]]:
+    """Textract's TABLE blocks as "| a | b |" rows, and which table each word sits in."""
+    word_table: dict[str, int] = {}
+    tables: list[str] = []
+    for t in (b for b in resp["Blocks"] if b["BlockType"] == "TABLE"):
+        rows: dict[int, dict[int, str]] = defaultdict(dict)
+        for c in (blocks[i] for i in _children(t) if blocks[i]["BlockType"] == "CELL"):
+            words = [blocks[i] for i in _children(c) if blocks[i]["BlockType"] == "WORD"]
+            for w in words:
+                word_table[w["Id"]] = len(tables)
+            rows[c["RowIndex"]][c["ColumnIndex"]] = " ".join(w["Text"] for w in words)
+        width = max((max(r) for r in rows.values()), default=0)
+        tables.append("\n".join(
+            "| " + " | ".join(rows[i].get(j, "") for j in range(1, width + 1)) + " |"
+            for i in sorted(rows)
+        ))  # fmt: skip
+    return word_table, tables
+
+
+def layout_text(resp: dict) -> str:
+    """An AnalyzeDocument answer as text: lines in the order of the LAYOUT blocks
+    (Textract's reading-order analysis; nested ones such as list items are followed),
+    a LAYOUT_TABLE written as its TABLE's rows. Lines no layout block covers go last.
+    Each line is written once."""
+    blocks = {b["Id"]: b for b in resp["Blocks"]}
+    word_table, tables = table_rows(blocks, resp)
+
+    def lines_of(b) -> list[str]:
+        out = []
+        for i in _children(b):
+            c = blocks.get(i)
+            if c is None:
+                continue
+            if c["BlockType"] == "LINE":
+                out.append(i)
+            elif c["BlockType"].startswith("LAYOUT_"):
+                out += lines_of(c)
+        return out
+
+    out, done, placed = [], set(), set()
+    for b in resp["Blocks"]:
+        if not b["BlockType"].startswith("LAYOUT_"):
+            continue
+        ids = [i for i in lines_of(b) if i not in done]
+        if not ids:
+            continue
+        done.update(ids)
+        if b["BlockType"] == "LAYOUT_TABLE":
+            inside = {word_table[w] for i in ids for w in _children(blocks[i]) if w in word_table}
+            new = sorted(inside - placed)
+            if new:
+                placed.update(new)
+                out += [tables[k] for k in new]
+                continue
+        out += [blocks[i]["Text"] for i in ids]
+    # a TABLE outside any LAYOUT_TABLE stays as its lines (adding it too wrote them twice)
+    out += [b["Text"] for b in resp["Blocks"] if b["BlockType"] == "LINE" and b["Id"] not in done]
+    return "\n".join(out)
+
+
+class TextractOcr:
+    """Amazon Textract (AnalyzeDocument with tables and layout) as OCR engine. It
+    recognizes characters and does not write any it did not see, but its reading order
+    is weaker than Qwen3-VL's on Korean tables (eval/textract_bench.py), so the service
+    uses it as a check (CheckedOcr), not as the reader."""
+
+    name = "textract-analyze-tables-layout"
+    FEATURES = ("TABLES", "LAYOUT")
+
+    def __init__(self, region: str, client=None) -> None:
+        self.client = client or boto3.client(
+            "textract", region_name=region,
+            config=Config(retries={"max_attempts": 8, "mode": "adaptive"}),
+        )  # fmt: skip
+
+    def analyze(self, image: Image.Image) -> dict:
+        try:
+            resp = self.client.analyze_document(
+                Document={"Bytes": jpeg(image)}, FeatureTypes=list(self.FEATURES)
+            )
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "")
+            raise OcrError(f"textract: {e}", code in TRANSIENT_CODES) from e
+        except BotoCoreError as e:
+            raise OcrError(f"textract: {e}", True) from e
+        resp.pop("ResponseMetadata", None)
+        return resp
+
+    def transcribe(self, image: Image.Image) -> OcrResult:
+        t = time.perf_counter()
+        text = layout_text(self.analyze(image))
+        return OcrResult(text, seconds=round(time.perf_counter() - t, 2))
+
+
+BR = re.compile(r"<br\s*/?>", re.IGNORECASE)
+
+
+def tidy(text: str) -> str:
+    """Qwen3-VL writes a line break inside a table cell as HTML "<br>", which is not on
+    the page: in a "| a | b |" row it becomes a space, elsewhere a line break. (Done after
+    the cache, so cached answers stay as the model gave them.)"""
+    if "<" not in text:
+        return text
+    return "\n".join(
+        BR.sub(" " if TABLE_ROW.match(line) else "\n", line) for line in text.split("\n")
+    )
+
+
+LEADER = re.compile(r"[.…·]{3,}")  # leader dots: the prompt asks for '...'
+TABLE_RULE_LINES = re.compile(r"^\s*\|?[\s|:-]*-{3,}[\s|:-]*$", re.MULTILINE)
+
+
+def norm(text: str) -> str:
+    """Text as the OCR benchmarks compare it: no table rule lines, leader dots as '...',
+    no whitespace or table bars (eval/ocr_bench.py uses the same)."""
+    text = LEADER.sub("...", re.sub(r"(?<=[.…·])\s+(?=[.…·])", "", TABLE_RULE_LINES.sub("", text)))
+    return re.sub(r"[\s|]", "", text)
+
+
+def missing_share(text: str, check: str) -> float:
+    """Share of `text`'s characters that `check` does not have (order not counted): a
+    page where the reader wrote characters the check never saw was probably invented."""
+    a, b = norm(text), norm(check)
+    if not a:
+        return 0.0
+    return 1 - sum((Counter(a) & Counter(b)).values()) / len(a)
+
+
+class CheckedOcr:
+    """Read a page with `primary` (Qwen3-VL) and, at the same time, with `check`
+    (Textract). If more than `threshold` of the primary's characters are missing from
+    the check's text, the primary invented them: the page keeps the check's text and
+    is marked replaced. On 33 benchmark pages a 5% threshold flagged the one page with
+    invented text and no good page (eval/textract_bench.py --agree; a small sample).
+    The check never fails a page: if it errors, the primary's text is kept."""
+
+    _pool = ThreadPoolExecutor(4)  # the checks run beside ocr_pages' own 4 readers
+
+    def __init__(self, primary: OcrEngine, check: OcrEngine, threshold: float = 0.05) -> None:
+        self.primary, self.check, self.threshold = primary, check, threshold
+        self.name = primary.name
+
+    def transcribe(self, image: Image.Image) -> OcrResult:
+        checked = self._pool.submit(self.check.transcribe, image)
+        res = self.primary.transcribe(image)  # its errors stay as they are (retry, skip)
+        try:
+            other = checked.result()
+        except Exception as e:  # noqa: BLE001 - the check is extra; the page is still read
+            log.warning("OCR check failed, keeping the reader's text: %s: %s", type(e).__name__, e)
+            return res
+        share = missing_share(tidy(res.text), tidy(other.text))
+        if share <= self.threshold:
+            return replace(res, missing=round(share, 4))
+        log.warning("OCR check: %.1f%% of the reader's characters are not on the page "
+                    "(Textract); using Textract's text", share * 100)  # fmt: skip
+        return replace(res, text=other.text, missing=round(share, 4), replaced=True)
+
+
 class CachedOcr:
     """Keep results on disk keyed by engine, prompt version and image bytes, so
     re-ingesting a document does not pay for its OCR again."""
@@ -164,6 +334,18 @@ class CachedOcr:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(asdict(res), ensure_ascii=False), encoding="utf-8")
         return res
+
+
+def build_ocr(model_id: str, region: str, check: bool, cache_dir: Path | None = None) -> OcrEngine:
+    """The service's OCR: Qwen3-VL, checked by Textract when `check` (SDRAG_OCR_CHECK).
+    With a cache directory each engine keeps its own results there, so a page already
+    read (by either) is not paid for again."""
+
+    def cached(engine: OcrEngine) -> OcrEngine:
+        return CachedOcr(engine, cache_dir) if cache_dir else engine
+
+    reader = cached(BedrockVisionOcr(model_id, region))
+    return CheckedOcr(reader, cached(TextractOcr(region))) if check else reader
 
 
 # PDFium is not thread-safe: concurrent calls crashed the bench (segfault) and broke
@@ -197,7 +379,8 @@ def ocr_pages(
 
     def one(page: int) -> tuple[int, OcrResult | None]:
         try:
-            return page, engine.transcribe(render_page(pdf, page))
+            res = engine.transcribe(render_page(pdf, page))
+            return page, replace(res, text=tidy(res.text))
         except OcrError as e:
             if e.transient:
                 raise

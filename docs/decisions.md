@@ -88,16 +88,45 @@ engine sits behind one interface (`OcrEngine`) and can be swapped.
 **Textract, measured later (2026-11-27, on the paid plan; `eval/textract_bench.py`,
 `results/ocr-textract.md`)**: AnalyzeDocument on the same 24 bench pages and the 9
 real-scan sheets, with tables and then also with LAYOUT (reading order). It recognizes
-characters about as well (recall 94-99.5% against 95.7-99.8%), invents less (real scan:
-extra 0.3% against 1.6%) and is faster (2-6 s per page against 11-14 s). Without LAYOUT it
+characters about as well (recall 94-99.5% against 95.7-99.8%), adds fewer characters not
+in the source (real scan: extra 0.3% against 1.6%; Qwen3-VL's extra turned out to be `<br>`
+tags, see the next paragraph) and is faster (2-6 s per page against 11-14 s). Without LAYOUT it
 loses reading order on two-column English pages (CER 58-76% against 3.9%); with LAYOUT
 those come level (3.6-5.6%), but Korean stays behind (body 3.1-4.4% against 2.3-2.8%,
-tables 11-12% against 0.4%), and the real scan overall is 4.9% against 2.8%. Qwen3-VL
+tables 11-12% against 0.4%), and the real scan overall is 4.9% against 2.8% (Qwen3-VL before the `<br>` cleanup; 1.1%
+after it). Qwen3-VL
 stays, as the criteria set before the run said. Simulated as a check on Qwen3-VL: flagging
-pages where over 5% of Qwen3-VL's characters are missing from Textract's output finds the
-one page with invented text (real-scan sheet 5) and no good page, but not Qwen3-VL's other
-high-CER pages, whose errors are reading order that Textract shares (33 pages; a direction,
-not a rate). That narrow check is the improvement on record.
+pages where over 5% of Qwen3-VL's characters are missing from Textract's output flags one
+page (real-scan sheet 5) and no good page, but not Qwen3-VL's other high-CER pages, whose
+errors are reading order that Textract shares (33 pages; a direction, not a rate).
+
+**`<br>` cleaned, and the check in the service (2026-11-27)**: the flagged page's extra
+characters were not invented words but HTML `<br>` that Qwen3-VL writes for a line break
+inside a table cell (as noted for sheet 5 under the real scan below). The same check run
+on the 78 corpus scan pages flagged one more, for the same reason (kr-equal-employment-dec
+p14, 37 tags); 5 corpus pages had `<br>`. `ingest/ocr.py` `tidy` turns it into a space in a
+table row (a line break elsewhere), after the cache. What the index now gets: real scan CER
+1.1% (extra 0.1%), corpus scans labor 4.1%, real estate 2.2%; the check then flags none of
+the 111 pages. It is in the service anyway (`CheckedOcr`, `SDRAG_OCR_CHECK`, on): every
+scanned page is also read by Textract alongside (2-6 s, about $0.02 per page), and a page
+where over 5% of Qwen3-VL's characters are not in Textract's text keeps Textract's text and
+is counted (`ocr_replaced` in the upload's stats). It guards against what a generative
+reader can do; it has found no invented text in our scans, and the 5% was chosen on 33
+pages. Three test-set gold quotes that had copied the tags were cleaned the same way.
+Retrieval re-run after the rebuild (public-only index, labor test set, BM25 and hybrid,
+no LLM): top 10 changed on 4 and 10 of 338 questions, hit@1/hit@10/MRR/nDCG unchanged at
+two decimals (BM25 MRR 0.423 -> 0.424); fixed windows likewise. The LLM systems were then
+re-run on the 104 questions whose stored results or gold touch the 5 changed pages (served
+system on test, real, real_heldout, test_re and real_re; hybrid + reranker on test; about
+$1.5), the other questions' rows kept, latency and cost kept from the original runs:
+served test hit@10 0.968 -> 0.965 (MRR 0.899 unchanged), real MRR 0.910 -> 0.896, held-out
+MRR 0.816 -> 0.810, real_re hit@10 0.964 -> 0.952 / MRR 0.941 -> 0.929, test_re unchanged;
+hybrid + reranker unchanged at two decimals. Most of it is the LLM reranker's run-to-run
+variation, not the clean-up: of the 11 served questions whose score moved, 9 have their
+gold in documents the clean-up did not touch (moves both ways). README and the slices
+updated to these numbers. Not re-run: the other LLM ablation systems (translation
+candidates, fixed windows, prompt variants), the agent, and answer generation/judging
+(v11-final); their reported numbers are from before the clean-up.
 
 **Two guards found by the benchmark**: the prompt asks for leader dots as "...",
 since the model otherwise repeated dots until the token limit and lost the rest of
@@ -934,7 +963,8 @@ under a hand's shadow, one in a dark room. Results: `data/eval/results/ocr-real-
   caps a rendered page's longest side at A4's (2,339 px); A4 and Letter pages render as
   before (the corpus scans' 78 cached pages all hit the cache, same CER).
 - CER 2.8% over the 9 pages (synthetic corpus scans: labor 4.8%, real estate 2.4%),
-  recall 99.4%. The two highest are not misreadings: sheet 5 (15.6%) is the table
+  recall 99.4% (2026-11-16; since the `<br>` cleanup of 2026-11-27: 1.1%, labor 4.1%,
+  real estate 2.2%). The two highest are not misreadings: sheet 5 (15.6%) is the table
   markup the engine writes (`<br>`, `---`; 0.4% without it), sheet 7 (recall 96.6%)
   misses only the GPO's tiny print-job line (`VerDate ... Jkt ...`). Shadow 0.0%, dark
   0.7%, skewed 0.2-2.6%.

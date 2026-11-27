@@ -1,5 +1,6 @@
-"""Amazon Textract on the same OCR pages as Qwen3-VL (evaluation only; the service
-engine stays BedrockVisionOcr).
+"""Amazon Textract on the same OCR pages as Qwen3-VL. The service reads with Qwen3-VL and
+uses Textract as a check (sdrag.ingest.ocr.CheckedOcr); the text of the LAYOUT output and
+the check's measure are the service's own functions (layout_text, missing_share).
 
 One AnalyzeDocument call (FeatureTypes=["TABLES"]) per page image, rendered exactly as
 ingestion renders it (sdrag.ingest.ocr.render_page, JPEG like the Bedrock engine gets).
@@ -16,7 +17,8 @@ A second call per page with FeatureTypes=["TABLES", "LAYOUT"] gives a third outp
 - textract-layout: lines in the reading order of the LAYOUT blocks (Textract's own
                    reading-order analysis), tables as "| a | b |" rows
 
-``--agree`` then simulates Textract as a check on Qwen3-VL (no new calls): pages where
+``--corpus`` runs the check on every scanned corpus page (Textract's answers go to the
+corpus OCR cache). ``--agree`` then simulates Textract as a check on Qwen3-VL (no new calls): pages where
 the two outputs differ by more than a threshold would be read again.
 
 Raw responses are cached on disk (data/raw/bench/ocr/textract-raw/), keyed by the
@@ -31,7 +33,7 @@ import hashlib
 import json
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -40,7 +42,7 @@ from botocore.config import Config
 from ocr_bench import BENCH, PAGES, PROFILES, norm, out_path, scan_path
 from rapidfuzz.distance import Levenshtein
 
-from sdrag.ingest.ocr import jpeg, render_page
+from sdrag.ingest.ocr import _children, jpeg, layout_text, missing_share, render_page, table_rows
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = BENCH / "textract-raw"
@@ -76,33 +78,13 @@ def analyze(image, features: str = "tables") -> tuple[dict, float]:
 
 def texts(resp: dict) -> dict[str, str]:
     blocks = {b["Id"]: b for b in resp["Blocks"]}
-
-    def children(b, kind="CHILD"):
-        return [i for r in b.get("Relationships", []) if r["Type"] == kind for i in r["Ids"]]
-
     lines = [b for b in resp["Blocks"] if b["BlockType"] == "LINE"]
     plain = "\n".join(b["Text"] for b in lines)
-
-    # words that sit inside each table, and the table as markdown rows
-    word_table: dict[str, int] = {}
-    tables: list[str] = []
-    for t in (b for b in resp["Blocks"] if b["BlockType"] == "TABLE"):
-        cells = [blocks[i] for i in children(t) if blocks[i]["BlockType"] == "CELL"]
-        rows: dict[int, dict[int, str]] = defaultdict(dict)
-        for c in cells:
-            words = [blocks[i] for i in children(c) if blocks[i]["BlockType"] == "WORD"]
-            for w in words:
-                word_table[w["Id"]] = len(tables)
-            rows[c["RowIndex"]][c["ColumnIndex"]] = " ".join(w["Text"] for w in words)
-        width = max((max(r) for r in rows.values()), default=0)
-        tables.append("\n".join(
-            "| " + " | ".join(rows[i].get(j, "") for j in range(1, width + 1)) + " |"
-            for i in sorted(rows)
-        ))  # fmt: skip
+    word_table, tables = table_rows(blocks, resp)  # words inside each table, the table as rows
 
     out, placed = [], set()
     for b in lines:
-        ids = [word_table.get(w) for w in children(b)]
+        ids = [word_table.get(w) for w in _children(b)]
         inside = [i for i in ids if i is not None]
         if inside and len(inside) * 2 >= len(ids):  # a line mostly inside a table
             if inside[0] not in placed:
@@ -112,64 +94,6 @@ def texts(resp: dict) -> dict[str, str]:
         out.append(b["Text"])
     out += [t for i, t in enumerate(tables) if i not in placed]
     return {"textract-lines": plain, "textract-tables": "\n".join(out)}
-
-
-def layout_text(resp: dict) -> str:
-    """Lines in the order of the LAYOUT blocks (nested LAYOUT blocks, e.g. the items of
-    a LAYOUT_LIST, are followed); a LAYOUT_TABLE is written as its TABLE's rows. Lines no
-    layout block covers go last. Each line is written once."""
-    blocks = {b["Id"]: b for b in resp["Blocks"]}
-
-    def children(b):
-        return [i for r in b.get("Relationships", []) if r["Type"] == "CHILD" for i in r["Ids"]]
-
-    word_table: dict[str, int] = {}
-    tables: list[str] = []
-    for t in (b for b in resp["Blocks"] if b["BlockType"] == "TABLE"):
-        rows: dict[int, dict[int, str]] = defaultdict(dict)
-        for c in (blocks[i] for i in children(t) if blocks[i]["BlockType"] == "CELL"):
-            words = [blocks[i] for i in children(c) if blocks[i]["BlockType"] == "WORD"]
-            for w in words:
-                word_table[w["Id"]] = len(tables)
-            rows[c["RowIndex"]][c["ColumnIndex"]] = " ".join(w["Text"] for w in words)
-        width = max((max(r) for r in rows.values()), default=0)
-        tables.append("\n".join(
-            "| " + " | ".join(rows[i].get(j, "") for j in range(1, width + 1)) + " |"
-            for i in sorted(rows)
-        ))  # fmt: skip
-
-    def lines_of(b) -> list[str]:
-        out = []
-        for i in children(b):
-            c = blocks.get(i)
-            if c is None:
-                continue
-            if c["BlockType"] == "LINE":
-                out.append(i)
-            elif c["BlockType"].startswith("LAYOUT_"):
-                out += lines_of(c)
-        return out
-
-    out, done, placed = [], set(), set()
-    for b in resp["Blocks"]:
-        if not b["BlockType"].startswith("LAYOUT_"):
-            continue
-        ids = [i for i in lines_of(b) if i not in done]
-        if not ids:
-            continue
-        done.update(ids)
-        if b["BlockType"] == "LAYOUT_TABLE":
-            inside = {word_table[w] for i in ids for w in children(blocks[i]) if w in word_table}
-            new = sorted(inside - placed)
-            if new:
-                placed.update(new)
-                out += [tables[k] for k in new]
-                continue
-        out += [blocks[i]["Text"] for i in ids]
-    # every line is written once; a TABLE outside any LAYOUT_TABLE stays as its lines
-    # (appending it too wrote those words twice)
-    out += [b["Text"] for b in resp["Blocks"] if b["BlockType"] == "LINE" and b["Id"] not in done]
-    return "\n".join(out)
 
 
 def all_texts(image) -> tuple[dict[str, str], float, float]:
@@ -296,10 +220,9 @@ def agree_rows() -> list[dict]:
     rows = []
     for name, q, t, truth in pages:
         qn, tn = norm(q), norm(t)
-        common = sum((Counter(qn) & Counter(tn)).values())
         rows.append({"page": name, "qwen_cer": scores(q, truth)["cer"],
                      "diff": Levenshtein.distance(qn, tn) / max(len(qn), len(tn), 1),
-                     "only": 1 - common / len(qn) if qn else 0.0})  # fmt: skip
+                     "only": missing_share(q, t)})  # the service's check (CheckedOcr)  # fmt: skip
     return rows
 
 
@@ -325,7 +248,53 @@ def agree_table(bad: float = 0.05, thresholds=(0.03, 0.05, 0.10)) -> list[str]:
     return lines + [""]
 
 
+def corpus_check(threshold: float = 0.05) -> list[str]:
+    """The service's check (CheckedOcr) on every scanned corpus page: the cached Qwen3-VL
+    text the index was built from against Textract, read through the OCR cache the
+    corpus ingest uses (so the deploy's ingest finds Textract's answers there too)."""
+    from evalset import OCR_CACHE
+
+    from sdrag.common.config import settings
+    from sdrag.ingest.corpus import load_corpus
+    from sdrag.ingest.ocr import CachedOcr, TextractOcr
+
+    class NoCall:  # the index's Qwen3-VL text must already be cached
+        name = settings.ocr_model
+
+        def transcribe(self, image):
+            raise RuntimeError("Qwen3-VL page not in the OCR cache")
+
+    qwen = CachedOcr(NoCall(), OCR_CACHE)
+    textract = CachedOcr(TextractOcr("ap-southeast-2"), OCR_CACHE)
+    jobs = []
+    for d in load_corpus(ROOT / "data"):
+        if d.file_type == "scan":
+            truth = json.loads(d.path.with_suffix(".truth.json").read_text("utf-8"))
+            jobs += [(d, int(p), truth[p]) for p in sorted(truth, key=int)]
+
+    def one(job):
+        d, page, truth = job
+        image = render_page(d.path, page)
+        q, t = qwen.transcribe(image).text, textract.transcribe(image).text
+        return d.id, page, missing_share(q, t), scores(q, truth)["cer"], scores(t, truth)["cer"]
+
+    with ThreadPoolExecutor(4) as pool:
+        rows = list(pool.map(one, jobs))
+    flagged = [r for r in rows if r[2] > threshold]
+    lines = [f"### The check on the corpus scans ({len(rows)} pages of {len({r[0] for r in rows})} documents)", "",
+             f"Flagged (Qwen3-VL characters Textract lacks > {threshold:.0%}): {len(flagged)} pages.", ""]  # fmt: skip
+    if flagged:
+        lines += ["| page | lacks | Qwen3-VL CER | Textract CER |", "|---|---|---|---|"]
+        lines += [f"| {d} p{p} | {m:.1%} | {qc:.1%} | {tc:.1%} |" for d, p, m, qc, tc in flagged]
+    top = sorted(rows, key=lambda r: -r[2])[:5]
+    lines += ["", "Highest shares: " + ", ".join(f"{d} p{p} {m:.1%}" for d, p, m, _, _ in top), ""]
+    return lines
+
+
 def main() -> None:
+    if "--corpus" in sys.argv:
+        print("\n".join(corpus_check()))
+        return
     n = len(bench_jobs()) + len(json.loads((REAL / "plan.json").read_text("utf-8")))
     print(
         f"{n} pages; new calls are TABLES+LAYOUT (~$0.015 + $0.004 per page): about "

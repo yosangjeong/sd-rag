@@ -43,7 +43,7 @@ from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat
 from sdrag.common.logs import log, user_hash
 from sdrag.common.search_client import make_client
-from sdrag.ingest.ocr import BedrockVisionOcr
+from sdrag.ingest.ocr import build_ocr
 from sdrag.retrieval.embed import TitanEmbedder
 from sdrag.retrieval.index import PUBLIC, create_index, list_documents
 from sdrag.service import RagService
@@ -61,7 +61,7 @@ def deps() -> SimpleNamespace:
     chat = BedrockChat(settings.llm_model, settings.aws_region, read_timeout=30, attempts=3)
     store = DynamoStore(settings.table, settings.aws_region) if settings.table else MemoryStore()
     d = SimpleNamespace(client=client, embedder=embedder, chat=chat, store=store,
-                        index=settings.index, ocr=BedrockVisionOcr(settings.ocr_model, settings.aws_region),
+                        index=settings.index, ocr=build_ocr(settings.ocr_model, settings.aws_region, settings.ocr_check),
                         service=RagService(client, settings.index, embedder, chat))  # fmt: skip
     if settings.upload_queue_url:
         from sdrag.worker.sqs import SqsQueue

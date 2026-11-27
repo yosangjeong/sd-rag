@@ -117,6 +117,7 @@ class ParsedDocument:
     blocks: list[Block] = field(default_factory=list)
     needs_ocr_pages: list[int] = field(default_factory=list)  # no text, not (yet) OCR'd
     ocr_pages: list[int] = field(default_factory=list)  # text came from OCR
+    ocr_replaced_pages: list[int] = field(default_factory=list)  # OCR check kept Textract's text
 
 
 class HeadingTracker:
@@ -782,7 +783,10 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
         for i, res in ocr_pages(path, blank, ocr, progress=progress).items():
             raw[i - 1] = res.text
             doc.ocr_pages.append(i)
+            if res.replaced:
+                doc.ocr_replaced_pages.append(i)
         doc.ocr_pages.sort()
+        doc.ocr_replaced_pages.sort()
     kept = strip_running_lines(raw)
     pages: list[tuple[int, list[tuple[str, object]]]] = []
     with pdfplumber.open(path, password="") as plumber:

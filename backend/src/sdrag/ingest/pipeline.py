@@ -23,7 +23,7 @@ from sdrag.common.config import settings
 from sdrag.common.search_client import make_client
 from sdrag.ingest.chunk import STRATEGIES, embed_input
 from sdrag.ingest.corpus import CorpusDoc, load_corpus
-from sdrag.ingest.ocr import BedrockVisionOcr, CachedOcr, OcrEngine
+from sdrag.ingest.ocr import OcrEngine, build_ocr
 from sdrag.ingest.parse import parse
 from sdrag.retrieval.embed import CachedEmbedder, Embedder, TitanEmbedder
 from sdrag.retrieval.index import PUBLIC, bulk_index, create_index, to_source
@@ -83,9 +83,8 @@ def main() -> None:
     embedder: Embedder = titan
     if settings.embed_cache_dir:
         embedder = CachedEmbedder(titan, Path(settings.embed_cache_dir))
-    ocr: OcrEngine = BedrockVisionOcr(settings.ocr_model, settings.aws_region)
-    if settings.ocr_cache_dir:
-        ocr = CachedOcr(ocr, Path(settings.ocr_cache_dir))
+    cache = Path(settings.ocr_cache_dir) if settings.ocr_cache_dir else None
+    ocr = build_ocr(settings.ocr_model, settings.aws_region, settings.ocr_check, cache)
 
     create_index(client, index, settings.embed_dims, recreate=a.recreate)
     if a.replace_public:  # a re-index in service: chunks a new chunking no longer makes go too

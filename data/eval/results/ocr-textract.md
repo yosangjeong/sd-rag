@@ -102,14 +102,41 @@ when the two engines disagree, which of Qwen3-VL's bad pages (CER over 5%) would
 | real sheet 6 | 0.2% | 24.7% | 0.2% |
 | real sheet 3 | 0.0% | 5.5% | 0.3% |
 
-- **Order-insensitive disagreement ("Qwen3-VL characters Textract lacks") finds invented
-  text**: over 5% it flags one page, real-scan sheet 5, the page where Qwen3-VL wrote 13.5%
-  of characters that are not on the page, and no good page.
+- **Order-insensitive disagreement ("Qwen3-VL characters Textract lacks") flags one page**:
+  over 5%, real-scan sheet 5, and no good page. Its 13.5% "extra" turned out to be markup,
+  not invented words: Qwen3-VL writes a line break inside a table cell as HTML `<br>`
+  (see below).
 - **It does not find Qwen3-VL's other high-CER pages**: those are English tables and a
   three-column page where Textract reads the same characters (disagreement under 2%); their
   CER comes from the order against the source text, which Textract shares.
 - **Edit-distance disagreement flags Korean table pages Qwen3-VL read correctly** (sheet 6,
   p71: 25-30% apart, Qwen3-VL CER under 1%): there Textract is the one out of order.
-- So the useful check is narrow: Textract as a detector of invented characters, a second
-  read when more than a few percent of Qwen3-VL's characters are not in Textract's output.
-  It costs one Textract call per scanned page (2-6 s, run alongside).
+- So the useful check is narrow: a second read that notices when more than a few percent of
+  Qwen3-VL's characters are not in Textract's output. It costs one Textract call per
+  scanned page (2-6 s, run alongside).
+
+## `<br>` in table cells, and the check in the service (2026-11-27)
+
+Adding the check to the service (`ingest/ocr.py` `CheckedOcr`) and running it on the
+corpus scans (`textract_bench.py --corpus`, 78 pages, Textract answers kept in the corpus
+OCR cache) flagged one page, kr-equal-employment-dec p14 (17.9% of Qwen3-VL's characters
+missing from Textract's text; Qwen3-VL CER 21.8%, Textract 0.0%). Its extra characters are
+37 `<br>` tags inside table cells, the same as real-scan sheet 5 (10 tags). Qwen3-VL wrote
+`<br>` on 5 of the 78 corpus pages (kr-minimum-wage-rul p5, kr-equal-employment-dec p13,
+p14, p16, kr-commercial-lease-dec p7) and on real-scan sheet 5.
+
+`tidy` now turns `<br>` into a space inside a `| a | b |` row and a line break elsewhere,
+after the cache (cached answers stay as the model gave them). On the cleaned text:
+
+| | before | after |
+|---|---|---|
+| real iPhone scan, CER / extra | 2.8% / 1.6% | **1.1% / 0.1%** (sheet 5: 15.6% -> 0.4%) |
+| corpus scans, labor CER | 4.8% | 4.1% |
+| corpus scans, real estate CER | 2.4% | 2.2% |
+| pages the check flags (33 bench + 78 corpus) | 2 (both the `<br>` pages) | **0** (highest share 4.1%) |
+
+So on these 111 pages the check found no invented text: what looked invented was the
+engine's markup. The check stays on in the service (`SDRAG_OCR_CHECK`) as a guard against
+the failure a generative reader can have; its 5% threshold was chosen on 33 pages.
+Three gold quotes of `test.jsonl` (g0062, g0276, g0466) had copied the `<br>` tags and were
+cleaned the same way; every set still loads and anchors.
