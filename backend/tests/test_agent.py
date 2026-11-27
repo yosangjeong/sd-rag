@@ -65,7 +65,7 @@ class FakeConverse:
                                     "input": {"query": "해고", "method": "keyword"}}}]  # fmt: skip
         else:
             content = [{"toolUse": {"toolUseId": "t2", "name": "finish",
-                                    "input": {"chunk_ids": ["b", "zzz"]}}}]  # fmt: skip
+                                    "input": {"chunk_ids": ["b", "zzz", "b"]}}}]  # fmt: skip
         return {"output": {"message": {"role": "assistant", "content": content}},
                 "usage": {"inputTokens": 100, "outputTokens": 10}}  # fmt: skip
 
@@ -82,7 +82,7 @@ class FakeSearcher:
 def test_agent_returns_picked_chunks_first_then_the_rest():
     searcher = FakeSearcher()
     res = SearchAgent(FakeConverse(), "m", searcher, []).run("해고 예고?")
-    assert res.finished and res.picked == ["b"]  # "zzz" was never retrieved
+    assert res.finished and res.picked == ["b"]  # "zzz" was never retrieved; "b" once
     # the agent's own query is there for the reranker's passage windows, once
     assert searcher.last_queries[0] == "해고 예고?"
     assert len(searcher.last_queries) == len(set(searcher.last_queries)) > 1

@@ -9,7 +9,9 @@ the answer often says them differently from the source:
   US statutes write numbers in words ("one thousand eight hundred and forty hours",
   "one and one-half times").
 - Fractions and percent: "100분의 25" is 25%, and "1분의 100" is 100 (times).
-- Units: 2 weeks is 14 days, 1 year is 12 months.
+- Units: 2 weeks is 14 days, 1 year is 12 months, and back: 90 days is 3 months
+  (30-day months, 365-day years, 52-week years; lenient, see below).
+- "$7.25" is a dollar amount without the word; "3~5일" checks 3 days as well as 5.
 
 Only quantities are checked: a number with a unit (days, months, years, hours, weeks,
 percent, won, dollars, times, persons, years of age) or a Korean fraction. Article
@@ -49,6 +51,15 @@ _KO_NUM = r"\d[\d,]*(?:\.\d+)?(?:\s*(?:\d[\d,]*\s*)?[천백만억]){0,6}(?:\s*\d
 RE_FRACTION = re.compile(rf"({_KO_NUM})\s*분의\s*({_KO_NUM})")
 RE_RATIO = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(%|퍼센트|percent|배|times)", re.IGNORECASE)
 RE_DIGITS = re.compile(r"(?<![\d.])\d[\d,]*(?:\.\d+)?")
+# "$7.25", "$1.5 million": a dollar amount written with the sign only
+RE_DOLLAR = re.compile(
+    r"\$\s?(\d[\d,]*(?:\.\d+)?)(?:\s*(thousand|million|billion)\b)?", re.IGNORECASE
+)
+# "2억", "5천만" with no unit after it (a question's "보증금 2억에"): read on the sources'
+# side only, where being lenient cannot flag anything
+RE_KO_BARE = re.compile(
+    r"\d[\d,]*(?:\.\d+)?\s*[억만](?:\s*(?:\d[\d,]*\s*)?[억천백만]){0,6}(?:\s*\d[\d,]*)?"
+)
 
 # the units an answer's figure must carry to be checked, and how to convert them
 # a unit that starts a longer word is not a unit: 3주택자, 2회사, 5인증, 10세대, 3건물
@@ -72,6 +83,8 @@ RE_FIGURE = re.compile(
     rf"(?P<unit>(?:{_UNITS_EN})\b|(?:{_UNITS_KO}))",
     re.IGNORECASE,
 )
+RE_RANGE = re.compile(rf"(\d[\d,]*(?:\.\d+)?)\s*[~∼～]\s*(\d[\d,]*(?:\.\d+)?)\s*({_UNITS_KO}|(?:{_UNITS_EN})\b)",
+                      re.IGNORECASE)  # fmt: skip
 RE_WORD_FIGURE = re.compile(rf"(?P<num>{RE_WORDS.pattern})[\s-]+(?P<unit>(?:{_UNITS_EN})\b)",
                             re.IGNORECASE)  # fmt: skip
 # numbers that are not quantities: article and list references
@@ -85,10 +98,10 @@ RE_DATE = re.compile(r"\d{4}\s*년(?:\s*\d{1,2}\s*월(?:\s*\d{1,2}\s*일)?)?|\d{
                      r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}")  # fmt: skip
 RE_LIST = re.compile(r"(?m)^\s*\d+\.(?!\d)|\(\d+\)")
 _CONVERT = {
-    "week": [7],
-    "year": [12, 365],
+    "week": [7, 1 / 52],
+    "year": [12, 365, 52],
     "month": [1 / 12, 30],
-    "day": [24, 1 / 7],
+    "day": [24, 1 / 7, 1 / 30, 1 / 365],
     "hour": [1 / 24],
 }
 _UNIT_KIND = {
@@ -162,6 +175,8 @@ def source_values(text: str) -> tuple[set[float], set[float]]:
         vals.add(round(_num(m.group()), 6))
     for m in RE_KO_AMOUNT.finditer(rest):
         vals.add(round(korean_amount(m.group()), 6))
+    for m in RE_KO_BARE.finditer(rest):
+        vals.add(round(korean_amount(m.group()), 6))
     for m in RE_SCALED.finditer(rest):  # 50만원 -> 500000, 1.5 million won -> 1500000
         vals.add(round(_num(m.group(1)) * _SCALE[m.group(2).lower()], 6))
     for m in RE_RATIO.finditer(rest):
@@ -196,6 +211,12 @@ def figures(text: str) -> list[tuple[str, list[float], bool]]:
         raw = m.group().strip() + (unit.group(1) if unit else "")
         out.append((raw, [round(korean_amount(m.group()), 6)], False))
     rest = RE_KO_AMOUNT.sub(" ", rest)
+    for m in RE_DOLLAR.finditer(rest):
+        v = _num(m.group(1)) * (_SCALE[m.group(2).lower()] if m.group(2) else 1)
+        out.append((m.group().strip(), [round(v, 6)], False))
+    rest = RE_DOLLAR.sub(" ", rest)
+    # a range's lower bound carries the unit of its upper one: "3~5일" is 3 days too
+    rest = RE_RANGE.sub(lambda m: f"{m.group(1)}{m.group(3)} ~ {m.group(2)}{m.group(3)}", rest)
     for m in [*RE_FIGURE.finditer(rest), *RE_WORD_FIGURE.finditer(rest)]:
         raw = m.group("num")
         if raw[0].isalpha() and rest[: m.start()].rstrip()[-1:].isdigit():

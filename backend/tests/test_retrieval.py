@@ -234,3 +234,23 @@ def test_definitions_search_only_definition_articles():
     )
     f = client.bodies[0]["query"]["bool"]["filter"]
     assert any("wildcard" in str(x) and "(정의*" in str(x) and " 정의*" in str(x) for x in f)
+
+
+def test_reranker_reads_numbers_as_strings_and_a_cut_off_reply():
+    from sdrag.common.llm import Completion
+    from sdrag.retrieval.rerank import LlmReranker
+
+    class Chat:
+        name = "fake"
+
+        def __init__(self, text):
+            self.text = text
+
+        def complete(self, system, user, max_tokens=1024, temperature=0.0):
+            return Completion(self.text, 1, 1, "end_turn")
+
+    hits = [Hit(f"c{i}", 1.0, {"text": f"t{i}"}) for i in range(1, 5)]
+    order = lambda text: [h.chunk_id for h in LlmReranker(Chat(text)).rerank("q", hits)]
+    assert order('{"ranking": ["3", "1"]}') == ["c3", "c1", "c2", "c4"]
+    assert order('{"ranking": [4, 2, 1') == ["c4", "c2", "c1", "c3"]  # max_tokens cut it
+    assert order('{"ranking": [true, 2]}') == ["c2", "c1", "c3", "c4"]  # true is not 1

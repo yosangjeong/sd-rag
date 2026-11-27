@@ -46,3 +46,15 @@ def test_long_runs_of_scale_words_stay_fast():
 
 def test_a_unit_that_starts_a_word_is_not_a_unit():
     assert unsupported("3주택자와 2회사", ["없음"]) == []
+
+
+def test_dollar_signs_conversions_back_bare_amounts_and_ranges():
+    from sdrag.common.numbers import unsupported
+
+    assert unsupported("The minimum wage is $7.50 per hour", ["$7.25 an hour"]) == ["$7.50"]
+    assert unsupported("The minimum wage is $7.25 per hour", ["$7.25 an hour"]) == []
+    assert unsupported("90일 이내에", ["3개월 이내"]) == []  # days back to months
+    assert unsupported("52주", ["1년"]) == [] and unsupported("365일", ["1년"]) == []
+    # an amount the question gives without a unit may be repeated with one
+    assert unsupported("2억원까지 보호됩니다", ["보증금"], "보증금 2억에 계약했는데") == []
+    assert unsupported("2~5일", ["5일 이내"]) == ["2일"]  # the lower bound is checked too

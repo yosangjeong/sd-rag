@@ -28,6 +28,7 @@ two-column pages across both columns line by line.
 import logging
 import re
 import zipfile
+import zlib
 from collections import Counter
 from dataclasses import dataclass, field
 from itertools import pairwise
@@ -51,6 +52,7 @@ logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 HP = "{http://www.hancom.co.kr/hwpml/2011/paragraph}"
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+MC = "{http://schemas.openxmlformats.org/markup-compatibility/2006}"
 
 # 제4조(해고 예고의 예외...) / 제12조의3(...) at the start of a paragraph or line. The
 # parenthesised title is required: a wrapped line can start with "제26조에 따른 ..."
@@ -135,20 +137,26 @@ class HeadingTracker:
         head = text.lstrip()[:80]
         m = RE_ANNEX.search(head)
         if m and head.startswith(("[별표", "■")):
-            self.annex, self.article = re.sub(r"\s+", " ", m.group(0)), None
+            # annexes follow the addenda in a statute: what comes after is not 부칙
+            self.annex, self.article, self.in_addenda = re.sub(r"\s+", " ", m.group(0)), None, False
             return True
         return False
 
     def update(self, text: str) -> None:
-        if self.update_annex(text) or self.annex is not None:
+        if self.update_annex(text):
             return
         if RE_ADDENDA.match(text):
-            self.in_addenda, self.article = True, "부칙"
+            self.annex, self.in_addenda, self.article = None, True, "부칙"
             return
         m = RE_ARTICLE.match(text)
         if m:
+            # an article after an annex starts a new part (a second statute in an upload);
+            # without the reset every later block kept the annex's heading
             article = re.sub(r"\s+", "", m.group(1)) + m.group(2)
+            self.annex = None
             self.article = f"부칙 {article}" if self.in_addenda else article
+            return
+        if self.annex is not None:  # annex body: its numbered items are not headings
             return
         lines = text.split("\n")
         m = RE_SECTION.match(lines[0])
@@ -176,7 +184,9 @@ class HeadingTracker:
 
     def outline(self, text: str, level: int) -> None:
         """A heading marked by the document's own styles (DOCX "Heading 2", "Title"),
-        for documents that are not statutes: the heading is the path of open levels."""
+        for documents that are not statutes: the heading is the path of open levels. It
+        closes an open annex and addenda (a later chapter of a guide is neither)."""
+        self.annex, self.in_addenda = None, False
         self.outline_path = self.outline_path[: max(level - 1, 0)]
         self.outline_path.append(re.sub(r"\s+", " ", text)[:100])
         self.article = " / ".join(self.outline_path)
@@ -197,7 +207,9 @@ def _hwpx_t(t_el) -> str:
     parts = [t_el.text or ""]
     for child in t_el:
         name = etree.QName(child).localname
-        parts.append("\t" if name == "tab" else "\n" if name == "lineBreak" else "")
+        # fixed-width / non-breaking spaces are spaces: "" glued the words around them
+        space = " " if name in ("fwSpace", "nbSpace") else ""
+        parts.append("\t" if name == "tab" else "\n" if name == "lineBreak" else space)
         parts.append(child.tail or "")
     return "".join(parts)
 
@@ -210,6 +222,18 @@ def _hwpx_cell_text(tc) -> str:
         if line.strip():
             texts.append(line.strip())
     return " ".join(texts)
+
+
+def _hwpx_sublists(el) -> list:
+    """The outermost subLists inside a drawn object (a text box's drawText, a group of
+    shapes, a picture's caption), in document order; nested ones are read by walk."""
+    out = []
+    for child in el:
+        if etree.QName(child).localname == "subList":
+            out.append(child)
+        else:
+            out += _hwpx_sublists(child)
+    return out
 
 
 def _hwpx_table(tbl) -> list[list[str]]:
@@ -234,11 +258,16 @@ def _hwpx_table(tbl) -> list[list[str]]:
 
 def parse_hwpx(path: Path) -> ParsedDocument:
     doc = ParsedDocument(str(path), "hwpx")
-    z = zipfile.ZipFile(path)
-    names = sorted(
-        (n for n in z.namelist() if re.match(r"Contents/section\d+\.xml$", n)),
-        key=lambda n: int(re.search(r"\d+", n).group()),
-    )
+    with zipfile.ZipFile(path) as z:
+        names = sorted(
+            (n for n in z.namelist() if re.match(r"Contents/section\d+\.xml$", n)),
+            key=lambda n: int(re.search(r"\d+", n).group()),
+        )
+        try:
+            sections = [etree.fromstring(z.read(n)) for n in names]
+        except (etree.XMLSyntaxError, zipfile.BadZipFile, EOFError, zlib.error) as e:
+            # a cut or damaged section; the raw lxml / zip error meant nothing to the user
+            raise UnreadableFile("파일이 손상되어 읽을 수 없습니다 (HWPX 본문 오류)") from e
     heads = HeadingTracker()
 
     def add(kind, text, rows=None):
@@ -269,12 +298,20 @@ def parse_hwpx(path: Path) -> ParsedDocument:
                             rows = _hwpx_table(child)
                             if rows and any(any(r) for r in rows):  # an empty table: nothing
                                 add("table", table_text(rows), rows)
+                    elif tag not in ("ctrl", "secPr") and (lists := _hwpx_sublists(child)):
+                        # text boxes (hp:rect > hp:drawText) and other drawn objects keep
+                        # their text in a subList: read in place, like a layout box
+                        if "".join(buf).strip():
+                            add("text", "".join(buf).strip())
+                        buf = []
+                        for sub in lists:
+                            walk(sub.findall(f"{HP}p"))
                     # ctrl (header/footer, page numbers), secPr, pictures: skipped
             if "".join(buf).strip():
                 add("text", "".join(buf).strip())
 
-    for name in names:
-        walk(etree.fromstring(z.read(name)).findall(f"{HP}p"))
+    for sec in sections:
+        walk(sec.findall(f"{HP}p"))
     return doc
 
 
@@ -300,33 +337,74 @@ def _docx_cell_text(cell) -> str:
     by "; "): python-docx's cell.text leaves nested tables out, and their values were
     lost (a figure table inside a summary table)."""
     parts = []
-    for el in cell._tc.iterchildren():
-        if el.tag == f"{W}p":
-            parts.append(Paragraph(el, cell).text)
-        elif el.tag == f"{W}tbl":
-            inner = Table(el, cell)
-            parts.append(
-                "; ".join(" · ".join(_docx_cell_text(c) for c in r.cells) for r in inner.rows)
-            )
+
+    def visit(container):
+        for el in container.iterchildren():
+            if el.tag == f"{W}p":  # as body paragraphs: tracked insertions count
+                parts.append(_docx_para_text(el))
+            elif el.tag == f"{W}tbl":
+                inner = Table(el, cell)
+                parts.append(
+                    "; ".join(" · ".join(_docx_cell_text(c) for c in r.cells) for r in inner.rows)
+                )
+            elif el.tag in (f"{W}sdt", f"{W}customXml"):  # a content control in the cell
+                content = el.find(f"{W}sdtContent") if el.tag == f"{W}sdt" else el
+                if content is not None:
+                    visit(content)
+
+    visit(cell._tc)
     return "\n".join(p for p in parts if p.strip()).strip()
 
 
 def _docx_para_text(p) -> str:
     """A paragraph's text as Word shows it with changes accepted: runs inside tracked
     insertions (w:ins), content controls and smart tags count (python-docx's
-    Paragraph.text skips them); deleted text (w:delText) does not."""
-    out = []
-    for node in p.iter(f"{W}t", f"{W}tab", f"{W}br", f"{W}cr"):
-        if node.tag == f"{W}t":
-            out.append(node.text or "")
-        else:
-            out.append("\t" if node.tag == f"{W}tab" else "\n")
-    return "".join(out)
+    Paragraph.text skips them); deleted text (w:delText) does not.
+
+    A text box (w:txbxContent) is stored twice, as a DrawingML mc:Choice and a VML
+    mc:Fallback: only the Choice is read (both made "상자글상자글"), and its paragraphs
+    go on lines of their own after the paragraph's text, not glued to it."""
+    out: list[str] = []
+    boxes: list[str] = []
+
+    def visit(el):
+        for node in el:
+            if node.tag == f"{MC}Fallback":
+                continue
+            if node.tag == f"{W}txbxContent":
+                # its paragraphs, also those in a table in the box (not nested boxes')
+                boxes.extend(
+                    t
+                    for q in node.iter(f"{W}p")
+                    if not any(a.tag == f"{W}p" for a in _ancestors(q, node))
+                    and (t := _docx_para_text(q).strip())
+                )
+            elif node.tag == f"{W}t":
+                out.append(node.text or "")
+            elif node.tag in (f"{W}tab", f"{W}br", f"{W}cr"):
+                out.append("\t" if node.tag == f"{W}tab" else "\n")
+            else:
+                visit(node)
+
+    visit(p)
+    return "\n".join(["".join(out), *boxes]) if boxes else "".join(out)
+
+
+def _ancestors(el, stop):
+    """el's ancestors up to (not including) stop."""
+    a = el.getparent()
+    while a is not None and a is not stop:
+        yield a
+        a = a.getparent()
 
 
 def parse_docx(path: Path) -> ParsedDocument:
     doc = ParsedDocument(str(path), "docx")
-    d = Document(str(path))
+    try:
+        d = Document(str(path))
+    except (etree.XMLSyntaxError, zipfile.BadZipFile, EOFError, zlib.error, KeyError) as e:
+        # damaged XML or a missing part; the raw error type meant nothing to the user
+        raise UnreadableFile("파일이 손상되어 읽을 수 없습니다 (DOCX 본문 오류)") from e
     heads = HeadingTracker()
 
     def walk(container_el, parent):
@@ -340,7 +418,9 @@ def parse_docx(path: Path) -> ParsedDocument:
                 text = _docx_para_text(el).strip()
                 if text:
                     heads.update(text)
-                    if (level := _docx_heading_level(para)) is not None and heads.annex is None:
+                    # a styled heading closes an open annex, unless it is the annex's own title
+                    level = _docx_heading_level(para)
+                    if level is not None and not heads.update_annex(text):
                         heads.outline(text, level)
                     doc.blocks.append(Block("text", text, len(doc.blocks), heading=heads.current))
             elif el.tag == f"{W}tbl":
@@ -409,7 +489,10 @@ def strip_running_lines(pages: list[str]) -> list[str]:
       footer in the corpus (GPO's "VerDate ...") is on every page.
 
     At least 3 pages: in a 5-page statute two "[별표 N] 삭제 <...>" pages match too.
-    Position-bound so that body lines that merely recur mid-page are never touched."""
+    Position-bound, so body lines that recur mid-page are kept; a body line that recurs
+    at an edge can still go. Two guards for that: a table row ("| ... |", OCR'd pages:
+    a scanned table's header row repeats on every page) is never a running line, and a
+    page whose every line would go is kept whole (short pages of one repeated form)."""
     if len(pages) < 3:
         return pages
     lines = [[ln for ln in p.splitlines() if ln.strip()] for p in pages]
@@ -426,8 +509,11 @@ def strip_running_lines(pages: list[str]) -> list[str]:
             pos % len(ls)
             for pos in EDGE
             if -len(ls) <= pos < len(ls)
+            and not ls[pos].lstrip().startswith("|")
             and counts[(pos, _edge_key(ls[pos]))] >= max(3, share[pos] * len(pages))
         }
+        if len(drop) == len(ls):  # nothing left: these were the page's body, not a header
+            drop = set()
         out.append("\n".join(ln for j, ln in enumerate(ls) if j not in drop))
     return out
 
@@ -441,8 +527,9 @@ def dehyphenate(text: str) -> str:
     return re.sub(r"(\w) ?-\n(?=[a-z])", r"\1", text)
 
 
-# a line inside a table cell that starts a list item: "1. 가설공사", "가. 굴착", "※ 비고"
-RE_CELL_ITEM = re.compile(r"^(\d+\.|[가-하]\.|\d+\)|[가-하]\)|\(\d+\)|[※ㆍ·-])")
+# a line inside a table cell that starts a list item: "1. 가설공사", "가. 굴착", "※ 비고",
+# "① 간담도계" (without ① it was glued: "진찰① 간담도계")
+RE_CELL_ITEM = re.compile(r"^([①-⑳]|\d+\.|[가-하]\.|\d+\)|[가-하]\)|\(\d+\)|[※ㆍ·-])")
 
 
 def _pdf_cell(cell: str | None) -> str:
@@ -762,6 +849,14 @@ def _open_pdf(path: Path) -> PdfReader:
         raise UnreadableFile(f"손상되었거나 끝까지 받지 못한 PDF입니다 ({type(e).__name__})") from e
 
 
+def _plumber(path: Path):
+    """pdfplumber's reader; pdfminer can refuse a file pypdf accepted."""
+    try:
+        return pdfplumber.open(path, password="")
+    except Exception as e:
+        raise UnreadableFile(f"손상되었거나 끝까지 받지 못한 PDF입니다 ({type(e).__name__})") from e
+
+
 def _pdf_page(i, orig, text, page, blank, rotated, doc) -> list[tuple[str, object]] | None:
     """One page's parts for parse_pdf, or None for a page with no text (recorded)."""
     if not orig.strip() or (i in blank and i not in doc.ocr_pages):
@@ -787,13 +882,16 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
     doc = ParsedDocument(str(path), "pdf")
     heads = HeadingTracker()
     reader = _open_pdf(path)
-    raw = [page.extract_text() or "" for page in reader.pages]
+    try:  # a damaged content stream fails only here, after _open_pdf's checks
+        raw = [page.extract_text() or "" for page in reader.pages]
+    except Exception as e:
+        raise UnreadableFile(f"손상되었거나 끝까지 받지 못한 PDF입니다 ({type(e).__name__})") from e
     rotated = {i for i, page in enumerate(reader.pages, start=1) if page.rotation % 360}
     blank = [i for i, t in enumerate(raw, start=1) if not t.strip()]
     if ocr is not None:
         # a scan stamped with a little text ("Scanned with CamScanner", a page number,
         # a fax header) is a scan too: OCR it (no corpus page qualifies, 2026-11-16)
-        with pdfplumber.open(path, password="") as plumber:
+        with _plumber(path) as plumber:
             stamped = set()
             for i, (t, page) in enumerate(zip(raw, plumber.pages), 1):
                 if t.strip() and _stamped_scan(t, page):
@@ -817,7 +915,7 @@ def parse_pdf(path: Path, ocr: OcrEngine | None = None, progress=None) -> Parsed
         doc.ocr_replaced_pages.sort()
     kept = strip_running_lines(raw)
     pages: list[tuple[int, list[tuple[str, object]]]] = []
-    with pdfplumber.open(path, password="") as plumber:
+    with _plumber(path) as plumber:
         for i, (orig, text, page) in enumerate(zip(raw, kept, plumber.pages), start=1):
             try:
                 parts = _pdf_page(i, orig, text, page, blank, rotated, doc)

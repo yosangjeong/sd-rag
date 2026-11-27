@@ -152,7 +152,11 @@ def test_running_headers_and_footers_are_dropped_by_position():
 
 def test_body_lines_repeating_at_page_ends_are_kept():
     # a fine table running over pages 4-7 of 10 ends every page with an amount
-    pages = [f"법제처 {i} 국가법령정보센터\n본문 {i}쪽\n가나다\n라마바" for i in range(1, 11)]
+    # (each page has a line of its own: a page whose every line repeats is kept whole)
+    pages = [
+        f"법제처 {i} 국가법령정보센터\n본문 {i}쪽\n제{i}조 {'가나다라마바사아자차'[i - 1]}\n가나다\n라마바"
+        for i in range(1, 11)
+    ]
     for i, amount in zip(range(3, 7), ("500만원", "300만원", "500만원", "200만원")):
         pages[i] += f"\n{amount}"
     out = strip_running_lines(pages)
@@ -481,3 +485,132 @@ def test_docx_empty_table_is_dropped_as_in_hwpx(tmp_path):
     d.add_table(rows=2, cols=3)  # a blank form's grid
     d.save(tmp_path / "form.docx")
     assert [b.kind for b in parse(tmp_path / "form.docx").blocks] == ["text"]
+
+
+# ---------- review fixes (2026-11-28) ----------
+
+
+def _docx_with_body_xml(path, xml):
+    """A DOCX whose body gets `xml` (WordprocessingML with w:, mc:, wps: prefixes)."""
+    from lxml import etree
+
+    d = Document()
+    ns = (
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+        'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" '
+        'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" '
+        'xmlns:v="urn:schemas-microsoft-com:vml"'
+    )
+    frag = etree.fromstring(f"<w:root {ns}>{xml}</w:root>")
+    body = d.element.body
+    for el in list(frag):
+        body.insert(len(body) - 1, el)  # before w:sectPr
+    d.save(path)
+
+
+def test_docx_cells_read_tracked_insertions_and_content_controls(tmp_path):
+    cell = "<w:tc><w:p><w:ins><w:r><w:t>{}</w:t></w:r></w:ins></w:p>{}</w:tc>"
+    sdt = "<w:sdt><w:sdtContent><w:p><w:r><w:t>(월 기준)</w:t></w:r></w:p></w:sdtContent></w:sdt>"
+    xml = (
+        "<w:tbl><w:tr>"
+        + cell.format("급여", "")
+        + cell.format("2,000,000원", sdt)
+        + "</w:tr></w:tbl>"
+    )
+    _docx_with_body_xml(tmp_path / "c.docx", xml)
+    assert parse(tmp_path / "c.docx").blocks[0].rows == [["급여", "2,000,000원\n(월 기준)"]]
+
+
+def test_docx_text_box_is_read_once_and_kept_apart(tmp_path):
+    box = "<w:txbxContent><w:p><w:r><w:t>상자글</w:t></w:r></w:p></w:txbxContent>"
+    xml = (
+        "<w:p><w:r><w:t>본문</w:t></w:r><w:r><mc:AlternateContent>"
+        f"<mc:Choice Requires='wps'><w:drawing><wps:txbx>{box}</wps:txbx></w:drawing></mc:Choice>"
+        f"<mc:Fallback><w:pict><v:textbox>{box}</v:textbox></w:pict></mc:Fallback>"
+        "</mc:AlternateContent></w:r></w:p>"
+    )
+    _docx_with_body_xml(tmp_path / "b.docx", xml)
+    assert [b.text for b in parse(tmp_path / "b.docx").blocks] == ["본문\n상자글"]
+
+
+def test_hwpx_text_boxes_and_fixed_width_spaces(tmp_path):
+    rect = (
+        "<hp:rect><hp:drawText><hp:subList>"
+        + p("<hp:t>장소: 대청마루</hp:t>")
+        + "</hp:subList></hp:drawText></hp:rect>"
+    )
+    body = (
+        p("<hp:t>업무협약 체결</hp:t>" + rect)
+        + p("<hp:t>(전년비,<hp:fwSpace/>만명)</hp:t>")
+        + p("<hp:t>끝</hp:t>")
+    )
+    make_hwpx(tmp_path / "a.hwpx", [body])
+    assert [b.text for b in parse(tmp_path / "a.hwpx").blocks] == [
+        "업무협약 체결",
+        "장소: 대청마루",
+        "(전년비, 만명)",
+        "끝",
+    ]
+
+
+def test_damaged_hwpx_section_fails_with_a_readable_reason(tmp_path):
+    from sdrag.ingest.parse import UnreadableFile
+
+    path = tmp_path / "cut.hwpx"
+    make_hwpx(path, ["<hp:p><hp:run><hp:t>잘린"])
+    with pytest.raises(UnreadableFile, match="손상"):
+        parse(path)
+
+
+def test_annex_and_addenda_close_when_a_new_part_starts(tmp_path):
+    assert headings(
+        ["제1조(목적) ...", "부칙 <제1호, 2020. 1. 1.>", "제1조(시행) ...", "[별표 1] 기준",
+         "1. 일반기준", "제1조(목적) 둘째 법령", "제2조(정의) ..."]
+    ) == [
+        "제1조(목적)", "부칙", "부칙 제1조(시행)", "[별표 1]",
+        "[별표 1]",  # an annex's numbered items are not headings
+        "제1조(목적)", "제2조(정의)",
+    ]  # fmt: skip
+    d = Document()
+    d.add_paragraph("[별표 1] 기준")
+    d.add_paragraph("가. 항목")
+    d.add_heading("2. 다음 장", 1)
+    d.add_paragraph("본문")
+    d.save(tmp_path / "g.docx")
+    assert [b.heading for b in parse(tmp_path / "g.docx").blocks] == [
+        "[별표 1]", "[별표 1]", "2. 다음 장", "2. 다음 장",
+    ]  # fmt: skip
+
+
+def test_running_lines_keep_table_rows_and_never_empty_a_page():
+    head = "| 성명 | 금액 |"
+    pages = [f"{head}\n| 홍길동{i} | {i}00 |\n| 소계 | {i}00 |" for i in range(1, 6)]
+    assert strip_running_lines(pages) == pages  # a scanned table's repeated rows stay
+    short = ["확인서\n서명", "확인서\n서명", "확인서\n서명"]
+    assert strip_running_lines(short) == short  # every line would go: kept whole
+
+
+def test_pdf_cell_circled_numbers_start_items():
+    assert _pdf_cell("진찰\n① 간담도계") == "진찰 ① 간담도계"
+
+
+def test_pdf_errors_after_opening_are_readable(tmp_path, monkeypatch):
+    import pdfplumber
+    import pypdf
+
+    from sdrag.ingest.parse import UnreadableFile
+
+    w = pypdf.PdfWriter()
+    w.add_blank_page(100, 100)
+    w.write(tmp_path / "a.pdf")
+
+    def boom(*a, **k):
+        raise KeyError("/Contents")
+
+    with monkeypatch.context() as m:
+        m.setattr(pypdf.PageObject, "extract_text", boom)
+        with pytest.raises(UnreadableFile, match="손상"):
+            parse(tmp_path / "a.pdf")
+    monkeypatch.setattr(pdfplumber, "open", boom)
+    with pytest.raises(UnreadableFile, match="손상"):
+        parse(tmp_path / "a.pdf")

@@ -141,7 +141,10 @@ class SearchAgent:
                 name, args = u["name"], u.get("input") or {}
                 res.steps.append({"tool": name, "input": args})
                 if name == "finish":
-                    res.picked = [i for i in args.get("chunk_ids", []) if i in found]
+                    ids = [
+                        i for i in args.get("chunk_ids", []) if isinstance(i, str) and i in found
+                    ]
+                    res.picked = list(dict.fromkeys(ids))  # one id twice was two sources
                     res.finished = True
                     break
                 if len(res.steps) > MAX_STEPS:

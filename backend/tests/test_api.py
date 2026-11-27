@@ -310,7 +310,7 @@ def test_chat_stream_sends_stages_deltas_then_the_stored_answer(api):
 
 
 def test_upload_shortens_a_long_name_and_keeps_a_daily_limit(api, monkeypatch, tmp_path):
-    c, d = api
+    c, _ = api
     monkeypatch.setattr(main.settings, "upload_dir", str(tmp_path))
     monkeypatch.setattr(main, "MAX_DAY_FILES", 2)
     long = "근로계약서" * 40 + ".pdf"  # 600 bytes: "File name too long" failed the batch

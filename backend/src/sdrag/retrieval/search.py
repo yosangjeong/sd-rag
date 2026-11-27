@@ -30,6 +30,7 @@ from sdrag.retrieval.embed import Embedder
 from sdrag.retrieval.terms import expand
 
 RRF_K = 60
+EF_SEARCH = 500  # HNSW candidates per vector search (Searcher.dense)
 LANGS = ("ko", "en")
 SOURCE = ["chunk_id", "doc_id", "owner", "title", "heading", "lang", "file_type", "page_start",
           "page_end", "start", "end", "text", "ocr"]  # fmt: skip
@@ -112,7 +113,15 @@ class Searcher:
 
     def dense(self, query: str, size: int = 10, langs=None, doc_ids=None, vector=None) -> list[Hit]:
         vector = vector or self.embedder.embed([query])[0]
-        knn = {"vector": vector, "k": size}
+        # a wide HNSW search: with the default (ef = k) a filtered search missed the exact
+        # nearest chunk of an English translation over Korean statutes (elr-016: rank 1
+        # exactly, not in the top 50); ef 500 matched exact search on 60 dev questions
+        # (recall@50 0.995 -> 1.000) for 0.2 ms more on 8k vectors
+        knn = {
+            "vector": vector,
+            "k": size,
+            "method_parameters": {"ef_search": max(EF_SEARCH, size)},
+        }
         if f := _filters(langs, doc_ids, self.owners, self.scope, self.country):
             knn["filter"] = {"bool": {"filter": f}}  # Lucene filters while searching
         body = {"size": size, "_source": SOURCE, "query": {"knn": {"embedding": knn}}}
