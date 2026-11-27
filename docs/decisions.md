@@ -82,9 +82,18 @@ median.
 quality levels (`eval/ocr_bench.py`): CER Korean body 2.3%, Korean tables 0.4%,
 English 2-column 3.9%, 3-column 7.1%, tables 9.0%; invented characters under 1%;
 about 14 s and $0.005 per page. Nova Pro was rejected (repetition loops, content
-filter). Textract (supports Korean, but needs the paid plan) and Claude (needs the
-Anthropic use-case form) were not available to test; the engine sits behind one
-interface (`OcrEngine`) and can be swapped.
+filter). Claude (needs the Anthropic use-case form) was not available to test; the
+engine sits behind one interface (`OcrEngine`) and can be swapped.
+
+**Textract, measured later (2026-11-27, on the paid plan; `eval/textract_bench.py`,
+`results/ocr-textract.md`)**: AnalyzeDocument with tables on the same 24 bench pages and
+the 9 real-scan sheets. It recognizes characters about as well (recall 94-99.5% against
+95.7-99.8%), invents less (real scan: extra 0.3% against 1.6%) and is faster (2-6 s per
+page against 11-14 s), but loses reading order on two-column English pages (CER 58-76%
+against 3.9%) and is behind on Korean (body CER 3.1-5.1% against 2.3-2.8%, tables in
+table form 11-12% against 0.4%; real scan overall 12.7% against 2.8%). Mixed, so
+Qwen3-VL stays, as decided before the run. Improvement: Textract with LAYOUT for
+reading order, or Textract as a check on Qwen3-VL (pages where they disagree re-read).
 
 **Two guards found by the benchmark**: the prompt asks for leader dots as "...",
 since the model otherwise repeated dots until the token limit and lost the rest of
