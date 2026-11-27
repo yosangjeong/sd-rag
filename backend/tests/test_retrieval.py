@@ -206,10 +206,25 @@ def test_wide_searches_the_statute_terms_too():
     s.wide("집주인이 계약기간을 1년으로 하재요", translation="landlord one-year lease",
            statute_terms="주택임대차보호법 임대차기간 2년")  # fmt: skip
     assert len(client.bodies) == 7  # bm25 + dense for question, translation, terms; definitions
-    assert (
-        client.bodies[4]["query"]["bool"]["must"]["multi_match"]["query"]
-        == "주택임대차보호법 임대차기간 2년"
-    )
+    bm25_queries = [b["query"]["bool"]["must"]["multi_match"]["query"]
+                    for b in client.bodies if "must" in b["query"].get("bool", {})]  # fmt: skip
+    assert "주택임대차보호법 임대차기간 2년" in bm25_queries  # sent at once: in no fixed order
+
+
+def test_wide_adds_the_statute_terms_own_lists():
+    s = Searcher(FakeClient(), "chunks-structure", FakeEmbedder())
+    terms = "주택임대차보호법 임대차기간"
+
+    def listed(prefix, q):
+        return [Hit(f"{prefix}{'t' if q == terms else 'q'}#{i}", 1.0, {}) for i in range(30)]
+
+    s.bm25 = lambda q, *a, **k: listed("b", q)
+    s.dense = lambda q, *a, **k: listed("d", q)
+    s.references = lambda *a, **k: []
+    s.definitions = lambda *a, **k: []
+    ids = {h.chunk_id for h in s.wide("집주인이 1년만 살래요", translation="", statute_terms=terms)}
+    # the fused top 10 takes the first 5 of each; each list then adds its next 5
+    assert {"bt#7", "dt#7"} <= ids and "bt#10" not in ids
 
 
 def test_definitions_search_only_definition_articles():

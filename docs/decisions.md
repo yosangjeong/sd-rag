@@ -1261,6 +1261,31 @@ single GLM-4.7 calls from the laptop took 1.1-3.5 s that afternoon (0.95 s for t
 in parallel on 11-14), so most of it was Bedrock latency; to be measured again on the
 final deployment. Torn down the same day.
 
+## The statute-terms query's own lists, and the pool's searches sent at once (2026-11-28)
+
+The question and its translation each add the top 5 of their own BM25 and dense lists
+(part 2 of `Searcher.wide`); the statute-terms query, added later (11-14), added only its
+fused top 10. Giving it its own lists as well:
+
+- **Pool (no reranker, all sets)**: 3 of the 10 test-set golds that never reached the pool
+  now do (g0536, el-044, cfpb-026; real_dev eld-028 too), none lost; the pool grows from
+  a mean of 56 to 66 candidates (max 68 -> 78).
+- **Reranked, dev sets only** (real_dev 31, dev_re 21, labor dev 85): gold in the top 6
+  134 vs 134 of 137 (eld-028 gained, g0179 lost), first 122 vs 124; reranker median time
+  -0.1 to +0.6 s per set. The rule set before the run (+2 in the top 6, none lost) was
+  not met: on accuracy it is a draw.
+
+Adopted anyway, so the three queries follow one rule (simpler to explain; the asymmetry was
+an accident of the order things were added, not a decision). The idea came from test-set
+misses; the choice was made on dev, and the test sets are scored once after.
+
+To win back the reranker's extra time, `wide`'s searches are sent at once instead of one
+after another: the BM25 and dense searches of the three queries, their embeddings, the
+definitions search, and the up-to-15 cross-reference searches. Same calls, same merge
+order, so the same pool (40 of 40 dev questions identical); `wide` 0.78 s -> 0.27 s median
+on 40 dev questions (local OpenSearch, Bedrock embeddings from the laptop). Spend about
+$3.8 (rerank calls). Scripts were scratch, not kept.
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region

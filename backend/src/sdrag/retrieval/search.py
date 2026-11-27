@@ -6,7 +6,7 @@
 - ``bilingual``: the hybrid search run with the question and with its translation into
   the other corpus language (rerank.LlmTranslator), fused
 - ``wide`` (served): bilingual_union plus each first-stage list on its own and the
-  decree/rule articles that cite the retrieved law articles, about 50 candidates for
+  decree/rule articles that cite the retrieved law articles, about 66 candidates for
   the reranker (docs/decisions.md, "Wider candidate pool")
 - ``per_language``: the hybrid search run once per corpus language and fused. Both
   embedding models measured favor chunks in the query's language: a Korean query put
@@ -21,6 +21,7 @@ pipeline so that the same code merges the per-language lists.
 """
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from opensearchpy import OpenSearch
@@ -192,8 +193,12 @@ class Searcher:
            shares few words with the question. 15 of the 49 misses were such a decree
            or rule article while its law article was retrieved.
         4. The question in the statute's terms (`LlmTranslator.to_statute_terms`): its
-           hybrid top `extra` not yet in. A situation question ("주변에서 계약기간을 1년으로
-           하라는데") or a provision's popular name shares few words with the article.
+           hybrid top `extra` not yet in, then the top `each` of its BM25 and of its dense
+           list, as for the question and its translation. A situation question ("주변에서
+           계약기간을 1년으로 하라는데") or a provision's popular name shares few words with the
+           article. Its own lists (2026-11-28) brought 3 of 10 test-set pool misses in and
+           made the pool about 10 larger; reranked, the dev sets were even (top 6: 134 of
+           137 either way), kept so the three queries follow one rule.
         5. Definition articles (`definitions`): "평균임금은 어떻게 계산하나요" is answered
            by 제2조(정의), which lists dozens of terms and matches no single question well.
 
@@ -205,12 +210,24 @@ class Searcher:
         if statute_terms is None and hasattr(self.translator, "to_statute_terms"):
             statute_terms = self.translator.to_statute_terms(query)
         queries = [query] + ([translation] if translation.strip() else [])
-        lists = []
-        for q in queries:
-            vector = self.embedder.embed([q])[0]
-            b = self.bm25(expand(q), 50, None, doc_ids)  # everyday words -> statute terms
-            d = self.dense(q, 50, None, doc_ids, vector)
-            lists.append((rrf(b, d, size=size), b, d))
+        terms = (statute_terms or "").strip()
+        if terms in queries:
+            terms = ""
+        texts = queries + ([terms] if terms else [])
+        # every search here is independent of the others, so they are sent at once: one
+        # after another, the 9 searches and 3 embeddings took 0.78 s median (2026-11-28)
+        vectors = self.embedder.embed(texts)
+        with ThreadPoolExecutor(8) as pool:
+            bm25s = [
+                pool.submit(self.bm25, expand(q), 50, None, doc_ids) for q in queries
+            ]  # everyday words -> statute terms
+            if terms:  # already in the statute's terms: no expand
+                bm25s.append(pool.submit(self.bm25, terms, 50, None, doc_ids))
+            denses = [pool.submit(self.dense, t, 50, None, doc_ids, v)
+                      for t, v in zip(texts, vectors, strict=True)]  # fmt: skip
+            defs_f = pool.submit(self.definitions, texts, doc_ids)
+            bs, ds = [f.result() for f in bm25s], [f.result() for f in denses]
+        lists = [(rrf(b, d, size=size), b, d) for b, d in zip(bs[: len(queries)], ds, strict=False)]
         out: dict[str, Hit] = {}
 
         def add(hits, n):
@@ -224,14 +241,16 @@ class Searcher:
             add(b, each)
             add(d, each)
         ranked = [x for _, b, d in lists for x in (b, d)]  # every list, for `fused`
-        terms = (statute_terms or "").strip()
-        if terms and terms not in queries:
-            t_hits = self.hybrid(terms, extra, 50, None, doc_ids)
+        if terms:
+            bt, dt = bs[-1], ds[-1]
+            t_hits = rrf(bt, dt, size=extra)  # = self.hybrid(terms, extra, 50, None, doc_ids)
             add(t_hits, extra)
+            add(bt, each)
+            add(dt, each)
             ranked.append(t_hits)
             queries.append(terms)
         r_hits = self.references(queries, list(out.values()), doc_ids)
-        d_hits = self.definitions(queries, doc_ids)
+        d_hits = defs_f.result()
         add(r_hits, refs)
         add(d_hits, defs)
         ranked += [r_hits, d_hits]
@@ -261,7 +280,7 @@ class Searcher:
         The first version looked at the first 8 articles only and scored with the
         question alone; for a fine asked in English the 제39조(과태료) article was the
         9th among the candidates and the decree's fine table never came up."""
-        seen, found = set(), {}
+        seen, found, bodies = set(), {}, []
         for h in hits:
             doc = h.source.get("doc_id", "")
             m = RE_ARTICLE.match(h.source.get("heading") or "")
@@ -284,9 +303,12 @@ class Searcher:
             filters.append({"match_phrase": {"search_text": phrase}})
             should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"]}}
                       for q in queries if q.strip()]  # fmt: skip
-            body = {"size": per_article, "_source": SOURCE,
-                    "query": {"bool": {"should": should, "filter": filters}}}  # fmt: skip
-            for r in _hits(self.client.search(index=self.index, body=body)):
+            bodies.append({"size": per_article, "_source": SOURCE,
+                           "query": {"bool": {"should": should, "filter": filters}}})  # fmt: skip
+        with ThreadPoolExecutor(8) as pool:  # up to 15 searches, independent: sent at once
+            results = list(pool.map(lambda b: self.client.search(index=self.index, body=b), bodies))
+        for res in results:  # merged in article order, as when they were run one by one
+            for r in _hits(res):
                 if r.chunk_id not in found or r.score > found[r.chunk_id].score:
                     found[r.chunk_id] = r
         return sorted(found.values(), key=lambda r: (-r.score, r.chunk_id))
