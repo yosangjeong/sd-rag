@@ -11,7 +11,7 @@ wide+rerank+jur@chunks-structure (served); modes are the Searcher methods (bm25,
 dense, hybrid, per_language, bilingual, bilingual_union, bilingual_union_dense, wide) and
 agent (sdrag.agent).
 "+rerank" reorders the first stage's candidates with the LLM reranker (20 for most modes,
-30 for bilingual_union, about 50 for wide); "+jur" first asks
+30 for bilingual_union, about 70 for wide, 78 at most); "+jur" first asks
 which country's law the question is about and searches only that country's statutes
 (retrieval/jurisdiction.py, as served). --llm picks the model for these LLM steps.
 
@@ -45,6 +45,7 @@ from sdrag.retrieval.index import PUBLIC, list_documents
 from sdrag.retrieval.jurisdiction import jurisdiction
 from sdrag.retrieval.rerank import LlmReranker, LlmTranslator
 from sdrag.retrieval.search import Searcher
+from sdrag.service import is_other_country
 
 DEPTH = 20
 # USD per 1M tokens (input, output)
@@ -99,6 +100,7 @@ def run_system(system: str, items, client, embedder, chat, rerank_chat=None,
     if mode == "agent":
         docs = list_documents(client, index, [PUBLIC])
         agent = SearchAgent(chat.client, chat.model_id, s, docs)
+        all_docs = docs
     meters = [chat] + ([rerank_chat] if rerank_chat else [])
     meter = Meter(embedder, *meters)
     rows = []
@@ -108,6 +110,8 @@ def run_system(system: str, items, client, embedder, chat, rerank_chat=None,
         steps = None
         country = s.country = jurisdiction(aux, it.question) if by_country else None
         if agent:
+            if country:  # as served: the agent's document list matches what it can search
+                agent.documents = [d for d in all_docs if not is_other_country(d, country)]
             pool = None
             if "pool" in stages:  # agent+pool: on top of the basic mode's wide pool, as served
                 pool = s.wide(it.question, size=DEPTH)

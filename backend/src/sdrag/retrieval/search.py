@@ -189,25 +189,28 @@ class Searcher:
              defs: int = 3,
              doc_ids=None, translation: str | None = None,
              statute_terms: str | None = None, fused: bool = False) -> list[Hit]:  # fmt: skip
-        """A wider candidate list for the reranker than bilingual_union, in five parts:
+        """A wider candidate list for the reranker than bilingual_union, in five parts, each
+        adding only chunks not in the list yet, in this order:
 
-        1. bilingual_union: the question's hybrid top `size`, its translation's `extra`.
-        2. Each first-stage list on its own, top `each` of BM25 and of dense for both the
-           question and its translation. RRF keeps a chunk that only one list ranks high
-           below chunks both lists rank middling: of 49 served misses (top 6), a gold
-           BM25 put 3rd was 38th after fusion.
+        1. Hybrid: the question's top `size`, then up to `extra` new ones from the top
+           `size` of its translation and of the statute-terms query (part 4).
+        2. Each first-stage list on its own, top `each` of BM25 and of dense for each of
+           the three queries. RRF keeps a chunk that only one list ranks high below chunks
+           both lists rank middling: of 49 served misses (top 6), a gold BM25 put 3rd was
+           38th after fusion.
         3. Cross-references (`references`): where a Korean statute leaves the figure,
            the authority or the procedure to a decree or rule ("대통령령으로 정한다"), the
            answer is in the decree article that cites it ("법 제39조제3항제6호"), which
            shares few words with the question. 15 of the 49 misses were such a decree
            or rule article while its law article was retrieved.
-        4. The question in the statute's terms (`LlmTranslator.to_statute_terms`): like
-           the translation, up to `extra` new ones from its hybrid top `size`, then the top
-           `each` of its BM25 and of its dense list. A situation question ("주변에서
+        4. The question in the statute's terms (`LlmTranslator.to_statute_terms`), taken
+           like the translation in parts 1 and 2. A situation question ("주변에서
            계약기간을 1년으로 하라는데") or a provision's popular name shares few words with the
            article. Its own lists (2026-11-28) brought 3 of 10 test-set pool misses in and
            made the pool about 10 larger; reranked, the dev sets were even (top 6: 134 of
-           137 either way), kept so the three queries follow one rule.
+           137 either way), kept so the three queries follow one rule. Since 2026-11-28
+           its hybrid list comes with the other two (all hybrid lists, then all single
+           lists), not after the single lists of the question and its translation.
         5. Definition articles (`definitions`): "평균임금은 어떻게 계산하나요" is answered
            by 제2조(정의), which lists dozens of terms and matches no single question well.
 
@@ -237,35 +240,30 @@ class Searcher:
                       for t, v in zip(texts, vectors, strict=True)]  # fmt: skip
             defs_f = pool.submit(self.definitions, keyword, doc_ids)
             bs, ds = [f.result() for f in bm25s], [f.result() for f in denses]
-        lists = [(rrf(b, d, size=size), b, d) for b, d in zip(bs[: len(queries)], ds, strict=False)]
+        # (hybrid, bm25, dense) per query: the question, its translation, the terms query
+        lists = [(rrf(b, d, size=size), b, d) for b, d in zip(bs, ds, strict=True)]
         out: dict[str, Hit] = {}
 
         def add(hits, n):
             for h in [h for h in hits if h.chunk_id not in out][:n]:
                 out[h.chunk_id] = h
 
-        add(lists[0][0], size)
-        if len(lists) > 1:
-            add(lists[1][0], extra)
-        for _, b, d in lists:
+        for i, (h, _, _) in enumerate(lists):  # part 1: every hybrid list first
+            add(h, size if i == 0 else extra)
+        for _, b, d in lists:  # part 2: then each single list
             add(b, each)
             add(d, each)
-        ranked = [x for _, b, d in lists for x in (b, d)]  # every list, for `fused`
+        ranked = [x for _, b, d in lists for x in (b, d)]  # every single list, for `fused`
         if terms:
-            bt, dt = bs[-1], ds[-1]
-            # like the translation: up to `extra` new ones from its fused top `size`
-            t_hits = rrf(bt, dt, size=size)
-            add(t_hits, extra)
-            add(bt, each)
-            add(dt, each)
-            ranked.append(t_hits)
             queries.append(terms)
         r_hits = self.references(keyword, list(out.values()), doc_ids)
         d_hits = defs_f.result()
         add(r_hits, refs)
         add(d_hits, defs)
         ranked += [r_hits, d_hits]
-        self.last_queries = queries  # for the reranker's passage windows
+        # for the reranker's passage windows: the queries as asked (the statute words BM25
+        # appends are synonyms; the terms query carries such words itself)
+        self.last_queries = queries
         pool = list(out.values())
         if fused:  # present the pool in the order all its lists agree on, not arrival
             fused_rank = {h.chunk_id: i for i, h in enumerate(rrf(*ranked, size=10_000))}
@@ -318,7 +316,10 @@ class Searcher:
                 cites = {"match_phrase_prefix": {"search_text.en": {"query": f"영 제{n}조",
                                                                      "max_expansions": 50}}}  # fmt: skip
             filters.append(cites)
-            should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"]}}
+            # scored like the main BM25 (most_fields); no minimum match: a decree article that
+            # cites the act shares few words with the question, which is why it is fetched
+            should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"],
+                                       "type": "most_fields"}}
                       for q in queries if q.strip()]  # fmt: skip
             bodies.append({"size": per_article, "_source": SOURCE,
                            "query": {"bool": {"should": should, "filter": filters}}})  # fmt: skip
@@ -335,7 +336,8 @@ class Searcher:
         the queries by BM25: a question about what a term means, or how it is computed,
         is answered there. 133 such chunks in the 70-document corpus. `queries` as BM25
         searches them (`wide` passes them expanded)."""
-        should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"]}}
+        should = [{"multi_match": {"query": q, "fields": ["search_text", "search_text.en"],
+                                   "type": "most_fields"}}
                   for q in queries if q.strip()]  # fmt: skip
         # "제2조(정의)", and "제10조의3(권리금의 정의 등)": the word, not "조정의" or "결정의"
         heading = {"bool": {"should": [

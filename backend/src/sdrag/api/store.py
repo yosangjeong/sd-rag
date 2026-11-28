@@ -59,10 +59,11 @@ class MemoryStore:
             key, {"id": conv_id, "title": message["text"][:60], "messages": [], "ts": time.time()}
         )
         item["messages"].append(message)
+        item["updated"] = time.time()  # as DynamoStore: the list is ordered by it
         return conv_id
 
     def conversations(self, user):
-        return [{"id": v["id"], "title": v["title"], "ts": v["ts"]}
+        return [{"id": v["id"], "title": v["title"], "ts": v["ts"], "updated": v["updated"]}
                 for (u, k), v in self.items.items() if u == user and k.startswith("CONV#")]  # fmt: skip
 
     def conversation(self, user, conv_id):
@@ -130,8 +131,8 @@ class DynamoStore:
             start = {"ExclusiveStartKey": r["LastEvaluatedKey"]}
 
     def conversations(self, user):
-        return [{"id": i["id"], "title": i["title"], "ts": i["ts"]}
-                for i in self._query(user, "CONV#", ("id", "title", "ts"))]  # fmt: skip
+        return [{"id": i["id"], "title": i["title"], "ts": i["ts"], "updated": i.get("updated", i["ts"])}
+                for i in self._query(user, "CONV#", ("id", "title", "ts", "updated"))]  # fmt: skip
 
     def conversation(self, user, conv_id):
         r = self.table.get_item(Key={"pk": self._pk(user), "sk": f"CONV#{conv_id}"})

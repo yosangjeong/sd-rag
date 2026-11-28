@@ -227,6 +227,27 @@ def test_wide_adds_the_statute_terms_own_lists():
     assert {"bt#7", "dt#7"} <= ids and "bt#10" not in ids
 
 
+def test_wide_takes_every_hybrid_list_before_the_single_lists():
+    s = Searcher(FakeClient(), "chunks-structure", FakeEmbedder())
+    tag = {"해고 예고": "q", "dismissal notice": "t", "근로기준법 해고의 예고": "s"}
+
+    def listed(kind, q):
+        return [Hit(f"{kind}{tag[q.split(' ', 1)[0] if q not in tag else q]}#{i}", 1.0, {})
+                for i in range(30)]  # fmt: skip
+
+    s.bm25 = lambda q, *a, **k: listed("b", next(x for x in tag if q.startswith(x)))
+    s.dense = lambda q, *a, **k: listed("d", q)
+    s.references = lambda *a, **k: []
+    s.definitions = lambda *a, **k: []
+    order = [h.chunk_id for h in s.wide("해고 예고", translation="dismissal notice",
+                                         statute_terms="근로기준법 해고의 예고")]  # fmt: skip
+    first_single = len(order) - 30  # the six single lists add 5 new ones each, last
+    hybrid, single = order[:first_single], order[first_single:]
+    assert len(hybrid) == 40 and {x[1] for x in hybrid} == {"q", "t", "s"}
+    assert hybrid[20][1] == "t" and hybrid[30][1] == "s"  # question 20, translation 10, terms 10
+    assert [x[:2] for x in single[::5]] == ["bq", "dq", "bt", "dt", "bs", "ds"]
+
+
 def test_definitions_search_only_definition_articles():
     client = FakeClient()
     Searcher(client, "chunks-structure", FakeEmbedder(), country="kr").definitions(

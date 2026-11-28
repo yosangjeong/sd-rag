@@ -179,6 +179,8 @@ def source_values(text: str) -> tuple[set[float], set[float]]:
         vals.add(round(korean_amount(m.group()), 6))
     for m in RE_SCALED.finditer(rest):  # 50만원 -> 500000, 1.5 million won -> 1500000
         vals.add(round(_num(m.group(1)) * _SCALE[m.group(2).lower()], 6))
+    for m in RE_DOLLAR.finditer(rest):  # "$1.5 million", read as in an answer (figures)
+        vals.add(round(_num(m.group(1)) * (_SCALE[m.group(2).lower()] if m.group(2) else 1), 6))
     for m in RE_RATIO.finditer(rest):
         v = _num(m.group(1))
         ratios.add(

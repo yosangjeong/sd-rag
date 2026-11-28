@@ -75,6 +75,32 @@ def test_chat_answers_with_citations_and_keeps_the_conversation(api):
     assert d.service.calls == [("alice", "해고 예고?", "basic")]
 
 
+def test_a_reopened_conversation_keeps_the_chips_and_the_list_follows_activity(api):
+    c, _ = api
+    a = c.post("/api/chat", json={"message": "a"}, headers=as_user("alice")).json()
+    c.post("/api/chat", json={"message": "b"}, headers=as_user("alice"))
+    conv = c.get(f"/api/conversations/{a['conversation_id']}", headers=as_user("alice")).json()
+    assert conv["messages"][1]["latency_ms"] == 12  # shown under the answer, as live
+    # continuing the older conversation moves it to the top
+    c.post("/api/chat", json={"message": "a2", "conversation_id": a["conversation_id"]},
+           headers=as_user("alice"))  # fmt: skip
+    assert (
+        c.get("/api/conversations", headers=as_user("alice")).json()[0]["id"]
+        == a["conversation_id"]
+    )
+
+
+def test_each_request_of_a_selection_wakes_for_all_files_waiting(api):
+    c, d = api
+    one = [("files", ("a.pdf", b"%PDF-1.4 a", "application/pdf"))]
+    two = [("files", ("b.pdf", b"%PDF-1.4 b", "application/pdf")),
+           ("files", ("c.pdf", b"%PDF-1.4 c", "application/pdf"))]  # fmt: skip
+    c.post("/api/documents", files=one, headers=as_user("alice"))
+    assert d.queue.woken == 1
+    c.post("/api/documents", files=two, headers=as_user("alice"))  # a.pdf still queued
+    assert d.queue.woken == 3
+
+
 def test_users_cannot_see_each_others_conversations(api):
     c, _ = api
     r = c.post("/api/chat", json={"message": "q"}, headers=as_user("alice")).json()
@@ -164,7 +190,13 @@ def test_dynamo_store_reads_every_page_and_lists_without_messages():
     store.table = Table()
     assert [c["id"] for c in store.conversations("u")] == ["c1", "c2"]
     first = store.table.calls[0]
-    assert set(first["ExpressionAttributeNames"].values()) == {"id", "title", "ts"}  # no messages
+    assert set(first["ExpressionAttributeNames"].values()) == {
+        "id",
+        "title",
+        "ts",
+        "updated",
+    }  # no messages
+    assert store.conversations("u")[0]["updated"] == 1  # an item without it: its start time
 
 
 def test_a_token_with_an_unknown_key_id_is_401_not_500(monkeypatch):

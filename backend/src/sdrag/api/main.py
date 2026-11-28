@@ -150,7 +150,10 @@ def _finish(d, user: str, body: ChatIn, rid: str, reply) -> dict:
     )
     msg = {"role": "assistant", "text": reply.answer.text, "citations": citations,
            "unchecked_figures": reply.answer.unchecked_figures, "mode": reply.mode,
-           "steps": [{"tool": s.get("tool")} for s in reply.steps], "ts": time.time()}  # fmt: skip
+           "steps": [{"tool": s.get("tool")} for s in reply.steps], "ts": time.time(),
+           # the chips the page shows under an answer, kept for a reopened conversation
+           "latency_ms": round(reply.latency_ms),
+           "searched": reply.question if reply.question not in ("", body.message) else None}  # fmt: skip
     d.store.add_message(user, conv, msg)
     return {"conversation_id": conv, "answer": reply.answer.text, "citations": citations,
             "unchecked_figures": reply.answer.unchecked_figures,
@@ -221,7 +224,7 @@ def chat_stream(body: ChatIn, request: Request, user: str = Depends(current_user
 
 @app.get("/api/conversations")
 def conversations(user: str = Depends(current_user)) -> list[dict]:
-    return sorted(deps().store.conversations(user), key=lambda c: -float(c["ts"]))
+    return sorted(deps().store.conversations(user), key=lambda c: -float(c["updated"]))
 
 
 @app.get("/api/conversations/{conv_id}")
@@ -332,8 +335,12 @@ def upload(files: list[UploadFile], request: Request, user: str = Depends(curren
         else:
             rejected.append(r)
     if accepted:
+        # the page sends a selection 10 files a request: wake for all of this user's files
+        # still waiting, or every request asks for one worker and the second waits for the
+        # queue alarm (4-5 minutes)
+        waiting = sum(1 for x in mine if x.get("status") in ("queued", "processing", "retrying"))
         try:
-            d.queue.wake(len(accepted))
+            d.queue.wake(waiting + len(accepted))
         except Exception as e:  # noqa: BLE001 - the queue alarm still scales the worker
             log(
                 "error", request_id=request.state.rid, path="wake", error=f"{type(e).__name__}: {e}"

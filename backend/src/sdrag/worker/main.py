@@ -24,7 +24,7 @@ import boto3
 
 from sdrag.api.store import DynamoStore
 from sdrag.common.config import settings
-from sdrag.common.logs import log
+from sdrag.common.logs import log, user_hash
 from sdrag.common.search_client import make_client
 from sdrag.ingest.ocr import build_ocr
 from sdrag.retrieval.embed import TitanEmbedder
@@ -112,14 +112,22 @@ class Heartbeat:
         self.thread.join(timeout=10)
 
 
+def _give_up(deps, job: dict, error: str) -> None:
+    """A file no try could process: its chunks out of the index (a busy index may have
+    taken some batches), the status "failed", and an "ingest" line like every other
+    outcome (worker/job.py), so the evaluators' upload log ends where the file did."""
+    _remove_chunks(deps, f"u-{job['doc_id']}")
+    deps.store.update_document(job["user"], job["doc_id"], status="failed", stage="", error=error)
+    log("ingest", user=user_hash(job["user"]), doc_id=job["doc_id"], status="failed",
+        stage="", error=error)  # fmt: skip
+
+
 def handle(m: dict, sqs, s3, deps) -> None:
     job = json.loads(m["Body"])
     receipt = m["ReceiptHandle"]
     receives = int(m.get("Attributes", {}).get("ApproximateReceiveCount", "1"))
     if receives > MAX_TRIES:  # every try died mid-job (out of memory, task stopped)
-        _remove_chunks(deps, f"u-{job['doc_id']}")  # batches a try indexed before it died
-        deps.store.update_document(job["user"], job["doc_id"], status="failed", stage="",
-                                   error="처리 도중 작업이 멈췄습니다 (재시도 끝)")  # fmt: skip
+        _give_up(deps, job, "처리 도중 작업이 멈췄습니다 (재시도 끝)")
         sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
         return
     last_try = receives >= MAX_TRIES
@@ -132,17 +140,15 @@ def handle(m: dict, sqs, s3, deps) -> None:
             except Exception as e:  # noqa: BLE001 - leave the message for a retry
                 log("error", path="worker-download", doc_id=job.get("doc_id"),
                     error=f"{type(e).__name__}: {e}"[:500])  # fmt: skip
-                result = {"status": "retrying", "error": "파일을 내려받지 못했습니다"}
+                # stage "": a try that died mid-job may have left one
+                result = {"status": "retrying", "stage": "", "error": "파일을 내려받지 못했습니다"}
                 deps.store.update_document(job["user"], job["doc_id"], **result)  # not "queued"
+                log("ingest", user=user_hash(job["user"]), doc_id=job["doc_id"], **result)
             else:
                 result = process(job["user"], job["doc_id"], path, job["filename"], deps)
         if result["status"] == "retrying" and last_try:
-            # the last try: say "failed" instead of "retrying" forever and delete it; a
-            # busy index may have taken some batches, which must not stay searchable
-            _remove_chunks(deps, f"u-{job['doc_id']}")
-            deps.store.update_document(job["user"], job["doc_id"], status="failed", stage="",
-                                       error=(result.get("error") or "처리하지 못했습니다")
-                                       + " (재시도 끝)")  # fmt: skip
+            # the last try: say "failed" instead of "retrying" forever and delete it
+            _give_up(deps, job, (result.get("error") or "처리하지 못했습니다") + " (재시도 끝)")
             sqs.delete_message(QueueUrl=settings.upload_queue_url, ReceiptHandle=receipt)
         elif result["status"] == "retrying":  # visible again in a minute
             _later(sqs, receipt, 60)

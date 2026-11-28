@@ -289,9 +289,10 @@ def parse_hwpx(path: Path) -> ParsedDocument:
                         if "".join(buf).strip():
                             add("text", "".join(buf).strip())
                         buf = []
-                        if child.get("colCnt") == "1":
+                        if all(len(tr.findall(f"{HP}tc")) == 1 for tr in child.findall(f"{HP}tr")):
                             # a single-column table is a layout box (law.go.kr wraps annexes
-                            # in one): read each cell like body text so inner tables stay tables
+                            # in one): read each cell like body text so inner tables stay tables;
+                            # cells counted per row, as for DOCX (colCnt is only a size hint)
                             for tc in child.findall(f"{HP}tr/{HP}tc"):
                                 walk(tc.findall(f"{HP}subList/{HP}p"))
                         else:

@@ -56,3 +56,14 @@ def test_a_delivery_after_every_try_died_marks_failed_without_running():
     process.assert_not_called()
     assert doc["status"] == "failed" and "멈췄습니다" in doc["error"]
     assert sqs.deleted == ["r"] and doc["removed"] == [{"term": {"doc_id": "u-d1"}}]
+
+
+def test_a_final_failure_writes_the_ingest_line_like_every_outcome():
+    for receives, result in (
+        (w.MAX_TRIES, {"status": "retrying", "error": "바쁨"}),
+        (w.MAX_TRIES + 1, None),
+    ):
+        with mock.patch.object(w, "log") as log:
+            _run(receives, result)
+        ingest = [c.kwargs for c in log.call_args_list if c.args == ("ingest",)]
+        assert len(ingest) == 1 and ingest[0]["status"] == "failed" and ingest[0]["doc_id"] == "d1"

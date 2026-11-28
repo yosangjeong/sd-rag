@@ -28,11 +28,12 @@ PRESETS = {
                     " pct(latency_ms, 95) as p95_ms, avg(llm_input_tokens) as input_tokens,"
                     " avg(llm_output_tokens) as output_tokens by mode",
     "tool_calls": "filter event = 'tool_call' | stats count() as n by tool",
-    "errors": "fields @timestamp, request_id, path, status, error"
+    "errors": "fields @timestamp, request_id, doc_id, path, status, error"
               " | filter event = 'error' or status >= 500 | sort @timestamp desc | limit 50",
     "audit": "fields @timestamp, user, action, document, documents, chunk"
              " | filter event = 'audit' | sort @timestamp desc | limit 100",
-    "ingest": "fields @timestamp, doc_id, status, chunks, file_type, ocr_pages, parse_s, embed_s, index_s, error"
+    "ingest": "fields @timestamp, doc_id, status, chunks, file_type, lang, ocr_pages, ocr_replaced, unread_pages,"
+              " parse_s, embed_s, index_s, error"
               " | filter event = 'ingest' | sort @timestamp desc | limit 100",
     "request": "fields @timestamp, event, mode, tool, input.query, input.method, results.0.doc_id, latency_ms, error"
                " | filter request_id = '{rid}' | sort @timestamp asc",
@@ -95,6 +96,8 @@ def _local(preset: str, minutes: int, rid: str) -> list[dict]:
         if r["event"] == "answer":
             by[r["mode"]].append(r)
     return [{"mode": m, "n": len(rs), "avg_ms": round(statistics.mean(r["latency_ms"] for r in rs)),
+             # as Insights' pct(latency_ms, 95): the nearest-rank 95th percentile
+             "p95_ms": sorted(r["latency_ms"] for r in rs)[max(0, -(-95 * len(rs) // 100) - 1)],
              "input_tokens": round(statistics.mean(r["llm_input_tokens"] for r in rs)),
              "output_tokens": round(statistics.mean(r["llm_output_tokens"] for r in rs))}
             for m, rs in by.items()]  # fmt: skip

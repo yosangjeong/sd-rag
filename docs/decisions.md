@@ -1442,6 +1442,42 @@ chain ("Going back to my first question ...") resolved too (GLM-4.7, 4 conversat
 change. A summary of older turns or retrieving them was not needed for this: a question
 names its subject in one line.
 
+## Siblings treated alike: a second audit (2026-11-28)
+
+Explaining the pool while studying, the user noticed the statute-terms query's hybrid list
+came after the question's and translation's single lists, not with the other hybrid
+lists: it had been added later and appended. Now all three hybrid lists come first, then
+all six single lists. The whole code was then searched for the same kind of thing
+(siblings handled apart because one came later); what was found and done:
+
+- **Pool order** (above). Gold in the pool over the 7 sets: none lost, none gained; 529 of
+  777 pools changed by about one chunk, mean size 69.7 -> 71.0 (max 78 as before).
+- **BM25 in references and definitions** scored the two analyzer fields with the default
+  best_fields, the main search with most_fields: now most_fields everywhere. Gold in the
+  pool: none lost or gained; 425 pools changed by under one chunk on average.
+  References keep no minimum match on purpose (a decree article citing the act shares few
+  words with the question, which is why it is fetched); definitions keep theirs.
+- **wide_fused** (ablation) counted the terms query's lists twice; fixed.
+- **Upload wake**: the page sends a selection 10 files a request, and each request woke
+  workers for its own 10, so the second worker waited for the queue alarm. The API now
+  wakes for all of the user's files still waiting.
+- **Upload log**: a file's final failure (last try, every try died) and a failed download
+  wrote no `ingest` line, so the evaluators' upload log ended on "retrying"; they do now.
+- **Conversations**: a reopened answer lost its latency and rewritten-question chips (not
+  stored), and the list sorted by start time though the store kept the last update; both
+  fixed (the in-memory store keeps `updated` too).
+- **Eval gate** also runs when `data/manifest.csv` or `data/corpus/` changes (what it
+  indexes). **Eval agent** sees the same country-filtered document list as the served one.
+- **Figure check** read "$1.5 million" in an answer as 1.5e6 but in a source as 1.5 (a
+  false flag); sources read dollar amounts the same way now.
+- **HWPX single-column tables** are found by counting cells per row, as for DOCX (colCnt is
+  a size hint); all 69 corpus HWPX tables give the same answer either way, so no re-index.
+- Log presets show doc_id on errors and lang / OCR fields on uploads; the local log view
+  gives p95 like CloudWatch's.
+
+Left as is, with the reason in the code: the reranker's windows use the queries as asked,
+not with BM25's appended statute words (synonyms; the terms query carries such words).
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region
