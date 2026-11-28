@@ -1410,10 +1410,12 @@ last retrieval change, by the same pipeline as the labor and real-estate sets
 - all test (`data/eval/fresh_test.jsonl`), its hash in `SHA256SUMS` committed before any
   system is scored on it.
 
-Made: 528 passages, 321 passed generation and the check, 309 after cleaning, and 2 more
-dropped whose pooled also-span is a tuning item's answer: **307 items** (ko->ko 148,
-en->ko 71, en->en 56, ko->en 32; PDF 122, scan 61, DOCX 56, HWPX 54, two formats 14;
-63 documents). About $1 of model calls; `chunks-fixed` re-indexed first so the pool reads
+Made: 640 passages, 384 passed generation and the check, 376 after cleaning, and 2 more
+dropped whose pooled also-span is a tuning item's answer: **374 items** (ko->ko 152,
+en->ko 69, en->en 93, ko->en 60; PDF 185, scan 65, DOCX 55, HWPX 54, two formats 15;
+64 documents). A first draw (110 English PDF passages) gave only 88 English answers, so
+English PDF was drawn deeper before anything was scored; no scanned table is in it (every
+one is in an annex a tuning item answers from). About $2 of model calls in all; `chunks-fixed` re-indexed first so the pool reads
 the current parser's text.
 
 Rules set before it is scored: it is scored **once**, at the final deploy, on the final

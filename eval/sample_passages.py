@@ -64,10 +64,12 @@ TARGET_RE = {
     ("ko", "pdf"): 18, ("ko", "hwpx"): 22, ("ko", "docx"): 22, ("ko", "scan"): 12,
     ("en", "pdf"): 30, ("en", "scan"): 12,
 }  # fmt: skip
-# the fresh set: about 330 items, every cell of both earlier sets
+# the fresh set: every cell of both earlier sets. English PDF is drawn deeper: after the
+# exclusion, most English passages left are boilerplate the generator skips (110 gave
+# 71 items, 88 English answers in all)
 TARGET_FRESH = {
     ("ko", "pdf"): 50, ("ko", "hwpx"): 50, ("ko", "docx"): 50, ("ko", "scan"): 40,
-    ("en", "pdf"): 110, ("en", "scan"): 30,
+    ("en", "pdf"): 180, ("en", "scan"): 30,
 }  # fmt: skip
 TARGETS = {"labor": TARGET, "re": TARGET_RE, "fresh": TARGET_FRESH}
 RESERVE = 1.6
@@ -167,6 +169,8 @@ def used_units(texts: dict[str, DocText]) -> set[tuple[str, str | None]]:
 
     spans = []
     for path in sorted((DATA / "eval").glob("*.jsonl")):
+        if path.name == "fresh_test.jsonl":  # its own output, once written
+            continue
         try:
             items = load_items(path)
         except KeyError:  # unseen / similar: uploaded documents, not in the corpus

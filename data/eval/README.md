@@ -13,7 +13,7 @@ chunking strategy: a retrieved chunk is relevant when its range overlaps a gold 
 | `real_unanswerable.jsonl` | real questions the corpus does not answer | the agent should say it does not know |
 | `real_questions_candidates.csv` | the real questions as collected | input of `real.jsonl` |
 | `test_re.jsonl`, `dev_re.jsonl` | generated from the real-estate documents added later, 80% / 20% | same rules as test / dev |
-| `fresh_test.jsonl` | generated 2026-11-28 from all 70 documents, 307 items, no article shared with any other set | scored **once**, at the final deploy, on the final code (untouched until then; the CI gate never reads it) |
+| `fresh_test.jsonl` | generated 2026-11-28 from all 70 documents, 374 items, no article shared with any other set | scored **once**, at the final deploy, on the final code (untouched until then; the CI gate never reads it) |
 | `SHA256SUMS` | hashes of the sets | each set's hash committed before any system is tuned on its dev |
 
 Counts and breakdowns: see "Composition" below (filled by `eval/finalize_qa.py`).
@@ -195,21 +195,23 @@ stages (`sample_passages.py --set fresh`, `generate_qa.py --set fresh`,
   holding a gold or also span of any other set** (780 left out); pooling uses the eight
   cheap systems only, not the served one;
 - an item whose pooled also-span lands on a tuning item's answer (dev, dev_re, real_dev)
-  is dropped (2: f0148, f0341); all the rest is test.
+  is dropped (2: f0195, f0290); all the rest is test.
 
-528 passages -> 321 passed generation and the check -> 309 after cleaning -> 307.
+640 passages -> 384 passed generation and the check -> 376 after cleaning -> 374.
 
 | | items |
 |---|---|
-| question -> answer language | ko->ko 148, en->ko 71, en->en 56, ko->en 32 |
-| answer file type | PDF 122 (ko 55, en 67), scan 61 (ko 40, en 21), DOCX 56, HWPX 54, two formats 14 |
-| kind | fact 262, table 31, multi 14 |
-| style | question 171, situation 70, keywords 66 |
-| documents | 63 of 70 (real-estate statutes: 33 items) |
+| question -> answer language | ko->ko 152, en->ko 69, en->en 93, ko->en 60 |
+| answer file type | PDF 185 (ko 56, en 129), scan 65 (ko 41, en 24), DOCX 55, HWPX 54, two formats 15 |
+| kind | fact 330, table 29, multi 15 |
+| style | question 211, situation 89, keywords 74 |
+| documents | 64 of 70 |
 
-English answers are fewer than targeted (88 against 140): most English passages left
-after the exclusion were boilerplate the generator skipped. No scanned table is left
-(every one is used by an earlier set). Rules for scoring it: `docs/decisions.md`,
+English PDF is drawn deeper than the other cells (target 180): most English passages left
+after the exclusion are boilerplate the generator skips (a first draw of 110 gave 71
+items). No scanned table is in it: all 15 scanned tables are in annexes that a tuning item
+(dev, dev_re, real_dev) already answers from, so scanned tables are reported from the
+earlier test sets only. Rules for scoring it: `docs/decisions.md`,
 "A fresh test set".
 
 ## unseen.jsonl (documents the system never saw)

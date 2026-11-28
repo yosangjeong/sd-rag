@@ -26,7 +26,7 @@ The focus is retrieval accuracy (`data/eval/`). Choices were made on the dev set
 test sets below were kept apart from them, but they are not untouched: their results were
 read and their errors analysed after each measurement, a few decisions were checked on
 them too, and the answer versions were compared on a fixed sample of the labor test set
-(`docs/decisions.md`). A set made after the last retrieval change, 307 questions over articles no other set uses, is
+(`docs/decisions.md`). A set made after the last retrieval change, 374 questions over articles no other set uses, is
 scored once on the final deploy (`data/eval/fresh_test.jsonl`, rules in `docs/decisions.md`).
 Until then, the closest to held-out is the set of real questions collected on 11-14 after the
 retrieval changes of that day (below: hit@10 0.91, MRR 0.81). It is not clean: it was used
