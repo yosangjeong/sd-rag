@@ -1428,6 +1428,20 @@ straight to main. It now also runs on a push to main that touches parsing, chunk
 retrieval (the deploy does not wait for it; a red run means a revert), and runs once at
 the final deploy to show it working.
 
+## Follow-ups that point further back (2026-11-28)
+
+Studying the request path: `condense` saw only the last 6 messages, so a follow-up about
+an earlier question was rewritten against the wrong subject. Four exchanges (dismissal
+notice, annual leave, minimum wage, severance), then "아까 첫 번째로 물어본 거, 5인 미만
+사업장이면 어떻게 돼요?": the old window gave "5인 미만 사업장이면 연차휴가는 며칠인가요?". Now
+the user's questions before those 6 messages are listed too (up to 20, 200 characters each;
+their answers are not), in the same call: "5인 미만 사업장이면 수습 기간에도 해고 예고를 해야
+하나요?". A new topic came back unchanged, a recent reference still resolved, and an English
+chain ("Going back to my first question ...") resolved too (GLM-4.7, 4 conversations, about
+1,200 tokens in all). The retrieval sets are single questions, so their numbers do not
+change. A summary of older turns or retrieving them was not needed for this: a question
+names its subject in one line.
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region

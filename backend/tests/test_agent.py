@@ -101,6 +101,26 @@ def test_condense_is_skipped_without_history_and_used_with_it():
     assert "그럼 5인 미만은?" in chat.prompts[0] and "30일 전" in chat.prompts[0]
 
 
+def test_condense_sees_earlier_questions_but_not_earlier_answers():
+    chat = FakeChat("수습 기간에도 5인 미만 사업장은 해고 예고를 해야 하나요?")
+    history = []
+    for q, a in [("수습 기간에도 해고 예고를 해야 하나요?", "OLD-ANSWER 30일 전"),
+                 ("연차휴가는 며칠?", "15일"), ("최저임금은?", "시급"), ("퇴직금은?", "1년 이상")]:  # fmt: skip
+        history += [{"role": "user", "text": q}, {"role": "assistant", "text": a}]
+    condense(chat, history, "아까 첫 번째 질문은 5인 미만이면?")
+    prompt = chat.prompts[0]
+    assert prompt.startswith("Conversation:\nEarlier questions, oldest first:\n- 수습 기간에도")
+    assert "OLD-ANSWER" not in prompt  # answers before the last three exchanges are left out
+    assert "user: 연차휴가는 며칠?" in prompt and "assistant: 1년 이상" in prompt
+    # a long conversation: only the latest EARLIER_QUESTIONS of the older questions
+    long = [{"role": r, "text": f"{r}{i}"} for i in range(40) for r in ("user", "assistant")]
+    condense(chat, long, "그럼?")
+    p = chat.prompts[1]
+    # users 37-39 are in the last three exchanges; of 0-36 before them, the latest 20
+    assert "- user17\n" in p and "- user36\n" in p and "- user16\n" not in p
+    assert "- user37" not in p and "user: user37" in p
+
+
 class SequenceChat(FakeChat):
     def __init__(self, *replies):
         super().__init__(None)

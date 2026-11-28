@@ -143,12 +143,17 @@ class LlmTranslator:
 
 
 CONDENSE_SYSTEM = """You turn the user's last message in a conversation with a document search engine into a standalone search question.
-Use the earlier turns only to resolve what the last message refers to: omitted subjects, "that", "그 경우", "what about ...", and "the opposite" / "그 반대" (spell out who does what to whom, e.g. the employer notifying the worker instead of the worker notifying the employer).
+Use the earlier turns (and the list of earlier questions, when there is one) only to resolve what the last message refers to: omitted subjects, "that", "그 경우", "what about ...", and "the opposite" / "그 반대" (spell out who does what to whom, e.g. the employer notifying the worker instead of the worker notifying the employer).
 Drop conversational openers ("그럼", "그러면", "so", "then"). Keep the language of the last message. If it is already a complete question on its own, return it unchanged. Do not answer it.
 Return only the question."""
 
-HISTORY_TURNS = 6  # the last three exchanges
+HISTORY_TURNS = 6  # the last three exchanges, questions and answers
 HISTORY_CHARS = 600  # per turn: an answer's first lines carry its subject
+# before those, the user's questions only: a question names its subject in a line, so
+# "아까 첫 번째 질문은 5인 미만이면?" still resolves after many turns, for a few
+# hundred characters more and no extra call (answers that far back are left out)
+EARLIER_QUESTIONS = 20
+EARLIER_CHARS = 200
 
 
 def condense(chat, history: list[dict], question: str) -> str:
@@ -156,10 +161,18 @@ def condense(chat, history: list[dict], question: str) -> str:
 
     Retrieval sees one query, so "그럼 5인 미만은?" after a question on dismissal
     notice has to become "5인 미만 사업장도 해고 예고를 해야 하나요?" first. History
-    entries are {"role": "user" | "assistant", "text": ...}."""
+    entries are {"role": "user" | "assistant", "text": ...}. The model sees the last
+    HISTORY_TURNS messages and, before them, up to EARLIER_QUESTIONS of the user's
+    questions."""
     if not history:
         return question
-    turns = "\n".join(f"{m['role']}: {m['text'][:HISTORY_CHARS]}" for m in history[-HISTORY_TURNS:])
+    recent, older = history[-HISTORY_TURNS:], history[:-HISTORY_TURNS]
+    earlier = [m["text"][:EARLIER_CHARS] for m in older if m["role"] == "user"]
+    earlier = earlier[-EARLIER_QUESTIONS:]
+    turns = "\n".join(f"{m['role']}: {m['text'][:HISTORY_CHARS]}" for m in recent)
+    if earlier:
+        listed = "\n".join(f"- {q}" for q in earlier)
+        turns = f"Earlier questions, oldest first:\n{listed}\n\nLast turns:\n{turns}"
     c = chat.complete(CONDENSE_SYSTEM, f"Conversation:\n{turns}\n\nLast message: {question}",
                       max_tokens=300)  # fmt: skip
     text = strip_think(c.text).strip('"')
