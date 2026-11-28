@@ -1350,8 +1350,9 @@ Fixed, with what they changed:
   faster. About $3.9. Its reply is also read when numbers come as strings or the JSON is cut.
 - **PDF memory**: pdfplumber pages are closed as read (113 pages: 1,098 MB -> 110 MB).
 - **Uploads**: names cut to 200 bytes (a longer one failed the whole batch), each file's
-  error kept to that file, 30 files per user per 24 hours (100 scans of 300 pages would be
-  about $550 of OCR, above the spend limit), the page sends files 10 per request (one
+  error kept to that file, 100 files per user per 24 hours, one full request (first set to 30 for
+  OCR cost; raised the same day because the brief has 50+ files uploaded at once, and only
+  the admin creates accounts), the page sends files 10 per request (one
   request of 100 large files could outlast CloudFront's 60 s).
 - **Worker**: a final failure removes the chunks a busy index took and the stage; botocore
   timeouts are transient; a retry's extra chunks are removed; an empty Textract read keeps

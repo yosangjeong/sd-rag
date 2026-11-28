@@ -54,8 +54,9 @@ from sdrag.worker.job import ALLOWED, LocalQueue
 
 MAX_FILES, MAX_FILE_MB = 100, 50
 # files one user can upload per 24 hours: OCR is the cost (Qwen3-VL and the Textract
-# check per scanned page), and 100 files of 300 scanned pages would be about $550
-MAX_DAY_FILES = 30
+# check per scanned page). The brief has 50+ files uploaded at once, so the limit is one
+# full request (MAX_FILES); accounts are made by the admin only (no self sign-up)
+MAX_DAY_FILES = MAX_FILES
 MAX_NAME_BYTES = 200  # the file name is a path and an S3 key part (255 bytes on Linux)
 
 
