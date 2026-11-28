@@ -150,6 +150,7 @@ trail of searches and source views (who, which document). Queries for evaluators
 | Availability | API on 2 tasks in 2 AZs; one OpenSearch node (a second would double the largest cost) | 3 AZs, OpenSearch replicas and dedicated masters, API autoscaling |
 | Network | tasks in public subnets (no NAT) | private subnets with NAT or VPC endpoints |
 | Domain | CloudFront default domain | own domain, ACM certificate, WAF |
+| Conversation memory | a follow-up is made standalone from the last 6 messages (600 characters each, `rerank.condense`); the answer step sees only that question, so a reference to something said earlier is lost | a running summary of older turns, or the relevant earlier turns retrieved, given to the rewrite |
 | Prompt injection | layered prompts and least capability | add Guardrails / an injection classifier at ingest and query time |
 | Evaluation | generated + pooled gold, real-question check | larger human-labeled set, regular re-judging |
 | Reranker / answers | general LLM (GLM-4.7) | a dedicated reranker model if offered in-Region |
