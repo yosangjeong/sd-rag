@@ -13,6 +13,7 @@ chunking strategy: a retrieved chunk is relevant when its range overlaps a gold 
 | `real_unanswerable.jsonl` | real questions the corpus does not answer | the agent should say it does not know |
 | `real_questions_candidates.csv` | the real questions as collected | input of `real.jsonl` |
 | `test_re.jsonl`, `dev_re.jsonl` | generated from the real-estate documents added later, 80% / 20% | same rules as test / dev |
+| `fresh_test.jsonl` | generated 2026-11-28 from all 70 documents, 307 items, no article shared with any other set | scored **once**, at the final deploy, on the final code (untouched until then; the CI gate never reads it) |
 | `SHA256SUMS` | hashes of the sets | each set's hash committed before any system is tuned on its dev |
 
 Counts and breakdowns: see "Composition" below (filled by `eval/finalize_qa.py`).
@@ -182,6 +183,34 @@ The correctness judge's prompts and its agreement with the reference grading:
 | gold annotated outside the judge | 0 | 0 | 4 | 0 | 0 | 0 | 3 | 0 |
 
 A real question's language is its source's: easylaw questions are Korean, dol.gov questions English, so the real set has no cross-lingual items.
+
+## fresh_test.jsonl (the untouched test set, 2026-11-28)
+
+The other test sets were kept out of the choices but read and analysed after each
+measurement, so this one was made after the last retrieval change, by the same three
+stages (`sample_passages.py --set fresh`, `generate_qa.py --set fresh`,
+`finalize_qa.py --set fresh`; seed 20261128), with two differences:
+
+- passages come from all 70 documents, and **none from an article, annex or section
+  holding a gold or also span of any other set** (780 left out); pooling uses the eight
+  cheap systems only, not the served one;
+- an item whose pooled also-span lands on a tuning item's answer (dev, dev_re, real_dev)
+  is dropped (2: f0148, f0341); all the rest is test.
+
+528 passages -> 321 passed generation and the check -> 309 after cleaning -> 307.
+
+| | items |
+|---|---|
+| question -> answer language | ko->ko 148, en->ko 71, en->en 56, ko->en 32 |
+| answer file type | PDF 122 (ko 55, en 67), scan 61 (ko 40, en 21), DOCX 56, HWPX 54, two formats 14 |
+| kind | fact 262, table 31, multi 14 |
+| style | question 171, situation 70, keywords 66 |
+| documents | 63 of 70 (real-estate statutes: 33 items) |
+
+English answers are fewer than targeted (88 against 140): most English passages left
+after the exclusion were boilerplate the generator skipped. No scanned table is left
+(every one is used by an earlier set). Rules for scoring it: `docs/decisions.md`,
+"A fresh test set".
 
 ## unseen.jsonl (documents the system never saw)
 

@@ -36,7 +36,7 @@ from pathlib import Path
 from evalset import CACHE, DATA, EMBED_CACHE, Gold, Item, doc_texts, locate, overlaps, save_items
 from generate_qa import CHECK_MODEL, paths
 from opensearchpy import OpenSearch
-from sample_passages import SEED, TARGET, TARGET_RE
+from sample_passages import SEED, TARGETS
 
 from sdrag.common.config import settings
 from sdrag.common.llm import BedrockChat, CachedChat, parse_json
@@ -259,7 +259,8 @@ def sha256(path: Path) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=6)
-    ap.add_argument("--set", default="labor", help="labor (with the real questions) or re")
+    ap.add_argument("--set", default="labor",
+                    help="labor (with the real questions), re, or fresh (test only)")  # fmt: skip
     a = ap.parse_args()
     passages_path, generated_path = paths(a.set)
     texts = doc_texts()
@@ -267,7 +268,7 @@ def main() -> None:
                 for x in passages_path.read_text("utf-8").splitlines() if x}  # fmt: skip
     generated = [json.loads(x) for x in generated_path.read_text("utf-8").splitlines() if x]
     print("filling cells:")
-    items = fill(generated, passages, TARGET if a.set == "labor" else TARGET_RE)
+    items = fill(generated, passages, TARGETS[a.set])
 
     client = OpenSearch(hosts=[settings.opensearch_url], timeout=60)
     emb = TitanEmbedder(settings.embed_model, settings.aws_region, settings.embed_dims)
@@ -300,10 +301,23 @@ def main() -> None:
           f"OCR-fixed {sum(1 for i in items if 'edited' in i.meta)}")  # fmt: skip
 
     if a.set != "labor":  # an added set: generated items only, written next to the others
-        dev, test = split(items, texts)
-        names = (f"dev_{a.set}.jsonl", f"test_{a.set}.jsonl")
-        save_items(OUT / names[0], dev)
-        save_items(OUT / names[1], test)
+        # the fresh set is all test: nothing is tuned on it (sample_passages.SETS); its
+        # passages avoid every other set's articles, but pooling can add an also-span
+        # there: an item that so shares an answer with a tuning item is dropped
+        if a.set == "fresh":
+            from evalset import load_items
+
+            tuning = [h for n in ("dev.jsonl", "dev_re.jsonl", "real_dev.jsonl")
+                      for it in load_items(OUT / n) for h in [*it.gold, *it.also]]  # fmt: skip
+            shared = [it for it in items
+                      if any(overlaps(vars(g), h) for g in [*it.gold, *it.also] for h in tuning)]  # fmt: skip
+            items = [it for it in items if it not in shared]
+            print(f"dropped, answer shared with a tuning item: {[it.qid for it in shared]}")
+        dev, test = split(items, texts) if a.set != "fresh" else ([], items)
+        names = (f"dev_{a.set}.jsonl", f"test_{a.set}.jsonl") if dev else ("fresh_test.jsonl",)
+        if dev:
+            save_items(OUT / names[0], dev)
+        save_items(OUT / names[-1], test)
         sums = {ln.split()[1]: ln for ln in (OUT / "SHA256SUMS").read_text().splitlines() if ln}
         sums |= {n: f"{sha256(OUT / n)}  {n}" for n in names}
         (OUT / "SHA256SUMS").write_text("".join(v + "\n" for v in sums.values()))

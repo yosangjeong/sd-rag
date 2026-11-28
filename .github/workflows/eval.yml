@@ -1,11 +1,23 @@
 # Retrieval evaluation gate: changes to parsing, chunking or retrieval are scored on
 # the dev sets (labor and real estate; never the test sets) and fail if accuracy
-# drops (eval/gate.py).
+# drops (eval/gate.py), on a pull request (before it is merged) and on a push to main
+# (the project's own commits go straight to main; the deploy, which follows ci, does not
+# wait for this run, so a red run means a revert). About $2 of model calls a run.
 # Runs a local OpenSearch with nori in the runner, indexes the corpus in data/corpus/
 # with the OCR and embedding caches from S3 (EvalRole: read them, invoke the models),
 # then queries.
 name: eval
 on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/src/sdrag/ingest/**"
+      - "backend/src/sdrag/retrieval/**"
+      - "backend/src/sdrag/common/**"
+      - "backend/uv.lock"
+      - "eval/**"
+      - "data/eval/dev*.jsonl"
+      - "data/eval/baseline-dev*.json"
   pull_request:
     # also the settings (model ids, OCR check) and pinned dependencies the scored system
     # runs with, and the dev sets and baselines eval/gate.py compares against

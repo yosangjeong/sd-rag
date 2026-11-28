@@ -1393,6 +1393,39 @@ is about 25k). Left as limitations (design.md): derived figures flagged, evaluat
 view across users, tokens valid an hour after sign-out, retry wait after scale-in, streams
 not cancelled on disconnect, the re-index minute without public chunks, OCR cache keys.
 
+## A fresh test set, and the gate on main (2026-11-28)
+
+Checked against the brief again: the evaluation set must be one "not used for tuning".
+The test sets were kept out of the choices, but their results were read and analysed
+after each measurement, and the closest to held-out (the 11-14 real questions) was used
+twice and shares gold passages with tuning items. So a new set is made now, after the
+last retrieval change, by the same pipeline as the labor and real-estate sets
+(`eval/sample_passages.py --set fresh`, `generate_qa.py`, `finalize_qa.py`):
+
+- passages from all 70 documents, per (answer language, file type) cell, about 330 items
+  targeted; **no passage from an article, annex or section that holds a gold or also span
+  of any other set** (780 left out), so no item shares an answer with a tuning item;
+- gold from generation and the check (another model family), `also` from pooling the
+  eight cheap systems (bm25, dense, hybrid, per_language; not the served system);
+- all test (`data/eval/fresh_test.jsonl`), its hash in `SHA256SUMS` committed before any
+  system is scored on it.
+
+Made: 528 passages, 321 passed generation and the check, 309 after cleaning, and 2 more
+dropped whose pooled also-span is a tuning item's answer: **307 items** (ko->ko 148,
+en->ko 71, en->en 56, ko->en 32; PDF 122, scan 61, DOCX 56, HWPX 54, two formats 14;
+63 documents). About $1 of model calls; `chunks-fixed` re-indexed first so the pool reads
+the current parser's text.
+
+Rules set before it is scored: it is scored **once**, at the final deploy, on the final
+code, for every system in the ablation table, then re-pooled with the served system's top
+5 like the other sets (`eval/repool.py`). Its numbers are reported as they come, next to
+the earlier sets; nothing is changed after reading them. The eval gate never reads it.
+
+The CI eval gate had never run: it ran on pull requests only, and the commits go
+straight to main. It now also runs on a push to main that touches parsing, chunking or
+retrieval (the deploy does not wait for it; a red run means a revert), and runs once at
+the final deploy to show it working.
+
 ## Constraints that shaped the above
 
 - AWS project on the free plan, single Region ap-southeast-2, no cross-Region

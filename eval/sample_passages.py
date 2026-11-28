@@ -34,9 +34,14 @@ from evalset import CACHE, DocText, doc_texts
 from sdrag.ingest.chunk import split_span
 
 SEED = 20261112
-# two sets, by the documents their answers come from: "labor" (the original corpus,
-# frozen 2026-11-12) and "re" (real-estate statutes added later, manifest tag realestate)
-SETS = ("labor", "re")
+# three sets, by the documents their answers come from: "labor" (the original corpus,
+# frozen 2026-11-12), "re" (real-estate statutes added later, manifest tag realestate),
+# and "fresh" (2026-11-28, all 70 documents): a test set made after the last retrieval
+# change and scored once, on the final system, its passages drawn from articles no
+# other set's gold or also span is in (the earlier test sets were read and analysed,
+# and the 11-14 real questions share gold passages with tuning items)
+SETS = ("labor", "re", "fresh")
+SEEDS = {"fresh": 20261128}
 
 
 def out_path(name: str):
@@ -59,6 +64,12 @@ TARGET_RE = {
     ("ko", "pdf"): 18, ("ko", "hwpx"): 22, ("ko", "docx"): 22, ("ko", "scan"): 12,
     ("en", "pdf"): 30, ("en", "scan"): 12,
 }  # fmt: skip
+# the fresh set: about 330 items, every cell of both earlier sets
+TARGET_FRESH = {
+    ("ko", "pdf"): 50, ("ko", "hwpx"): 50, ("ko", "docx"): 50, ("ko", "scan"): 40,
+    ("en", "pdf"): 110, ("en", "scan"): 30,
+}  # fmt: skip
+TARGETS = {"labor": TARGET, "re": TARGET_RE, "fresh": TARGET_FRESH}
 RESERVE = 1.6
 CROSS = {"ko": 0.33, "en": 0.45}
 TABLE_SHARE, MULTI_SHARE = 0.15, 0.12
@@ -149,6 +160,30 @@ def multi_pairs(texts: dict[str, DocText]) -> list[dict]:
     return pairs
 
 
+def used_units(texts: dict[str, DocText]) -> set[tuple[str, str | None]]:
+    """(document, heading) of every article, annex or section that holds a gold or also
+    span of an existing set (data/eval/*.jsonl): the fresh set asks about none of them."""
+    from evalset import DATA, load_items
+
+    spans = []
+    for path in sorted((DATA / "eval").glob("*.jsonl")):
+        try:
+            items = load_items(path)
+        except KeyError:  # unseen / similar: uploaded documents, not in the corpus
+            continue
+        for it in items:
+            spans += [*it.gold, *it.also]
+    used = set()
+    for g in spans:
+        d = texts.get(g.doc_id)
+        if d is None:  # a document of another set (unseen, similar): not in the corpus
+            continue
+        for b in d.blocks:
+            if b.start < g.end and g.start < b.end:
+                used.add((d.id, b.heading))
+    return used
+
+
 def set_docs(name: str) -> set[str]:
     from evalset import DATA
 
@@ -156,7 +191,7 @@ def set_docs(name: str) -> set[str]:
 
     re_docs = {d.id for d in load_corpus(DATA) if "realestate" in d.tags}
     all_docs = {d.id for d in load_corpus(DATA)}
-    return re_docs if name == "re" else all_docs - re_docs
+    return {"re": re_docs, "labor": all_docs - re_docs}.get(name, all_docs)
 
 
 def main() -> None:
@@ -165,16 +200,22 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", choices=SETS, default="labor")
     a = ap.parse_args()
-    rng = random.Random(SEED)
+    rng = random.Random(SEEDS.get(a.set, SEED))
     keep = set_docs(a.set)
     texts = {k: v for k, v in doc_texts().items() if k in keep}
-    targets = TARGET if a.set == "labor" else TARGET_RE
-    prefix = "p" if a.set == "labor" else "r"
+    targets = TARGETS[a.set]
+    prefix = {"labor": "p", "re": "r", "fresh": "f"}[a.set]
+    taken = used_units(texts) if a.set == "fresh" else set()
+
+    def free(p: dict) -> bool:
+        return (p["doc_id"], p["heading"]) not in taken
+
+    print(f"articles left out (in an earlier set): {len(taken)}")
     OUT = out_path(a.set)
     by_cell: dict[tuple, list[DocText]] = defaultdict(list)
     for d in texts.values():
         by_cell[(d.lang, d.file_type)].append(d)
-    pairs = multi_pairs(texts)
+    pairs = [p for p in multi_pairs(texts) if all(free(x) for x in p["parts"])]
     rng.shuffle(pairs)
 
     out = []
@@ -187,11 +228,12 @@ def main() -> None:
         # the reader to); its act article may be in another format, which is fine
         cell_pairs = [p for p in pairs if texts[p["parts"][1]["doc_id"]].file_type == ftype]
         chosen = [{"kind": "multi", **p} for p in cell_pairs[:n_multi]]
-        tables = [t for d in docs for t in table_passages(d)]
+        tables = [t for d in docs for t in table_passages(d) if free(t)]
         n_table = min(round(n * TABLE_SHARE), len(tables))
         chosen += [{"kind": "table", "parts": [t]} for t in rng.sample(tables, n_table)]
         # fact passages: round-robin over the cell's documents so no statute dominates
-        pools = {d.id: rng.sample(text_passages(d), len(text_passages(d))) for d in docs}
+        pools = {d.id: rng.sample(ps, len(ps))
+                 for d in docs for ps in [[x for x in text_passages(d) if free(x)]]}  # fmt: skip
         used = {(p["parts"][0]["doc_id"], p["parts"][0]["start"]) for p in chosen}
         while len(chosen) < n and any(pools.values()):
             for d in docs:

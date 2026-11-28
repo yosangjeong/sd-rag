@@ -26,7 +26,9 @@ The focus is retrieval accuracy (`data/eval/`). Choices were made on the dev set
 test sets below were kept apart from them, but they are not untouched: their results were
 read and their errors analysed after each measurement, a few decisions were checked on
 them too, and the answer versions were compared on a fixed sample of the labor test set
-(`docs/decisions.md`). The closest to held-out is the set of real questions collected on 11-14 after the
+(`docs/decisions.md`). A set made after the last retrieval change, 307 questions over articles no other set uses, is
+scored once on the final deploy (`data/eval/fresh_test.jsonl`, rules in `docs/decisions.md`).
+Until then, the closest to held-out is the set of real questions collected on 11-14 after the
 retrieval changes of that day (below: hit@10 0.91, MRR 0.81). It is not clean: it was used
 twice (the second time to reject doc2query), 5 of its questions were re-run after the 11/27
 OCR clean-up, retrieval changed after it (11-16 to 11-28), and 9 of its 33 answerable
@@ -218,8 +220,10 @@ The scripts read the stack outputs from CloudFormation, so they work the same af
 deploy by CI/CD. `SdRag-CiCd` (GitHub OIDC roles) is deployed by hand (it also deploys
 the network and data stacks it depends on: the eval role reads the corpus bucket); its
 outputs and the bucket name go to the repository variables `DEPLOY_ROLE_ARN`,
-`EVAL_ROLE_ARN` and `CORPUS_BUCKET`, after which pushes to `main` deploy and retrieval
-changes are gated on the dev sets. The roles trust GitHub's immutable subject for this
+`EVAL_ROLE_ARN` and `CORPUS_BUCKET`, after which pushes to `main` deploy, and a change to
+parsing, chunking or retrieval is scored on the dev sets (`.github/workflows/eval.yml`,
+`eval/gate.py`): on a pull request before it is merged, and on a push to `main` after it
+(the deploy does not wait for that run; a red run means a revert). The roles trust GitHub's immutable subject for this
 repository (`repo:<owner>@<id>/<repo>@<id>:...`, see `gh api
 repos/<owner>/<repo>/actions/oidc/customization/sub`). Behind a TLS-inspecting proxy, set
 `SDRAG_BUILD_CA` to its CA for the image build.
